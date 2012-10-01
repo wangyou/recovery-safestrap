@@ -26,7 +26,7 @@ LOCAL_CFLAGS += -DRECOVERY_GRAPHICS_USE_LINELENGTH
 endif
 
 #Remove the # from the line below to enable event logging
-#TWRP_EVENT_LOGGING := true
+TWRP_EVENT_LOGGING := true
 ifeq ($(TWRP_EVENT_LOGGING), true)
 LOCAL_CFLAGS += -D_EVENT_LOGGING
 endif

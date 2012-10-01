@@ -1337,7 +1337,8 @@ int get_battery_level(void)
     if (curTime.tv_sec > nextSecCheck)
     {
         char cap_s[4];
-        FILE * cap = fopen("/sys/class/power_supply/battery/capacity","rt");
+        // FILE * cap = fopen("/sys/class/power_supply/battery/capacity","rt");
+        FILE * cap = fopen("/sys/class/power_supply/battery/charge_counter","rt");
         if (cap)
         {
             fgets(cap_s, 4, cap);

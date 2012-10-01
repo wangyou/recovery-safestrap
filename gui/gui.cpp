@@ -351,6 +351,7 @@ static void loopTimer(void)
 static int runPages(void)
 {
     // Raise the curtain
+/*
     if (gCurtain != NULL)
     {
         gr_surface surface;
@@ -360,6 +361,7 @@ static int runPages(void)
         curtainRaise(surface);
         gr_free_surface(surface);
     }
+*/
 
     gGuiRunning = 1;
 
@@ -461,6 +463,7 @@ extern "C" int gui_init()
 
 	gr_init();
 
+#if 0
     // We need to write out the curtain blob
     if (sizeof(gCurtainBlob) > 32)
     {
@@ -485,7 +488,7 @@ extern "C" int gui_init()
     unlink("/tmp/extract.png");
 
 	curtainSet();
-
+#endif
 	ev_init();
     return 0;
 }

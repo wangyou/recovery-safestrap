@@ -255,6 +255,7 @@ protected:
 	void operation_start(const string operation_name);
 	void operation_end(const int operation_status, const int simulate);
 	static void* command_thread(void *cookie);
+#include "objects_action_safestrap.hpp"
 };
 
 class GUIConsole : public RenderObject, public ActionObject

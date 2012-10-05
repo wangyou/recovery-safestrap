@@ -35,30 +35,30 @@
 	#include "cutils/properties.h"
 #endif
 
-struct dInfo tmp, sys, dat, boo, rec, cac, sdcext, sdcint, ase, sde, sp1, sp2, sp3, datdat;
+struct dInfo tmp, sys, dat, boo, rec, cac, sdcext, sdcint, ase, sde, sp1, sp2, sp3, datdat, ss;
 char tw_device_name[20];
 
 void dumpPartitionTable(void);
 
 static int isMTDdevice = 0, isEMMCdevice = 0;
 
-struct dInfo* findDeviceByLabel(const char* label)
-{
-    if (!label)                             return NULL;
-    if (strcmp(label, "system") == 0)       return &sys;
-    if (strcmp(label, "userdata") == 0)     return &dat;
-    if (strcmp(label, "data") == 0)         return &dat;
-    if (strcmp(label, "boot") == 0)         return &boo;
-    if (strcmp(label, "recovery") == 0)     return &rec;
-    if (strcmp(label, "cache") == 0)        return &cac;
-    if (strcmp(label, "sd-ext") == 0)       return &sde;
+struct dInfo* findDeviceByLabel(const char* label) {
+	if (!label)                             return NULL;
+	if (strcmp(label, "system") == 0)       return &sys;
+	if (strcmp(label, "userdata") == 0)     return &dat;
+	if (strcmp(label, "data") == 0)         return &dat;
+	if (strcmp(label, "boot") == 0)         return &boo;
+	if (strcmp(label, "recovery") == 0)     return &rec;
+	if (strcmp(label, "cache") == 0)        return &cac;
+	if (strcmp(label, "sd-ext") == 0)       return &sde;
 	if (strcmp(label, "and-sec") == 0)      return &ase;
+	if (strcmp(label, "ss") == 0)           return &ss;
 	if (strcmp(label, "datadata") == 0) {
 		DataManager_SetIntValue(TW_HAS_DATADATA, 1);
 		return &datdat;
 	}
 
-    // New sdcard methods
+	// New sdcard methods
 	if (DataManager_GetIntValue(TW_HAS_INTERNAL) == 1) {
 		if (strcmp(label, DataManager_GetStrValue(TW_EXTERNAL_LABEL)) == 0)      return &sdcext;
 		if (strcmp(label, DataManager_GetStrValue(TW_INTERNAL_LABEL)) == 0)      return &sdcint;
@@ -73,12 +73,12 @@ struct dInfo* findDeviceByLabel(const char* label)
 	} else
 		if (strcmp(label, DataManager_GetStrValue(TW_EXTERNAL_LABEL)) == 0)       return &sdcext;
 
-    // Special Partitions (such as WiMAX, efs, and PDS)
-    if (strcmp(label, EXPAND(SP1_NAME)) == 0)       return &sp1;
-    if (strcmp(label, EXPAND(SP2_NAME)) == 0)       return &sp2;
-    if (strcmp(label, EXPAND(SP3_NAME)) == 0)       return &sp3;
+	// Special Partitions (such as WiMAX, efs, and PDS)
+	if (strcmp(label, EXPAND(SP1_NAME)) == 0)       return &sp1;
+	if (strcmp(label, EXPAND(SP2_NAME)) == 0)       return &sp2;
+	if (strcmp(label, EXPAND(SP3_NAME)) == 0)       return &sp3;
 
-    return NULL;
+	return NULL;
 }
 
 struct dInfo* findDeviceByBlockDevice(const char* blockDevice)
@@ -99,6 +99,7 @@ struct dInfo* findDeviceByBlockDevice(const char* blockDevice)
     if (strcmp(blockDevice, sp1.blk) == 0)  return &sp1;
     if (strcmp(blockDevice, sp2.blk) == 0)  return &sp2;
     if (strcmp(blockDevice, sp3.blk) == 0)  return &sp3;
+    if (strcmp(blockDevice, ss.blk) == 0)  return &ss;
     return NULL;
 }
 
@@ -266,7 +267,7 @@ int getLocationsViafstab()
     fclose(fp);
 
     // We can ignore the results of this call. But if it works, it at least helps get details
-    getSizesViaPartitions();
+    //getSizesViaPartitions();
 
     // Now, let's retrieve base partition sizes
     if (isEMMCdevice)
@@ -536,6 +537,7 @@ void updateUsedSized()
 		DataManager_SetIntValue(TW_STORAGE_FREE_SIZE, (int)((dat.sze - dat.used) / 1048576LLU));
 	else
 		DataManager_SetIntValue(TW_STORAGE_FREE_SIZE, (int)((sdcint.sze - sdcint.used) / 1048576LLU));
+	DataManager_SetIntValue(TW_SS_STORAGE_FREE_SIZE, (int)((ss.sze - ss.used) / 1048576LLU));
 
 	dumpPartitionTable();
     return;

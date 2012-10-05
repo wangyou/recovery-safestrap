@@ -26,27 +26,27 @@ using namespace std;
 class DataManager
 {
 public:
-    static int ResetDefaults();
-    static int LoadValues(const string filename);
-    static int Flush();
+	static int ResetDefaults();
+	static int LoadValues(const string filename);
+	static int Flush();
 
-    // Core get routines
-    static int GetValue(const string varName, string& value);
-    static int GetValue(const string varName, int& value);
+	// Core get routines
+	static int GetValue(const string varName, string& value);
+	static int GetValue(const string varName, int& value);
 
-    // This is a dangerous function. It will create the value if it doesn't exist so it has a valid c_str
-    static string& GetValueRef(const string varName);
+	// This is a dangerous function. It will create the value if it doesn't exist so it has a valid c_str
+	static string& GetValueRef(const string varName);
 
-    // Helper functions
-    static string GetStrValue(const string varName);
-    static int GetIntValue(const string varName);
+	// Helper functions
+	static string GetStrValue(const string varName);
+	static int GetIntValue(const string varName);
 
-    // Core set routines
-    static int SetValue(const string varName, string value, int persist = 0);
-    static int SetValue(const string varName, int value, int persist = 0);
-    static int SetValue(const string varName, float value, int persist = 0);
+	// Core set routines
+	static int SetValue(const string varName, string value, int persist = 0);
+	static int SetValue(const string varName, int value, int persist = 0);
+	static int SetValue(const string varName, float value, int persist = 0);
 
-    static void DumpValues();
+	static void DumpValues();
 	static void SetDefaultValues();
 	static void ReadSettingsFile(void);
 	
@@ -60,19 +60,18 @@ public:
 	static string& CGetSettingsStorageMount();
 
 protected:
-    typedef pair<string, int> TStrIntPair;
-    typedef pair<string, TStrIntPair> TNameValuePair;
-    static map<string, TStrIntPair> mValues;
-    static string mBackingFile;
-    static int mInitialized;
+	typedef pair<string, int> TStrIntPair;
+	typedef pair<string, TStrIntPair> TNameValuePair;
+	static map<string, TStrIntPair> mValues;
+	static string mBackingFile;
+	static int mInitialized;
 
-    static map<string, string> mConstValues;
+	static map<string, string> mConstValues;
 
 protected:
-    static int SaveValues();
+	static int SaveValues();
 
-    static int GetMagicValue(string varName, string& value);
-
+	static int GetMagicValue(string varName, string& value);
 };
 
 #endif // _DATAMANAGER_HPP_HEADER

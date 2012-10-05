@@ -41,22 +41,22 @@
 
 extern "C"
 {
-    #include "common.h"
-    #include "data.h"
+	#include "common.h"
+	#include "data.h"
 	#include "ddftw.h"
-    #include "tw_reboot.h"
+	#include "tw_reboot.h"
 	#include "roots.h"
 	//#include "extra-functions.h"
 
 	int ensure_path_mounted(const char* path);
 	int mount_current_storage(void);
 
-    int get_battery_level(void);
-    void get_device_id(void);
+	int get_battery_level(void);
+	void get_device_id(void);
 
-    extern char device_id[15];
+	extern char device_id[15];
 
-    void gui_notifyVarChange(const char *name, const char* value);
+	void gui_notifyVarChange(const char *name, const char* value);
 
 	int __system(const char *command);
 }
@@ -308,6 +308,7 @@ int DataManager::SetValue(const string varName, int value, int persist /* = 0 */
 				str = GetStrValue(TW_EXTERNAL_PATH);
 				SetValue(TW_STORAGE_FREE_SIZE, (int)((sdcext.sze - sdcext.used) / 1048576LLU));
 			}
+			SetValue(TW_SS_STORAGE_FREE_SIZE, (int)((ss.sze - ss.used) / 1048576LLU));
 		} else if (GetIntValue(TW_HAS_INTERNAL) == 1)
 			str = GetStrValue(TW_INTERNAL_PATH);
 		else
@@ -580,6 +581,7 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair(TW_BACKUP_SP2_SIZE, make_pair("0", 0)));
 	mValues.insert(make_pair(TW_BACKUP_SP3_SIZE, make_pair("0", 0)));
 	mValues.insert(make_pair(TW_STORAGE_FREE_SIZE, make_pair("0", 0)));
+	mValues.insert(make_pair(TW_SS_STORAGE_FREE_SIZE, make_pair("0", 0)));
 	
     mValues.insert(make_pair(TW_REBOOT_AFTER_FLASH_VAR, make_pair("0", 1)));
     mValues.insert(make_pair(TW_SIGNED_ZIP_VERIFY_VAR, make_pair("0", 1)));
@@ -729,6 +731,7 @@ void DataManager::ReadSettingsFile(void)
 		SetValue(TW_STORAGE_FREE_SIZE, (int)((dat.sze - dat.used) / 1048576LLU));
 	else
 		SetValue(TW_STORAGE_FREE_SIZE, (int)((sdcint.sze - sdcint.used) / 1048576LLU));
+	SetValue(TW_SS_STORAGE_FREE_SIZE, (int)((ss.sze - ss.used) / 1048576LLU));
 
 	if (has_ext) {
 		string ext_path;

@@ -2,6 +2,7 @@ on early-init
     start ueventd
 
 on init
+    loglevel 8
     export PATH /sbin
     export LD_LIBRARY_PATH .:/sbin
     export ANDROID_ROOT /system
@@ -11,6 +12,7 @@ on init
     symlink /system/etc /etc
 
     mkdir /boot
+    mkdir /sdcard-ext
     mkdir /sdcard
     mkdir /sd-ext
     mkdir /datadata
@@ -20,6 +22,12 @@ on init
     mkdir /data
     mkdir /cache
     mount /tmp /tmp tmpfs
+    mkdir /tmp/tbattd
+    mkdir /tmp/data/battd
+
+on fs
+    exec /sbin/fixboot.sh
+    export SAFESTRAP_BOOT true
 
 on boot
 

@@ -51,6 +51,7 @@
 #define TW_BACKUP_SP2_SIZE          "tw_backup_sp2_size"
 #define TW_BACKUP_SP3_SIZE          "tw_backup_sp3_size"
 #define TW_STORAGE_FREE_SIZE        "tw_storage_free_size"
+#define TW_SS_STORAGE_FREE_SIZE     "tw_ss_storage_free_size"
 
 #define TW_RESTORE_SYSTEM_VAR       "tw_restore_system"
 #define TW_RESTORE_DATA_VAR         "tw_restore_data"

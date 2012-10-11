@@ -492,6 +492,7 @@ void updateUsedSized()
     updateMntUsedSize(&sp1);
     updateMntUsedSize(&sp2);
     updateMntUsedSize(&sp3);
+    updateMntUsedSize(&ss);
 
 	if (boo.used == 0 && boo.sze == 0) {
 		DataManager_SetIntValue(TW_HAS_BOOT_PARTITION, 0);
@@ -572,6 +573,7 @@ int getLocations()
     sp1.mountable = SP1_MOUNTABLE;
     sp2.mountable = SP2_MOUNTABLE;
     sp3.mountable = SP3_MOUNTABLE;
+    ss.mountable = 1;
 
 	sys.is_sub_partition = 0;
     dat.is_sub_partition = 0;
@@ -586,6 +588,7 @@ int getLocations()
     sp1.is_sub_partition = 0;
     sp2.is_sub_partition = 0;
     sp3.is_sub_partition = 0;
+    ss.is_sub_partition = 0;
 
     // This decides how we backup/restore a block
     sys.backup = files;
@@ -601,6 +604,7 @@ int getLocations()
     sp1.backup = SP1_BACKUP_METHOD;
     sp2.backup = SP2_BACKUP_METHOD;
     sp3.backup = SP3_BACKUP_METHOD;
+    ss.backup = none;
 
 	sys.is_encrypted = 0;
     dat.is_encrypted = 0;
@@ -615,6 +619,7 @@ int getLocations()
     sp1.is_encrypted = 0;
     sp2.is_encrypted = 0;
     sp3.is_encrypted = 0;
+    ss.is_encrypted = 0;
 
     if (getLocationsViaProc("emmc") != 0 && getLocationsViaProc("mtd") != 0 && getLocationsViafstab() != 0)
     {
@@ -664,6 +669,7 @@ int getLocations()
     DataManager_SetIntValue("tw_sp1_is_mountable", sp1.mountable ? 1 : 0);
     DataManager_SetIntValue("tw_sp2_is_mountable", sp2.mountable ? 1 : 0);
     DataManager_SetIntValue("tw_sp3_is_mountable", sp3.mountable ? 1 : 0);
+    DataManager_SetIntValue("tw_ss_is_mountable", ss.mountable ? 1 : 0);
 
     listMntInfo(&boo, "boot");
     listMntInfo(&sys, "system");
@@ -679,6 +685,7 @@ int getLocations()
     listMntInfo(&sp1, "special 1");
     listMntInfo(&sp2, "special 2");
     listMntInfo(&sp3, "special 3");
+    listMntInfo(&ss, "ss");
     return 0;
 }
 
@@ -818,6 +825,7 @@ void createFstab()
         if (sp1.mountable)      createFstabEntry(fp, &sp1);
         if (sp2.mountable)      createFstabEntry(fp, &sp2);
         if (sp3.mountable)      createFstabEntry(fp, &sp3);
+        if (ss.mountable)       createFstabEntry(fp, &ss);
 	}
 	fclose(fp);
 }
@@ -870,6 +878,7 @@ void dumpPartitionTable(void)
     dumpPartitionEntry(&sp1);
     dumpPartitionEntry(&sp2);
     dumpPartitionEntry(&sp3);
+    dumpPartitionEntry(&ss);
     fprintf(stderr, "+----------+-----------------------------+--------+----------+----------+---+---+\n");
 }
 

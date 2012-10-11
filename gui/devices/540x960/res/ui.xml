@@ -1574,6 +1574,7 @@
 			</object>
 
 			<object type="fileselector">
+				<condition var1="tw_bootslot" var2="stock" />
 				<placement x="%fileselector_x%" y="%row1_y%" w="%fileselector_width%" h="%fileselector_install_height%" />
 				<header background="%fileselector_header_background%" textcolor="%fileselector_header_textcolor%" separatorcolor="%fileselector_header_separatorcolor%" separatorheight="%fileselector_header_separatorheight%" />
 				<text>Select Package to Restore:</text>
@@ -1582,7 +1583,7 @@
 				<icon folder="folder_icon" file="file_icon" />
 				<background color="%fileselector_background%" />
 				<font resource="filelist" spacing="%fileselector_spacing%" color="%text_color%" />
-				<filter folders="1" files="0" nav="0" />
+				<filter folders="1" files="0" nav="0" bootslot="%tw_bootslot%" />
 				<path name="tw_backups_folder" />
 				<data name="tw_restore" default="" />
 				<selection name="tw_restore_name" />
@@ -3535,7 +3536,8 @@
 			<object type="action">
 				<action function="set">tw_slot_system_size=500</action>
 				<action function="set">tw_slot_data_size=0</action>
-				<action function="set">tw_slot_total_size=500</action>
+				<action function="set">tw_slot_cache_size=300</action>
+				<action function="set">tw_slot_total_size=800</action>
 			</object>
 
 			<object type="template" name="header" />
@@ -3581,7 +3583,7 @@
 				<image resource="radio_false" />
 				<actions>
 					<action function="set">tw_slot_data_size=1024</action>
-					<action function="set">tw_slot_total_size=500</action>
+					<action function="set">tw_slot_total_size=800</action>
 					<action function="addsubtract">tw_slot_total_size+1024</action>
 				</actions>
 			</object>
@@ -3601,7 +3603,7 @@
 				<image resource="radio_false" />
 				<actions>
 					<action function="set">tw_slot_data_size=2048</action>
-					<action function="set">tw_slot_total_size=500</action>
+					<action function="set">tw_slot_total_size=800</action>
 					<action function="addsubtract">tw_slot_total_size+2048</action>
 				</actions>
 			</object>
@@ -3621,14 +3623,29 @@
 				<image resource="radio_false" />
 				<actions>
 					<action function="set">tw_slot_data_size=3096</action>
-					<action function="set">tw_slot_total_size=500</action>
+					<action function="set">tw_slot_total_size=800</action>
 					<action function="addsubtract">tw_slot_total_size+3096</action>
 				</actions>
 			</object>
 
 			<object type="text" color="%text_color%">
+				<placement x="%col1_x%" y="%row7_text_y%" />
+				<font resource="font" />
+				<text>Cache partition size</text>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_slot_system_size" var2="500" />
+				<placement x="%col1_x%" y="%row8_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>300 MB</text>
+				<image resource="radio_true" />
+			</object>
+
+			<object type="text" color="%text_color%">
 				<condition var1="tw_slot_system_size" op=">" var2="0" />
 				<condition var1="tw_slot_data_size" op=">" var2="0" />
+				<condition var1="tw_slot_cache_size" op=">" var2="0" />
 				<font resource="font" />
 				<placement x="%col1_x%" y="%row13_text_y%" />
 				<text>Selected Space: %tw_slot_total_size% MB</text>
@@ -3650,6 +3667,7 @@
 			<object type="button">
 				<condition var1="tw_slot_system_size" op=">" var2="0" />
 				<condition var1="tw_slot_data_size" op=">" var2="0" />
+				<condition var1="tw_slot_cache_size" op=">" var2="0" />
 				<condition var1="tw_ss_storage_free_size" op=">=" var2="tw_slot_total_size" />
 				<placement x="%col_center_x%" y="%row4_y%" />
 				<font resource="font" color="%button_text_color%" />

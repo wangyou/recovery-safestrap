@@ -1,5 +1,44 @@
 // action_safestrap.cpp - GUIAction extension
 
+int createImagePartition(string slotName, string imageName, int imageSize, string mountName, int loopNum, int progressBase1, int progressBase2, int progressBase3) {
+	char cmd[512];
+
+	DataManager::SetValue("tw_operation", "Clearing old " + imageName + ".img...");
+
+	sprintf(cmd, "/%s", mountName.c_str());
+	ensure_path_unmounted(cmd);
+	sprintf(cmd, "rm -rf /ss/safestrap/%s/%s.img", slotName.c_str(), imageName.c_str());
+	__system(cmd);
+	sprintf(cmd, "rm /dev/block/%s", imageName.c_str());
+	__system(cmd);
+	sprintf(cmd, "/sbin/bbx losetup -d /dev/block/loop%d", loopNum);
+	__system(cmd);
+	DataManager::SetValue("ui_progress", progressBase1);
+
+	DataManager::SetValue("tw_operation", "Creating " + imageName + ".img...");
+	ui_print("Creating %s.img...\n", imageName.c_str());
+
+	sprintf(cmd, "dd if=/dev/zero of=/ss/safestrap/%s/%s.img bs=1M count=%d", slotName.c_str(), imageName.c_str(), imageSize);
+	__system(cmd);
+	DataManager::SetValue("ui_progress", progressBase2);
+
+	DataManager::SetValue("tw_operation", "Writing ext3 filesystem on " + imageName + "...");
+	ui_print("Writing ext3 filesystem on %s...\n", imageName.c_str());
+	sprintf(cmd, "/sbin/bbx losetup /dev/block/loop%d /ss/safestrap/%s/%s.img", loopNum, slotName.c_str(), imageName.c_str());
+	__system(cmd);
+	usleep(100000);
+	sprintf(cmd, "ln -s /dev/block/loop%d /dev/block/%s", loopNum, imageName.c_str());
+	__system(cmd);
+	sprintf(cmd, "mkfs.ext2 /dev/block/%s", imageName.c_str());
+	__system(cmd);
+	usleep(100000);
+	sprintf(cmd, "tune2fs -j /dev/block/%s", imageName.c_str());
+	__system(cmd);
+	DataManager::SetValue("ui_progress", progressBase3);
+
+	return 0;
+}
+
 int GUIAction::doSafestrapAction(Action action, int isThreaded /* = 0 */) {
 	int simulate;
 	std::string arg = gui_parse_text(action.mArg);
@@ -12,9 +51,13 @@ int GUIAction::doSafestrapAction(Action action, int isThreaded /* = 0 */) {
 		char cmd[512];
 		ensure_path_unmounted("/system");
 		ensure_path_unmounted("/data");
+		// move cache/recovery
+		ensure_path_unmounted("/cache");
 		sprintf(cmd, "/sbin/changeslot.sh %s", arg.c_str());
 		__system(cmd);
-		update_system_details();
+		ensure_path_mounted("/cache");
+		getLocations();
+		DataManager::SetValue("tw_bootslot", arg);
 		return 0;
 	}
 
@@ -42,7 +85,7 @@ int GUIAction::doSafestrapAction(Action action, int isThreaded /* = 0 */) {
 				str = array;
 		}
 		fclose(in);
-		ui_print("bootslot set: %s\n", str.c_str());
+//		ui_print("bootslot set: %s\n", str.c_str());
 		DataManager::SetValue(arg, str);
 		return 0;
 	}
@@ -58,6 +101,29 @@ int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */
 	DataManager::GetValue(TW_SIMULATE_ACTIONS, simulate);
 	DataManager::GetValue("tw_trybootslot", arg);
 
+	if (function == "nandroid") {
+		operation_start("Nandroid");
+
+		if (simulate) {
+			DataManager::SetValue("tw_partition", "Simulation");
+			simulate_progress_bar();
+		}
+		else {
+			if (arg == "backup") {
+				nandroid_back_exe();
+				DataManager::SetValue(TW_BACKUP_NAME, "(Current Date)");
+			}
+			else if (arg == "restore")
+				nandroid_rest_exe();
+			else {
+				operation_end(1, simulate);
+				return -1;
+			}
+		}
+		operation_end(0, simulate);
+		return 0;
+	}
+
 	if (function == "createslot") {
 		operation_start("createslot");
 		if (arg == "stock")
@@ -70,65 +136,35 @@ int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */
 		else {
 			int system_size = 500;
 			int data_size = 1024;
+			int cache_size = 500;
 			char cmd[512];
 
 			gui_changePage(pageName);
 
 			DataManager::GetValue("tw_slot_systen_size", system_size);
 			DataManager::GetValue("tw_slot_data_size", data_size);
+			DataManager::GetValue("tw_slot_cache_size", cache_size);
 
 			DataManager::SetValue("ui_progress", 0);
-
-			DataManager::SetValue("tw_operation", "Clearing any old files...");
-			ui_print("Clearing any old files...\n");
-			ensure_path_unmounted("/system");
-			ensure_path_unmounted("/data");
-			sprintf(cmd, "rm -rf /ss/safestrap/%s", arg.c_str());
-			__system(cmd);
-			__system("rm /dev/block/system");
-			__system("rm /dev/block/userdata");
-			__system("/sbin/bbx losetup -d /dev/block/loop7");
-			__system("/sbin/bbx losetup -d /dev/block/loop6");
-			DataManager::SetValue("ui_progress", 5);
 
 			sprintf(cmd, "mkdir /ss/safestrap/%s", arg.c_str());
 			__system(cmd);
 
-			DataManager::SetValue("tw_operation", "Creating system.img...");
-			ui_print("Creating system.img...\n");
-			// write out 1mb blocksize # of mb times
-			sprintf(cmd, "dd if=/dev/zero of=/ss/safestrap/%s/system.img bs=1M count=%d", arg.c_str(), system_size);
-			__system(cmd);
-			DataManager::SetValue("ui_progress", 30);
+			// SYSTEM
+			createImagePartition(arg, "system", system_size, "system", 7, 5, 20, 30);
 
-			DataManager::SetValue("tw_operation", "Writing ext3 filesystem on system...");
-			ui_print("Writing ext3 filesystem on system...\n");
-			sprintf(cmd, "/sbin/bbx losetup /dev/block/loop7 /ss/safestrap/%s/system.img", arg.c_str());
-			__system(cmd);
-			usleep(100000);
-			__system("ln -s /dev/block/loop7 /dev/block/system");
-			__system("mkfs.ext2 /dev/block/system");
-			usleep(100000);
-			__system("tune2fs -j /dev/block/system");
-			DataManager::SetValue("ui_progress", 40);
+			// USERDATA
+			createImagePartition(arg, "userdata", data_size, "data", 6, 35, 60, 70);
 
-			DataManager::SetValue("tw_operation", "Creating userdata.img (can take a few minutes)...");
-			ui_print("Creating userdata.img (can take a few minutes)...\n");
-			// write out 1mb blocksize # of mb times
-			sprintf(cmd, "dd if=/dev/zero of=/ss/safestrap/%s/userdata.img bs=1M count=%d", arg.c_str(), data_size);
-			__system(cmd);
-			DataManager::SetValue("ui_progress", 80);
-
-			DataManager::SetValue("tw_operation", "Writing ext3 filesystem on data...");
-			ui_print("Writing ext3 filesystem on data...\n");
-			sprintf(cmd, "/sbin/bbx losetup /dev/block/loop6 /ss/safestrap/%s/userdata.img", arg.c_str());
-			__system(cmd);
-			usleep(100000);
-			__system("ln -s /dev/block/loop6 /dev/block/userdata");
-			__system("mkfs.ext2 /dev/block/userdata");
-			usleep(100000);
-			__system("tune2fs -j /dev/block/userdata");
-			DataManager::SetValue("ui_progress", 90);
+			// CACHE
+			ensure_path_mounted("/cache");
+			__system("cp -R /cache/recovery /tmp");
+			__system("rm -rf /cache/recovery");
+			createImagePartition(arg, "cache", cache_size, "cache", 5, 75, 85, 90);
+			ensure_path_mounted("/cache");
+			__system("rm -rf /cache/recovery");
+			__system("cp -R /tmp/recovery /cache");
+			__system("rm -rf /tmp/recovery");
 
 			DataManager::SetValue("tw_operation", "Activating ROM slot...");
 			ui_print("Activating ROM slot...\n");
@@ -138,7 +174,7 @@ int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */
 
 			DataManager::SetValue("tw_operation", "Updating filesystem details...");
 			ui_print("Updating filesystem details...\n");
-			update_system_details();
+			getLocations();
 			DataManager::SetValue("ui_progress", 100);
 			DataManager::SetValue("tw_bootslot", arg);
 

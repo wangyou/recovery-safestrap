@@ -383,7 +383,7 @@ protected:
     std::string mVarName;
 };
 
-class GUIFileSelector : public RenderObject, public ActionObject
+class GUIFileSelector : public RenderObject, public ActionObject, public Conditional
 {
 public:
     GUIFileSelector(xml_node<>* node);
@@ -435,6 +435,7 @@ protected:
     std::vector<FileData> mFolderList;
     std::vector<FileData> mFileList;
     std::string mPathVar;
+    std::string mBootslot;
     std::string mExtn;
     std::string mVariable;
 	std::string mSortVariable;

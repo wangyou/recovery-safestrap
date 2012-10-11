@@ -1077,7 +1077,7 @@ int tw_do_backup(const char* enableVar, struct dInfo* mnt, const char* tw_image_
 int check_backup_name(int show_error) {
 	// Check the backup name to ensure that it is the correct size and contains only valid characters
 	// and that a backup with that name doesn't already exist
-	char backup_name[MAX_BACKUP_NAME_LEN];
+	char backup_name[MAX_BACKUP_NAME_LEN], slotname[255];
 	char backup_loc[255], tw_image_dir[255];
 	int copy_size = strlen(DataManager_GetStrValue(TW_BACKUP_NAME));
 	int index, cur_char;
@@ -1111,7 +1111,8 @@ int check_backup_name(int show_error) {
 
 	// Check to make sure that a backup with this name doesn't already exist
 	strcpy(backup_loc, DataManager_GetStrValue(TW_BACKUPS_FOLDER_VAR));
-	sprintf(tw_image_dir,"%s/%s/.", backup_loc, backup_name);
+	strcpy(slotname, DataManager_GetStrValue("tw_bootslot"));
+	sprintf(tw_image_dir,"%s/%s-%s/.", backup_loc, slotname, backup_name);
     if (statfs(tw_image_dir, &st) == 0) {
 		if (show_error)
 			LOGE("A backup with this name already exists.\n");
@@ -1137,6 +1138,7 @@ int nandroid_back_exe()
     char timestamp[MAX_BACKUP_NAME_LEN];
 	char tw_image_dir[255];
 	char backup_loc[255];
+	char slotname[255];
 	char exe[255];
 	time_t start, stop;
 	time_t seconds;
@@ -1149,17 +1151,18 @@ int nandroid_back_exe()
 
 	memset(timestamp, 0 , sizeof(timestamp));
 	strncpy(timestamp, DataManager_GetStrValue(TW_BACKUP_NAME), copy_size);
+	strcpy(slotname, DataManager_GetStrValue("tw_bootslot"));
 
 	if (copy_size == 0 || strcmp(timestamp, "0") == 0 || strcmp(timestamp, "(Current Date)") == 0) {
 		memset(timestamp, 0 , sizeof(timestamp));
-		sprintf(timestamp,"%04d-%02d-%02d--%02d-%02d-%02d",t->tm_year+1900,t->tm_mon+1,t->tm_mday,t->tm_hour,t->tm_min,t->tm_sec); // make time stamp
+		sprintf(timestamp,"%s-%04d-%02d-%02d--%02d-%02d-%02d",t->tm_year+1900,t->tm_mon+1,t->tm_mday,t->tm_hour,t->tm_min,t->tm_sec); // make time stamp
 	} else {
 		if (check_backup_name(1))
 			return -1;
 	}
 
 	strcpy(backup_loc, DataManager_GetStrValue(TW_BACKUPS_FOLDER_VAR));
-	sprintf(tw_image_dir,"%s/%s/", backup_loc, timestamp); // for backup folder
+	sprintf(tw_image_dir,"%s/%s-%s/", backup_loc, slotname, timestamp); // for backup folder
 	LOGI("Attempt to create folder '%s'\n", tw_image_dir);
     if (recursive_mkdir(tw_image_dir))
     {

@@ -63,7 +63,7 @@ int gui_start();
 #include "rapidxml.hpp"
 #include "objects.hpp"
 
-#include "action_safestrap.cpp";
+#include "action_safestrap.cpp"
 
 void curtainClose(void);
 

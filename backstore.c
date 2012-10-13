@@ -1155,7 +1155,7 @@ int nandroid_back_exe()
 
 	if (copy_size == 0 || strcmp(timestamp, "0") == 0 || strcmp(timestamp, "(Current Date)") == 0) {
 		memset(timestamp, 0 , sizeof(timestamp));
-		sprintf(timestamp,"%s-%04d-%02d-%02d--%02d-%02d-%02d",t->tm_year+1900,t->tm_mon+1,t->tm_mday,t->tm_hour,t->tm_min,t->tm_sec); // make time stamp
+		sprintf(timestamp,"%s-%04d-%02d-%02d--%02d-%02d-%02d",slotname, t->tm_year+1900,t->tm_mon+1,t->tm_mday,t->tm_hour,t->tm_min,t->tm_sec); // make time stamp
 	} else {
 		if (check_backup_name(1))
 			return -1;

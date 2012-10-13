@@ -16,14 +16,14 @@ on init
     mkdir /sdcard
     mkdir /sd-ext
     mkdir /datadata
-    mkdir /emmc
     mkdir /systemorig
     mkdir /system
     mkdir /data
     mkdir /cache
     mount /tmp /tmp tmpfs
-    mkdir /tmp/tbattd
-    mkdir /tmp/data/battd
+    chmod /tmp 0777
+    mkdir /tmp/tbattd 0777 root mot_accy
+    mkdir /tmp/data/battd 0777 root mot_accy
 
 on fs
     exec /sbin/fixboot.sh
@@ -42,6 +42,12 @@ service ueventd /sbin/ueventd
 
 service recovery /sbin/recovery
 
+service battd /sbin/battd
+    socket battdsock stream 0666 mot_accy mot_accy
+    user root
+    group mot_accy mot_pwric
+    oneshot
+
 service adbd /sbin/adbd recovery
     disabled
 
@@ -49,8 +55,8 @@ service adbd /sbin/adbd recovery
 # In recovery, always run adbd as root.
 on property:ro.debuggable=1
     write /sys/class/android_usb/android0/enable 0
-    write /sys/class/android_usb/android0/idVendor 18D1
-    write /sys/class/android_usb/android0/idProduct D001
+    write /sys/class/android_usb/android0/idVendor 22b8
+    write /sys/class/android_usb/android0/idProduct 4366
     write /sys/class/android_usb/android0/functions adb
     #write /sys/class/android_usb/android0/enable 1
     write /sys/class/android_usb/android0/iManufacturer $ro.product.manufacturer

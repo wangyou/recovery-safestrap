@@ -17,6 +17,9 @@
 #ifndef _VARIABLES_HEADER_
 #define _VARIABLES_HEADER_
 
+#define SS_VERSION_STR              "3.02"
+#define SS_VERSION_VAR              "ss_version"
+
 #define TW_VERSION_STR              "2.2.2.1"
 
 #define TW_USE_COMPRESSION_VAR      "tw_use_compression"
@@ -25,8 +28,8 @@
 #define TW_ZIP_INDEX                "tw_zip_index"
 #define TW_ZIP_QUEUE_COUNT			"tw_zip_queue_count"
 
-// adjust max for slot names (-10)
-#define MAX_BACKUP_NAME_LEN 54
+// adjust max for slot names (-10 + hyphen)
+#define MAX_BACKUP_NAME_LEN 53
 #define TW_BACKUP_NAME		        "tw_backup_name"
 #define TW_BACKUP_SYSTEM_VAR        "tw_backup_system"
 #define TW_BACKUP_DATA_VAR          "tw_backup_data"

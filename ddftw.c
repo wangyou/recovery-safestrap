@@ -42,15 +42,16 @@ void dumpPartitionTable(void);
 
 static int isMTDdevice = 0, isEMMCdevice = 0;
 
-struct dInfo* findDeviceByLabel(const char* label) {
-	if (!label)                             return NULL;
-	if (strcmp(label, "system") == 0)       return &sys;
-	if (strcmp(label, "userdata") == 0)     return &dat;
-	if (strcmp(label, "data") == 0)         return &dat;
-	if (strcmp(label, "boot") == 0)         return &boo;
-	if (strcmp(label, "recovery") == 0)     return &rec;
-	if (strcmp(label, "cache") == 0)        return &cac;
-	if (strcmp(label, "sd-ext") == 0)       return &sde;
+struct dInfo* findDeviceByLabel(const char* label)
+{
+    if (!label)                             return NULL;
+    if (strcmp(label, "system") == 0)       return &sys;
+    if (strcmp(label, "userdata") == 0)     return &dat;
+    if (strcmp(label, "data") == 0)         return &dat;
+    if (strcmp(label, "boot") == 0)         return &boo;
+    if (strcmp(label, "recovery") == 0)     return &rec;
+    if (strcmp(label, "cache") == 0)        return &cac;
+    if (strcmp(label, "sd-ext") == 0)       return &sde;
 	if (strcmp(label, "and-sec") == 0)      return &ase;
 	if (strcmp(label, "ss") == 0)           return &ss;
 	if (strcmp(label, "datadata") == 0) {
@@ -58,7 +59,7 @@ struct dInfo* findDeviceByLabel(const char* label) {
 		return &datdat;
 	}
 
-	// New sdcard methods
+    // New sdcard methods
 	if (DataManager_GetIntValue(TW_HAS_INTERNAL) == 1) {
 		if (strcmp(label, DataManager_GetStrValue(TW_EXTERNAL_LABEL)) == 0)      return &sdcext;
 		if (strcmp(label, DataManager_GetStrValue(TW_INTERNAL_LABEL)) == 0)      return &sdcint;
@@ -73,12 +74,12 @@ struct dInfo* findDeviceByLabel(const char* label) {
 	} else
 		if (strcmp(label, DataManager_GetStrValue(TW_EXTERNAL_LABEL)) == 0)       return &sdcext;
 
-	// Special Partitions (such as WiMAX, efs, and PDS)
-	if (strcmp(label, EXPAND(SP1_NAME)) == 0)       return &sp1;
-	if (strcmp(label, EXPAND(SP2_NAME)) == 0)       return &sp2;
-	if (strcmp(label, EXPAND(SP3_NAME)) == 0)       return &sp3;
+    // Special Partitions (such as WiMAX, efs, and PDS)
+    if (strcmp(label, EXPAND(SP1_NAME)) == 0)       return &sp1;
+    if (strcmp(label, EXPAND(SP2_NAME)) == 0)       return &sp2;
+    if (strcmp(label, EXPAND(SP3_NAME)) == 0)       return &sp3;
 
-	return NULL;
+    return NULL;
 }
 
 struct dInfo* findDeviceByBlockDevice(const char* blockDevice)
@@ -184,7 +185,7 @@ int getSizeViaDf(struct dInfo* mMnt)
         // Adjust block size to byte size
         unsigned long long size = blocks * 1024ULL;
         sprintf(tmpString, "%s%s", tw_block, device);
-        setLocationData(NULL, mMnt->blk, NULL, NULL, size, NULL);
+        setLocationData(mMnt->mnt, mMnt->blk, NULL, NULL, size, NULL);
     }
     fclose(fp);
     return 0;

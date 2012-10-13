@@ -41,7 +41,6 @@ extern "C" {
 int GUIFileSelector::mSortOrder = 0;
 
 GUIFileSelector::GUIFileSelector(xml_node<>* node)
-    : Conditional(node)
 {
 	xml_attribute<>* attr;
 	xml_node<>* child;
@@ -191,9 +190,6 @@ GUIFileSelector::GUIFileSelector(xml_node<>* node)
 		attr = child->first_attribute("extn");
 		if (attr)
 			mExtn = attr->value();
-		attr = child->first_attribute("bootslot");
-		if (attr)
-			mBootslot = attr->value();
 		attr = child->first_attribute("folders");
 		if (attr)
 			mShowFolders = atoi(attr->value());
@@ -318,8 +314,6 @@ GUIFileSelector::~GUIFileSelector()
 
 int GUIFileSelector::Render(void)
 {
-	if (!isConditionTrue())     return 0;
-
 	// First step, fill background
 	gr_color(mBackgroundColor.red, mBackgroundColor.green, mBackgroundColor.blue, 255);
 	gr_fill(mRenderX, mRenderY + mHeaderH, mRenderW, mRenderH - mHeaderH);
@@ -442,8 +436,6 @@ int GUIFileSelector::Render(void)
 
 int GUIFileSelector::Update(void)
 {
-	if (!isConditionTrue())     return 0;
-
 	if (!mHeaderIsStatic) {
 		std::string newValue = gui_parse_text(mHeaderText);
 		if (mLastValue != newValue) {
@@ -808,10 +800,8 @@ int GUIFileSelector::GetFileList(const std::string folder)
 
 		if (data.fileType == DT_DIR)
 		{
-			if (mShowNavFolders || (data.fileName != "." && data.fileName != TW_FILESELECTOR_UP_A_LEVEL)) {
-				if (mBootslot.empty() || mBootslot != "stock" || (data.fileName.length() > mBootslot.length() && data.fileName.substr(0, mBootslot.length()) == mBootslot))
-					mFolderList.push_back(data);
-			}
+			if (mShowNavFolders || (data.fileName != "." && data.fileName != TW_FILESELECTOR_UP_A_LEVEL))
+				mFolderList.push_back(data);
 		}
 		else if (data.fileType == DT_REG)
 		{

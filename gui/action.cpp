@@ -322,42 +322,45 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 
 	DataManager::GetValue(TW_SIMULATE_ACTIONS, simulate);
 
-	if (function == "reboot") {
-		//curtainClose(); this sometimes causes a crash
-		sync();
+    if (function == "reboot")
+    {
+        //curtainClose(); this sometimes causes a crash
 
-		if (arg == "recovery")
-			tw_reboot(rb_recovery);
-		else if (arg == "poweroff")
-			tw_reboot(rb_poweroff);
-		else if (arg == "bootloader")
-			tw_reboot(rb_bootloader);
-		else if (arg == "download")
-			tw_reboot(rb_download);
-		else
-			tw_reboot(rb_system);
+        sync();
 
-		// This should never occur
-		return -1;
-	}
+        if (arg == "recovery")
+            tw_reboot(rb_recovery);
+        else if (arg == "poweroff")
+            tw_reboot(rb_poweroff);
+        else if (arg == "bootloader")
+            tw_reboot(rb_bootloader);
+        else if (arg == "download")
+	    tw_reboot(rb_download);
+        else
+            tw_reboot(rb_system);
 
-	if (function == "home") {
-		PageManager::SelectPackage("TWRP");
-		gui_changePage("main");
-		return 0;
-	}
+        // This should never occur
+        return -1;
+    }
+    if (function == "home")
+    {
+        PageManager::SelectPackage("TWRP");
+        gui_changePage("main");
+        return 0;
+    }
 
-	if (function == "key") {
-		PageManager::NotifyKey(getKeyByName(arg));
-		return 0;
-	}
+    if (function == "key")
+    {
+        PageManager::NotifyKey(getKeyByName(arg));
+        return 0;
+    }
 
-	if (function == "page") {
+    if (function == "page") {
 		std::string page_name = gui_parse_text(arg);
-		return gui_changePage(page_name);
+        return gui_changePage(page_name);
 	}
 
-	if (function == "reload") {
+    if (function == "reload") {
 		int check = 0, ret_val = 0;
 		std::string theme_path;
 
@@ -379,65 +382,75 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 				ret_val = 1;
 			}
 		}
-		operation_end(ret_val, simulate);
+        operation_end(ret_val, simulate);
 	}
 
-	if (function == "readBackup") {
+    if (function == "readBackup")
+    {
 		set_restore_files();
-		return 0;
-	}
+        return 0;
+    }
 
-	if (function == "set") {
-		if (arg.find('=') != string::npos) {
-			string varName = arg.substr(0, arg.find('='));
-			string value = arg.substr(arg.find('=') + 1, string::npos);
-			DataManager::GetValue(value, value);
-			DataManager::SetValue(varName, value);
-		}
-		else
-			DataManager::SetValue(arg, "1");
-		return 0;
-	}
+    if (function == "set")
+    {
+        if (arg.find('=') != string::npos)
+        {
+            string varName = arg.substr(0, arg.find('='));
+            string value = arg.substr(arg.find('=') + 1, string::npos);
 
-	if (function == "clear") {
-		DataManager::SetValue(arg, "0");
-		return 0;
-	}
+            DataManager::GetValue(value, value);
+            DataManager::SetValue(varName, value);
+        }
+        else
+            DataManager::SetValue(arg, "1");
+        return 0;
+    }
+    if (function == "clear")
+    {
+        DataManager::SetValue(arg, "0");
+        return 0;
+    }
 
-	if (function == "mount") {
-		if (arg == "usb") {
-			DataManager::SetValue(TW_ACTION_BUSY, 1);
+    if (function == "mount")
+    {
+        if (arg == "usb")
+        {
+            DataManager::SetValue(TW_ACTION_BUSY, 1);
 			if (!simulate)
 				usb_storage_enable();
 			else
 				ui_print("Simulating actions...\n");
-		}
-		else if (!simulate) {
-			string cmd;
+        }
+        else if (!simulate)
+        {
+            string cmd;
 			if (arg == "EXTERNAL")
 				cmd = "mount " + DataManager::GetStrValue(TW_EXTERNAL_MOUNT);
 			else if (arg == "INTERNAL")
 				cmd = "mount " + DataManager::GetStrValue(TW_INTERNAL_MOUNT);
 			else
 				cmd = "mount " + arg;
-			__system(cmd.c_str());
+            __system(cmd.c_str());
 			if (arg == "/data" && DataManager::GetIntValue(TW_HAS_DATADATA) == 1)
 				__system("mount /datadata");
-		} else
+        } else
 			ui_print("Simulating actions...\n");
-		return 0;
-	}
+        return 0;
+    }
 
-	if (function == "umount" || function == "unmount") {
-		if (arg == "usb") {
-			if (!simulate)
+    if (function == "umount" || function == "unmount")
+    {
+        if (arg == "usb")
+        {
+            if (!simulate)
 				usb_storage_disable();
 			else
 				ui_print("Simulating actions...\n");
 			DataManager::SetValue(TW_ACTION_BUSY, 0);
-		}
-        	else if (!simulate) {
-			string cmd;
+        }
+        else if (!simulate)
+        {
+            string cmd;
 			if (arg == "EXTERNAL")
 				cmd = "umount " + DataManager::GetStrValue(TW_EXTERNAL_MOUNT);
 			else if (arg == "INTERNAL")
@@ -446,15 +459,16 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 				return 0;
 			else
 				cmd = "umount " + arg;
-			__system(cmd.c_str());
+            __system(cmd.c_str());
 			if (arg == "/data" && DataManager::GetIntValue(TW_HAS_DATADATA) == 1)
 				__system("umount /datadata");
-		} else
+        } else
 			ui_print("Simulating actions...\n");
-		return 0;
-	}
+        return 0;
+    }
 	
-	if (function == "restoredefaultsettings") {
+	if (function == "restoredefaultsettings")
+	{
 		operation_start("Restore Defaults");
 		if (simulate) // Simulated so that people don't accidently wipe out the "simulation is on" setting
 			ui_print("Simulating actions...\n");
@@ -466,7 +480,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		operation_end(0, simulate);
 	}
 	
-	if (function == "copylog") {
+	if (function == "copylog")
+	{
 		operation_start("Copy Log");
 		if (!simulate)
 		{
@@ -483,20 +498,23 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		return 0;
 	}
 	
-	if (function == "compute" || function == "addsubtract") {
-		if (arg.find("+") != string::npos) {
-			string varName = arg.substr(0, arg.find('+'));
-			string string_to_add = arg.substr(arg.find('+') + 1, string::npos);
+	if (function == "compute" || function == "addsubtract")
+	{
+		if (arg.find("+") != string::npos)
+        {
+            string varName = arg.substr(0, arg.find('+'));
+            string string_to_add = arg.substr(arg.find('+') + 1, string::npos);
 			int amount_to_add = atoi(string_to_add.c_str());
 			int value;
 
 			DataManager::GetValue(varName, value);
-			DataManager::SetValue(varName, value + amount_to_add);
+            DataManager::SetValue(varName, value + amount_to_add);
 			return 0;
-		}
-		if (arg.find("-") != string::npos) {
-			string varName = arg.substr(0, arg.find('-'));
-			string string_to_subtract = arg.substr(arg.find('-') + 1, string::npos);
+        }
+		if (arg.find("-") != string::npos)
+        {
+            string varName = arg.substr(0, arg.find('-'));
+            string string_to_subtract = arg.substr(arg.find('-') + 1, string::npos);
 			int amount_to_subtract = atoi(string_to_subtract.c_str());
 			int value;
 
@@ -504,12 +522,13 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			value -= amount_to_subtract;
 			if (value <= 0)
 				value = 0;
-			DataManager::SetValue(varName, value);
+            DataManager::SetValue(varName, value);
 			return 0;
-		}
+        }
 	}
 	
-	if (function == "setguitimezone") {
+	if (function == "setguitimezone")
+	{
 		string SelectedZone;
 		DataManager::GetValue(TW_TIME_ZONE_GUISEL, SelectedZone); // read the selected time zone into SelectedZone
 		string Zone = SelectedZone.substr(0, SelectedZone.find(';')); // parse to get time zone
@@ -563,10 +582,11 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 	}
 	
 	if (function == "overlay")
-		return gui_changeOverlay(arg);
+        return gui_changeOverlay(arg);
 
-	if (function == "queuezip") {
-		if (zip_queue_index >= 10) {
+	if (function == "queuezip")
+    {
+        if (zip_queue_index >= 10) {
 			ui_print("Maximum zip queue reached!\n");
 			return 0;
 		}
@@ -578,8 +598,9 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		return 0;
 	}
 
-	if (function == "cancelzip") {
-		if (zip_queue_index <= 0) {
+	if (function == "cancelzip")
+    {
+        if (zip_queue_index <= 0) {
 			ui_print("Minimum zip queue reached!\n");
 			return 0;
 		} else {
@@ -589,13 +610,15 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		return 0;
 	}
 
-	if (function == "queueclear") {
+	if (function == "queueclear")
+	{
 		zip_queue_index = 0;
 		DataManager::SetValue(TW_ZIP_QUEUE_COUNT, zip_queue_index);
 		return 0;
 	}
 
-	if (function == "sleep") {
+	if (function == "sleep")
+	{
 		operation_start("Sleep");
 		usleep(atoi(arg.c_str()));
 		operation_end(0, simulate);
@@ -606,8 +629,10 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 	if (doSafestrapAction(action, isThreaded) == 0)
 		return 0;
 
-	if (isThreaded) {
-		if (function == "fileexists") {
+    if (isThreaded)
+    {
+        if (function == "fileexists")
+		{
 			struct stat st;
 			string newpath = arg + "/.";
 
@@ -618,13 +643,14 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 				operation_end(1, simulate);
 		}
 
-		if (function == "flash") {
+		if (function == "flash")
+        {
 			int i, ret_val = 0;
 
 			for (i=0; i<zip_queue_index; i++) {
 				operation_start("Flashing");
-				DataManager::SetValue("tw_filename", zip_queue[i]);
-				DataManager::SetValue(TW_ZIP_INDEX, (i + 1));
+		        DataManager::SetValue("tw_filename", zip_queue[i]);
+		        DataManager::SetValue(TW_ZIP_INDEX, (i + 1));
 
 				ret_val = flash_zip(zip_queue[i], arg, simulate);
 				if (ret_val != 0) {
@@ -647,12 +673,12 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 				}
 			}
 			operation_end(ret_val, simulate);
-			return 0;
-		}
-
-		if (function == "wipe") {
-			operation_start("Format");
-			DataManager::SetValue("tw_partition", arg);
+            return 0;
+        }
+        if (function == "wipe")
+        {
+            operation_start("Format");
+            DataManager::SetValue("tw_partition", arg);
 
 			int ret_val = 0;
 
@@ -677,8 +703,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 						system("umount /sdcard");
 						system("mount /data/media /sdcard");
 					}
-				}
-				else if (arg == "INTERNAL") {
+				} else if (arg == "INTERNAL") {
 					int has_datamedia, dual_storage;
 
 					DataManager::GetValue(TW_HAS_DATA_MEDIA, has_datamedia);
@@ -699,7 +724,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 				} else
 					erase_volume(arg.c_str());
 
-					if (arg == "/sdcard") {
+				if (arg == "/sdcard") {
 					ensure_path_mounted(SDCARD_ROOT);
 					mkdir("/sdcard/TWRP", 0777);
 					DataManager::Flush();
@@ -708,10 +733,9 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			update_system_details();
 			if (ret_val != 0)
 				ret_val = 1;
-			operation_end(ret_val, simulate);
-			return 0;
-		}
-
+            operation_end(ret_val, simulate);
+            return 0;
+        }
 		if (function == "refreshsizes")
 		{
 			operation_start("Refreshing Sizes");
@@ -721,33 +745,31 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 				update_system_details();
 			operation_end(0, simulate);
 		}
-
-		if (function == "nandroid") {
-			operation_start("Nandroid");
+        if (function == "nandroid")
+        {
+            operation_start("Nandroid");
 
 			if (simulate) {
 				DataManager::SetValue("tw_partition", "Simulation");
 				simulate_progress_bar();
-			}
-			else {
+			} else {
 				if (arg == "backup") {
 					nandroid_back_exe();
 					DataManager::SetValue(TW_BACKUP_NAME, "(Current Date)");
-				}
-				else if (arg == "restore")
+				} else if (arg == "restore")
 					nandroid_rest_exe();
 				else {
 					operation_end(1, simulate);
 					return -1;
 				}
 			}
-			operation_end(0, simulate);
+            operation_end(0, simulate);
 			return 0;
-		}
-
-		if (function == "fixpermissions") {
+        }
+		if (function == "fixpermissions")
+		{
 			operation_start("Fix Permissions");
-			LOGI("fix permissions started!\n");
+            LOGI("fix permissions started!\n");
 			if (simulate) {
 				simulate_progress_bar();
 			} else
@@ -757,9 +779,9 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			operation_end(0, simulate);
 			return 0;
 		}
-
-		if (function == "dd") {
-			operation_start("imaging");
+        if (function == "dd")
+        {
+            operation_start("imaging");
 
 			if (simulate) {
 				simulate_progress_bar();
@@ -768,11 +790,11 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 				sprintf(cmd, "dd %s", arg.c_str());
 				__system(cmd);
 			}
-			operation_end(0, simulate);
-			return 0;
-		}
-
-		if (function == "partitionsd") {
+            operation_end(0, simulate);
+            return 0;
+        }
+		if (function == "partitionsd")
+		{
 			operation_start("Partition SD Card");
 
 			if (simulate) {
@@ -844,8 +866,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			operation_end(0, simulate);
 			return 0;
 		}
-
-		if (function == "installhtcdumlock") {
+		if (function == "installhtcdumlock")
+		{
 			operation_start("Install HTC Dumlock");
 			if (simulate) {
 				simulate_progress_bar();
@@ -855,8 +877,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			operation_end(0, simulate);
 			return 0;
 		}
-
-		if (function == "htcdumlockrestoreboot") {
+		if (function == "htcdumlockrestoreboot")
+		{
 			operation_start("HTC Dumlock Restore Boot");
 			if (simulate) {
 				simulate_progress_bar();
@@ -866,8 +888,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			operation_end(0, simulate);
 			return 0;
 		}
-
-		if (function == "htcdumlockreflashrecovery") {
+		if (function == "htcdumlockreflashrecovery")
+		{
 			operation_start("HTC Dumlock Reflash Recovery");
 			if (simulate) {
 				simulate_progress_bar();
@@ -877,8 +899,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			operation_end(0, simulate);
 			return 0;
 		}
-
-		if (function == "cmd") {
+		if (function == "cmd")
+		{
 			int op_status = 0;
 
 			operation_start("Command");
@@ -894,8 +916,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			operation_end(op_status, simulate);
 			return 0;
 		}
-
-		if (function == "terminalcommand") {
+		if (function == "terminalcommand")
+		{
 			int op_status = 0;
 			string cmdpath, command;
 
@@ -924,8 +946,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			}
 			return 0;
 		}
-
-		if (function == "killterminal") {
+		if (function == "killterminal")
+		{
 			int op_status = 0;
 
 			LOGI("Sending kill command...\n");
@@ -937,8 +959,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			DataManager::SetValue(TW_ACTION_BUSY, 0);
 			return 0;
 		}
-
-		if (function == "reinjecttwrp") {
+		if (function == "reinjecttwrp")
+		{
 			int op_status = 0;
 
 			operation_start("ReinjectTWRP");
@@ -953,8 +975,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			operation_end(op_status, simulate);
 			return 0;
 		}
-
-		if (function == "checkbackupname") {
+		if (function == "checkbackupname")
+		{
 			int op_status = 0;
 
 			operation_start("CheckBackupName");
@@ -969,8 +991,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			operation_end(op_status, simulate);
 			return 0;
 		}
-
-		if (function == "decrypt") {
+		if (function == "decrypt")
+		{
 			int op_status = 0;
 
 			operation_start("Decrypt");
@@ -1036,13 +1058,14 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		if (doSafestrapThreadedAction(action, isThreaded) == 0)
 			return 0;
 
-	}
-	else {
-		pthread_t t;
-		pthread_create(&t, NULL, thread_start, this);
-		return 0;
-	}
-	return -1;
+    }
+    else
+    {
+        pthread_t t;
+        pthread_create(&t, NULL, thread_start, this);
+        return 0;
+    }
+    return -1;
 }
 
 int GUIAction::getKeyByName(std::string key)
@@ -1114,4 +1137,3 @@ void* GUIAction::command_thread(void *cookie)
 	DataManager::SetValue(TW_ACTION_BUSY, 0);
 	return NULL;
 }
-

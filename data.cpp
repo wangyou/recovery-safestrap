@@ -41,22 +41,22 @@
 
 extern "C"
 {
-	#include "common.h"
-	#include "data.h"
+    #include "common.h"
+    #include "data.h"
 	#include "ddftw.h"
-	#include "tw_reboot.h"
+    #include "tw_reboot.h"
 	#include "roots.h"
 	//#include "extra-functions.h"
 
 	int ensure_path_mounted(const char* path);
 	int mount_current_storage(void);
 
-	int get_battery_level(void);
-	void get_device_id(void);
+    int get_battery_level(void);
+    void get_device_id(void);
 
-	extern char device_id[15];
+    extern char device_id[15];
 
-	void gui_notifyVarChange(const char *name, const char* value);
+    void gui_notifyVarChange(const char *name, const char* value);
 
 	int __system(const char *command);
 }
@@ -351,6 +351,7 @@ void DataManager::SetDefaultValues()
     mConstValues.insert(make_pair("false", "0"));
 
     mConstValues.insert(make_pair(TW_VERSION_VAR, TW_VERSION_STR));
+    mConstValues.insert(make_pair(SS_VERSION_VAR, SS_VERSION_STR));
 
 #ifdef BOARD_HAS_NO_REAL_SDCARD
     mConstValues.insert(make_pair(TW_ALLOW_PARTITION_SDCARD, "0"));
@@ -625,6 +626,13 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair("tw_terminal_state", make_pair("0", 0)));
 	mValues.insert(make_pair("tw_background_thread_running", make_pair("0", 0)));
 	mValues.insert(make_pair(TW_RESTORE_FILE_DATE, make_pair("0", 0)));
+
+/* SAFESTRAP */
+	mValues.insert(make_pair("tw_rom-slot1_name", make_pair("XXXXXXXXXX", 0)));
+	mValues.insert(make_pair("tw_rom-slot2_name", make_pair("XXXXXXXXXX", 0)));
+	mValues.insert(make_pair("tw_rom-slot3_name", make_pair("XXXXXXXXXX", 0)));
+	mValues.insert(make_pair("tw_rom-slot4_name", make_pair("XXXXXXXXXX", 0)));
+
 }
 
 // Magic Values

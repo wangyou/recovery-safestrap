@@ -187,10 +187,10 @@ static void draw_screen_locked(void)
         int k = menu_top + 1; //counter for bottom horizontal text line location
         if (show_menu) {
 
-        LOGI("text_rows: %i\n", text_rows);
-        LOGI("menu_items: %i\n", menu_items);
-        LOGI("menu_top: %i\n", menu_top);
-        LOGI("menu_show_start: %i\n", menu_show_start);
+        //LOGI("text_rows: %i\n", text_rows);
+        //LOGI("menu_items: %i\n", menu_items);
+        //LOGI("menu_top: %i\n", menu_top);
+        //LOGI("menu_show_start: %i\n", menu_show_start);
             //menu line item selection highlight draws
             gr_color(mihc.r, mihc.g, mihc.b, mihc.a);
             gr_fill(0, (menu_top + menu_sel - menu_show_start+1) * CHAR_HEIGHT,
@@ -200,10 +200,10 @@ static void draw_screen_locked(void)
             for (i = 0; i < menu_top; ++i) {
                 gr_color(htc.r, htc.g, htc.b, htc.a);
                 draw_text_line(i, menu[i]);
-                LOGI("Semi-static headers internal counter i: %i\n", i);
+                //LOGI("Semi-static headers internal counter i: %i\n", i);
             }
 
-            LOGI("Drawing horizontal start bar at k and k = %i\n", k);
+            //LOGI("Drawing horizontal start bar at k and k = %i\n", k);
             gr_color(mhebc.r, mhebc.g, mhebc.b, mhebc.a);
             //draws horizontal line at bottom of the menu
             gr_fill(0, (k-1)*CHAR_HEIGHT+CHAR_HEIGHT/2-1,
@@ -315,7 +315,7 @@ static void *input_thread(void *cookie)
         struct input_event ev;
         do {
             ev_get(&ev, 0);
-            LOGV("event: type==%d, ev.code=%d, ev.value=%d\n", ev.type, ev.code, ev.value);
+
             if (ev.type == EV_SYN) {
                 continue;
             } else if (ev.type == EV_REL) {

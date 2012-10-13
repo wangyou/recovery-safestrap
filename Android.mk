@@ -27,7 +27,8 @@ LOCAL_SRC_FILES := \
     format.c \
     data.cpp \
     makelist.c \
-    firmware.c
+    firmware.c \
+    safestrap-functions.c
 
 ifeq ($(TARGET_RECOVERY_REBOOT_SRC),)
   LOCAL_SRC_FILES += reboot.c

@@ -552,9 +552,9 @@ void listMntInfo(struct dInfo* mMnt, char* variable_name)
 
 void update_system_details()
 {
-	ui_print(" * Verifying filesystems...\n");
+//	ui_print(" * Verifying filesystems...\n");
     createFstab();
-    ui_print(" * Verifying partition sizes...\n");
+//    ui_print(" * Verifying partition sizes...\n");
     updateUsedSized();
 }
 

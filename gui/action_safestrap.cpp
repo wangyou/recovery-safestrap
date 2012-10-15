@@ -3,29 +3,35 @@
 int createImagePartition(string slotName, string imageName, int imageSize, string mountName, int loopNum, int progressBase1, int progressBase2, int progressBase3) {
 	char cmd[512];
 
+
 	DataManager::SetValue("tw_operation", "Clearing old " + imageName + ".img...");
 
 	sprintf(cmd, "/%s", mountName.c_str());
 	ensure_path_unmounted(cmd);
 	sprintf(cmd, "rm -rf /ss/safestrap/%s/%s.img", slotName.c_str(), imageName.c_str());
-	if (__system(cmd) != 0) return 1;
+	fprintf(stderr, "createImagePartition::%s\n", cmd);
+	__system(cmd);
 
 	sprintf(cmd, "rm /dev/block/%s", imageName.c_str());
+	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
-	if (__system(cmd) != 0) return 1;
+	__system(cmd);
 
 	sprintf(cmd, "/sbin/bbx losetup -d /dev/block/loop%d", loopNum);
+	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
-	if (__system(cmd) != 0) return 1;
+	__system(cmd);
 	DataManager::SetValue("ui_progress", progressBase1);
 
 	DataManager::SetValue("tw_operation", "Creating " + imageName + ".img...");
 	ui_print("Creating %s.img...\n", imageName.c_str());
 
 	sprintf(cmd, "dd if=/dev/zero of=/ss/safestrap/%s/%s.img bs=1M count=%d", slotName.c_str(), imageName.c_str(), imageSize);
+	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
 	if (__system(cmd) != 0) return 1;
 	sprintf(cmd, "/sbin/fsync /ss/safestrap/%s/%s.img", slotName.c_str(), imageName.c_str());
+	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
 	if (__system(cmd) != 0) return 1;
 	DataManager::SetValue("ui_progress", progressBase2);
@@ -33,24 +39,30 @@ int createImagePartition(string slotName, string imageName, int imageSize, strin
 	DataManager::SetValue("tw_operation", "Writing ext3 filesystem on " + imageName + "...");
 	ui_print("Writing ext3 filesystem on %s...\n", imageName.c_str());
 	sprintf(cmd, "/sbin/bbx losetup /dev/block/loop%d /ss/safestrap/%s/%s.img", loopNum, slotName.c_str(), imageName.c_str());
+	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
 	if (__system(cmd) != 0) return 1;
 
 	sprintf(cmd, "ln -s /dev/block/loop%d /dev/block/%s", loopNum, imageName.c_str());
+	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
 	if (__system(cmd) != 0) return 1;
 
-	sprintf(cmd, "mkfs.ext2 /dev/block/%s", imageName.c_str());
+	sprintf(cmd, "mke2fs /dev/block/%s", imageName.c_str());
+	fprintf(stderr, "createImagePartition::%s", cmd);
 	usleep(100000);
 	if (__system(cmd) != 0) return 1;
 	sprintf(cmd, "/sbin/fsync /ss/safestrap/%s/%s.img", slotName.c_str(), imageName.c_str());
+	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
 	if (__system(cmd) != 0) return 1;
 
 	sprintf(cmd, "tune2fs -j /dev/block/%s", imageName.c_str());
+	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
 	if (__system(cmd) != 0) return 1;
 	sprintf(cmd, "/sbin/fsync /ss/safestrap/%s/%s.img", slotName.c_str(), imageName.c_str());
+	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
 	if (__system(cmd) != 0) return 1;
 	DataManager::SetValue("ui_progress", progressBase3);
@@ -142,10 +154,10 @@ int GUIAction::doSafestrapAction(Action action, int isThreaded /* = 0 */) {
 		string str = "Undefined";
 		string var = "";
 
-		DataManager::SetValue("tw_rom-slot1_name", "ROM Slot 1");
-		DataManager::SetValue("tw_rom-slot2_name", "ROM Slot 2");
-		DataManager::SetValue("tw_rom-slot3_name", "ROM Slot 3");
-		DataManager::SetValue("tw_rom-slot4_name", "ROM Slot 4");
+		DataManager::SetValue("tw_rom-slot1_name", "ROM-Slot-1");
+		DataManager::SetValue("tw_rom-slot2_name", "ROM-Slot-2");
+		DataManager::SetValue("tw_rom-slot3_name", "ROM-Slot-3");
+		DataManager::SetValue("tw_rom-slot4_name", "ROM-Slot-4");
 
 		for (int i = 1; i < 5; i++) {
 			sprintf(array, "rom-slot%d", i);
@@ -230,24 +242,25 @@ int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */
 			ui_print("Simulating actions...\n");
 		}
 		else {
-			int system_size = 500;
+			int system_size = 600;
 			int data_size = 500;
-			int cache_size = 500;
+			int cache_size = 300;
 			char cmd[512];
 
 			gui_changePage(pageName);
 
-			DataManager::GetValue("tw_slot_systen_size", system_size);
+			DataManager::GetValue("tw_slot_system_size", system_size);
 			DataManager::GetValue("tw_slot_data_size", data_size);
 			DataManager::GetValue("tw_slot_cache_size", cache_size);
 
 			DataManager::SetValue("ui_progress", 0);
 
-			sprintf(cmd, "mkdir /ss/safestrap/%s", arg.c_str());
+			sprintf(cmd, "mkdir -p /ss/safestrap/%s", arg.c_str());
 			__system(cmd);
 
 			// SYSTEM
 			if (createImagePartition(arg, "system", system_size, "system", 7, 5, 20, 30) != 0) {
+				fprintf(stderr, "Error creating system partition!");
 				DataManager::SetValue("tw_operation", "Error creating system partition!");
 				ui_print("Error creating system partition!\n");
 				ui_print("Cleaning up files...\n");

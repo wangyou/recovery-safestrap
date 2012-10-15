@@ -386,6 +386,7 @@
 			</object>
 
 			<object type="button">
+				<condition var1="tw_bootslot" op="!=" var2="stock" />
 				<placement x="%col2_x%" y="%row1_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Install</text>
@@ -394,6 +395,13 @@
 					<action function="queueclear"></action>
 					<action function="page">install</action>
 				</actions>
+			</object>
+			<object type="button">
+				<condition var1="tw_bootslot" op="=" var2="stock" />
+				<placement x="%col2_x%" y="%row1_y%" />
+				<font resource="font" color="%button_text_disable_color%" />
+				<text>Install</text>
+				<image resource="main_button" />
 			</object>
 
 			<object type="button">
@@ -3535,7 +3543,7 @@
 		<page name="boot_slot_try_create">
 			<object type="action">
 				<action function="refreshsizesnt"></action>
-				<action function="set">tw_slot_system_size=500</action>
+				<action function="set">tw_slot_system_size=600</action>
 				<action function="set">tw_slot_data_size=0</action>
 				<action function="set">tw_slot_cache_size=300</action>
 				<action function="set">tw_slot_total_size=800</action>
@@ -3556,10 +3564,10 @@
 			</object>
 
 			<object type="button">
-				<condition var1="tw_slot_system_size" var2="500" />
+				<condition var1="tw_slot_system_size" var2="600" />
 				<placement x="%col1_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>500 MB</text>
+				<text>600 MB</text>
 				<image resource="radio_true" />
 			</object>
 
@@ -3570,62 +3578,62 @@
 			</object>
 
 			<object type="button">
-				<condition var1="tw_slot_data_size" var2="500" />
-				<placement x="%col1_x%" y="%row4_text_y%" />
-				<font resource="font" color="%text_color%" />
-				<text>500MB</text>
-				<image resource="radio_true" />
-			</object>
-			<object type="button">
-				<condition var1="tw_slot_data_size" op="!=" var2="500" />
-				<placement x="%col1_x%" y="%row4_text_y%" />
-				<font resource="font" color="%text_color%" />
-				<text>500MB</text>
-				<image resource="radio_false" />
-				<actions>
-					<action function="set">tw_slot_data_size=500</action>
-					<action function="set">tw_slot_total_size=800</action>
-					<action function="addsubtract">tw_slot_total_size+500</action>
-				</actions>
-			</object>
-
-			<object type="button">
 				<condition var1="tw_slot_data_size" var2="1024" />
-				<placement x="%col1_x%" y="%row5_text_y%" />
+				<placement x="%col1_x%" y="%row4_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>1GB</text>
 				<image resource="radio_true" />
 			</object>
 			<object type="button">
 				<condition var1="tw_slot_data_size" op="!=" var2="1024" />
-				<placement x="%col1_x%" y="%row5_text_y%" />
+				<placement x="%col1_x%" y="%row4_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>1GB</text>
 				<image resource="radio_false" />
 				<actions>
 					<action function="set">tw_slot_data_size=1024</action>
-					<action function="set">tw_slot_total_size=800</action>
+					<action function="set">tw_slot_total_size=900</action>
 					<action function="addsubtract">tw_slot_total_size+1024</action>
 				</actions>
 			</object>
 
 			<object type="button">
 				<condition var1="tw_slot_data_size" var2="2048" />
-				<placement x="%col1_x%" y="%row6_text_y%" />
+				<placement x="%col1_x%" y="%row5_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>2GB</text>
 				<image resource="radio_true" />
 			</object>
 			<object type="button">
 				<condition var1="tw_slot_data_size" op="!=" var2="2048" />
-				<placement x="%col1_x%" y="%row6_text_y%" />
+				<placement x="%col1_x%" y="%row5_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>2GB</text>
 				<image resource="radio_false" />
 				<actions>
 					<action function="set">tw_slot_data_size=2048</action>
-					<action function="set">tw_slot_total_size=800</action>
+					<action function="set">tw_slot_total_size=900</action>
 					<action function="addsubtract">tw_slot_total_size+2048</action>
+				</actions>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_slot_data_size" var2="3072" />
+				<placement x="%col1_x%" y="%row6_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>3GB</text>
+				<image resource="radio_true" />
+			</object>
+			<object type="button">
+				<condition var1="tw_slot_data_size" op="!=" var2="3072" />
+				<placement x="%col1_x%" y="%row6_text_y%" />
+				<font resource="font" color="%text_color%" />
+				<text>3GB</text>
+				<image resource="radio_false" />
+				<actions>
+					<action function="set">tw_slot_data_size=3072</action>
+					<action function="set">tw_slot_total_size=900</action>
+					<action function="addsubtract">tw_slot_total_size+3072</action>
 				</actions>
 			</object>
 
@@ -3636,7 +3644,7 @@
 			</object>
 
 			<object type="button">
-				<condition var1="tw_slot_system_size" var2="500" />
+				<condition var1="tw_slot_cache_size" var2="300" />
 				<placement x="%col1_x%" y="%row8_text_y%" />
 				<font resource="font" color="%text_color%" />
 				<text>300 MB</text>
@@ -3750,11 +3758,13 @@
 			</object>
 
 			<object type="text" color="%text_color%">
+				<condition var1="tw_trybootslot" op="!=" var2="stock" />
 				<font resource="font" />
 				<placement x="%col1_x%" y="%row6_text_y%" />
 				<text>Nickname:</text>
 			</object>
 			<object type="text" color="%text_color%">
+				<condition var1="tw_trybootslot" op="!=" var2="stock" />
 				<font resource="font" />
 				<placement x="%center_x%" y="%row6_text_y%" />
 				<text>%tw_slotname%</text>

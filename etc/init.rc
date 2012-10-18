@@ -22,8 +22,15 @@ on init
     mkdir /cache
     mount /tmp /tmp tmpfs
     chmod /tmp 0777
+
+#battd
     mkdir /tmp/tbattd 0777 root mot_accy
+    mkdir /tmp/data 0777 root mot_accy
     mkdir /tmp/data/battd 0777 root mot_accy
+    chmod 0666 /dev/cpcap
+    chmod 0666 /dev/cpcap_batt
+    chmod 0666 /dev/cpcap_mot_rtc
+    chmod 0666 /dev/cpcap_uc
 
 on fs
     exec /sbin/fixboot.sh
@@ -57,7 +64,7 @@ on property:ro.debuggable=1
     write /sys/class/android_usb/android0/enable 0
     write /sys/class/android_usb/android0/idVendor 22b8
     write /sys/class/android_usb/android0/idProduct 4366
-    write /sys/class/android_usb/android0/functions adb
+    write /sys/class/android_usb/android0/functions "mass_storage,adb"
     #write /sys/class/android_usb/android0/enable 1
     write /sys/class/android_usb/android0/iManufacturer $ro.product.manufacturer
     write /sys/class/android_usb/android0/iProduct $ro.product.model

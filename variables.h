@@ -17,7 +17,7 @@
 #ifndef _VARIABLES_HEADER_
 #define _VARIABLES_HEADER_
 
-#define SS_VERSION_STR              "3.04"
+#define SS_VERSION_STR              "3.05"
 #define SS_VERSION_VAR              "ss_version"
 
 #define TW_VERSION_STR              "2.2.2.1"

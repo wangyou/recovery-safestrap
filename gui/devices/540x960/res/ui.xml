@@ -2043,6 +2043,7 @@
 				<action function="umount">/boot</action>
 			</object>
 
+<!--
 			<object type="button">
 				<placement x="%col1_x%" y="%row8_text_y%" />
 				<font resource="font" color="%text_color%" />
@@ -2090,6 +2091,7 @@
 				<image resource="radio_true" />
 				<action function="togglestorage">internal</action>
 			</object>
+//-->
 
 			<object type="button">
 				<condition var1="tw_has_usb_storage" var2="1" />

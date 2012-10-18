@@ -109,7 +109,8 @@ Volume* volume_for_path(const char* path) {
 			else
 				strcpy(search_path, DataManager_GetStrValue(TW_EXTERNAL_MOUNT));
 		} else
-			strcpy(search_path, DataManager_GetCurrentStorageMount());
+			strcpy(search_path, path);
+//			strcpy(search_path, DataManager_GetCurrentStorageMount());
 	} else
 		strcpy(search_path, path);
 

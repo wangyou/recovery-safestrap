@@ -676,13 +676,13 @@ int usb_storage_enable(void)
 	char lun_file[255];
 
 	if (DataManager_GetIntValue(TW_HAS_DUAL_STORAGE) == 1 && DataManager_GetIntValue(TW_HAS_DATA_MEDIA) == 0) {
-		Volume *vol = volume_for_path(DataManager_GetSettingsStoragePath());
+
+		Volume *vol = volume_for_path(DataManager_GetStrValue(TW_INTERNAL_PATH));
 		if (!vol)
 		{
 			LOGE("Unable to locate volume information.");
 			return -1;
 		}
-
 		sprintf(lun_file, CUSTOM_LUN_FILE, 0);
 
 		if ((fd = open(lun_file, O_WRONLY)) < 0)
@@ -705,7 +705,6 @@ int usb_storage_enable(void)
 			LOGE("Unable to locate volume information.\n");
 			return -1;
 		}
-
 		sprintf(lun_file, CUSTOM_LUN_FILE, 1);
 
 		if ((fd = open(lun_file, O_WRONLY)) < 0)
@@ -721,6 +720,7 @@ int usb_storage_enable(void)
 			return -1;
 		}
 		close(fd);
+
 	} else {
 		if (DataManager_GetIntValue(TW_HAS_DATA_MEDIA) == 0)
 			strcpy(lun_file, DataManager_GetCurrentStoragePath());

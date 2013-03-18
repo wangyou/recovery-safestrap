@@ -169,6 +169,7 @@ static int vk_init(struct ev *e)
 
     // Some devices split the keys from the touchscreen
     e->vk_count = 0;
+#ifndef TW_IGNORE_VIRTUAL_KEYS
     vk_fd = open(vk_path, O_RDONLY);
     if (vk_fd >= 0)
     {
@@ -193,9 +194,10 @@ static int vk_init(struct ev *e)
         e->vk_count /= 6;
         if (e->vk_count <= 0)
             return -1;
-
-        e->down = DOWN_NOT;
+	else
+            e->down = DOWN_NOT;
     }
+#endif
 
     ioctl(e->fd->fd, EVIOCGABS(ABS_X), &e->p.xi);
     ioctl(e->fd->fd, EVIOCGABS(ABS_Y), &e->p.yi);

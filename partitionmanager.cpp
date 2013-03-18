@@ -462,6 +462,7 @@ int TWPartitionManager::Check_Backup_Name(bool Display_Error) {
 	// Check to make sure that a backup with this name doesn't already exist
 	DataManager::GetValue(TW_BACKUPS_FOLDER_VAR, Backup_Loc);
 	strcpy(backup_loc, Backup_Loc.c_str());
+// FIXME-HASH: add rom-slot to the name
 	sprintf(tw_image_dir,"%s/%s/.", backup_loc, backup_name);
     if (TWFunc::Path_Exists(tw_image_dir)) {
 		if (Display_Error)
@@ -1406,19 +1407,21 @@ int TWPartitionManager::Format_Data(void) {
 }
 
 int TWPartitionManager::Wipe_Media_From_Data(void) {
-	TWPartition* dat = Find_Partition_By_Path("/data");
+	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
+	TWPartition* dat = Find_Partition_By_Path(datamedia_mount);
 
 	if (dat != NULL) {
 		if (!dat->Has_Data_Media) {
-			LOGE("This device does not have /data/media\n");
+			LOGE("This device does not have /datamedia/media\n");
 			return false;
 		}
 		if (!dat->Mount(true))
 			return false;
 
-		ui_print("Wiping internal storage -- /data/media...\n");
-		TWFunc::removeDir("/data/media", false);
-		if (mkdir("/data/media", S_IRWXU | S_IRWXG | S_IWGRP | S_IXGRP) != 0)
+		ui_print("Wiping internal storage -- /datamedia/media...\n");
+// FIXME-HASH: change to name setting
+		TWFunc::removeDir(datamedia_mount + "/media", false);
+		if (mkdir((datamedia_mount + "/media").c_str(), S_IRWXU | S_IRWXG | S_IWGRP | S_IXGRP) != 0)
 			return -1;
 		if (dat->Has_Data_Media) {
 			dat->Recreate_Media_Folder();
@@ -1438,7 +1441,9 @@ void TWPartitionManager::Refresh_Sizes(void) {
 
 void TWPartitionManager::Update_System_Details(void) {
 	std::vector<TWPartition*>::iterator iter;
+	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
 	int data_size = 0;
+	int datamedia_size = 0;
 
 	ui_print("Updating partition details...\n");
 	for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
@@ -1449,6 +1454,8 @@ void TWPartitionManager::Update_System_Details(void) {
 				DataManager::SetValue(TW_BACKUP_SYSTEM_SIZE, backup_display_size);
 			} else if ((*iter)->Mount_Point == "/data" || (*iter)->Mount_Point == "/datadata") {
 				data_size += (int)((*iter)->Backup_Size / 1048576LLU);
+			} else if ((*iter)->Mount_Point == datamedia_mount) {
+				datamedia_size += (int)((*iter)->Backup_Size / 1048576LLU);
 			} else if ((*iter)->Mount_Point == "/cache") {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
 				DataManager::SetValue(TW_BACKUP_CACHE_SIZE, backup_display_size);
@@ -1476,6 +1483,9 @@ void TWPartitionManager::Update_System_Details(void) {
 					DataManager::SetValue(TW_BACKUP_BOOT_VAR, 0);
 				} else
 					DataManager::SetValue("tw_has_boot_partition", 1);
+			} else if ((*iter)->Mount_Point == "/ss") {
+				int ss_display_free = (int)((*iter)->Free / 1048576LLU);
+				DataManager::SetValue(TW_SS_STORAGE_FREE_SIZE, ss_display_free);
 			}
 #ifdef SP1_NAME
 			if ((*iter)->Backup_Name == EXPAND(SP1_NAME)) {
@@ -1515,6 +1525,8 @@ void TWPartitionManager::Update_System_Details(void) {
 					DataManager::SetValue(TW_HAS_RECOVERY_PARTITION, 1);
 			} else if ((*iter)->Mount_Point == "/data") {
 				data_size += (int)((*iter)->Backup_Size / 1048576LLU);
+			} else if ((*iter)->Mount_Point == datamedia_mount) {
+				datamedia_size += (int)((*iter)->Backup_Size / 1048576LLU);
 			}
 #ifdef SP1_NAME
 			if ((*iter)->Backup_Name == EXPAND(SP1_NAME)) {
@@ -1687,10 +1699,10 @@ int TWPartitionManager::Decrypt_Device(string Password) {
 			// Sleep for a bit so that the device will be ready
 			sleep(1);
 #ifdef RECOVERY_SDCARD_ON_DATA
-			if (dat->Mount(false) && TWFunc::Path_Exists("/data/media/0")) {
-				dat->Storage_Path = "/data/media/0";
+			if (dat->Mount(false) && TWFunc::Path_Exists(datamedia_mount + "/media/0")) {
+				dat->Storage_Path = datamedia_mount + "/media/0";
 				dat->Symlink_Path = dat->Storage_Path;
-				DataManager::SetValue(TW_INTERNAL_PATH, "/data/media/0");
+				DataManager::SetValue(TW_INTERNAL_PATH, datamedia_mount + "/media/0");
 				dat->UnMount(false);
 				DataManager::SetBackupFolder();
 				Output_Partition(dat);
@@ -1839,16 +1851,17 @@ void TWPartitionManager::Mount_All_Storage(void) {
 }
 
 void TWPartitionManager::UnMount_Main_Partitions(void) {
-	// Unmounts system and data if data is not data/media
+	// Unmounts system and data if data is not datamedia/media
 	// Also unmounts boot if boot is mountable
 	LOGI("Unmounting main partitions...\n");
 
 	TWPartition* Boot_Partition = Find_Partition_By_Path("/boot");
 
 	UnMount_By_Path("/system", true);
-#ifndef RECOVERY_SDCARD_ON_DATA
+// FIXME-HASH: We have datamedia mount point so we can unmount /data
+//#ifndef RECOVERY_SDCARD_ON_DATA
 	UnMount_By_Path("/data", true);
-#endif
+//#endif
 	if (Boot_Partition != NULL && Boot_Partition->Can_Be_Mounted)
 		Boot_Partition->UnMount(true);
 }

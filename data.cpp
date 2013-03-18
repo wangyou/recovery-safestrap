@@ -512,6 +512,7 @@ void DataManager::SetBackupFolder()
 
 void DataManager::SetDefaultValues()
 {
+    string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
     string str, path;
 
     get_device_id();
@@ -522,6 +523,13 @@ void DataManager::SetDefaultValues()
     mConstValues.insert(make_pair("false", "0"));
 
     mConstValues.insert(make_pair(TW_VERSION_VAR, TW_VERSION_STR));
+
+// Safestrap
+    mConstValues.insert(make_pair(SS_VERSION_VAR, SS_VERSION_STR));
+    fprintf(stderr, "TW_SS_DEFAULT_VIRT_SYSTEM_SIZE == %s\n", DEFAULT_VIRT_SYSTEM_SIZE);
+    fprintf(stderr, "TW_SS_DEFAULT_VIRT_CACHE_SIZE == %s\n", DEFAULT_VIRT_CACHE_SIZE);
+    mConstValues.insert(make_pair(TW_SS_DEFAULT_VIRT_SYSTEM_SIZE, DEFAULT_VIRT_SYSTEM_SIZE));
+    mConstValues.insert(make_pair(TW_SS_DEFAULT_VIRT_CACHE_SIZE, DEFAULT_VIRT_CACHE_SIZE));
 
 #ifdef TW_FORCE_CPUINFO_FOR_DEVICE_ID
 	printf("TW_FORCE_CPUINFO_FOR_DEVICE_ID := true\n");
@@ -581,11 +589,11 @@ void DataManager::SetDefaultValues()
 #else
 	#ifdef RECOVERY_SDCARD_ON_DATA
 		#ifdef TW_EXTERNAL_STORAGE_PATH
-			LOGI("Has /data/media + external storage in '%s'\n", EXPAND(TW_EXTERNAL_STORAGE_PATH));
-			// Device has /data/media + external storage
+			LOGI("Has %s/media + external storage in '%s'\n", datamedia_mount, EXPAND(TW_EXTERNAL_STORAGE_PATH));
+			// Device has /datamedia/media + external storage
 			mConstValues.insert(make_pair(TW_HAS_DUAL_STORAGE, "1"));
 		#else
-			LOGI("Single storage only -- data/media.\n");
+			LOGI("Single storage only -- %s/media.\n", datamedia_mount);
 			// Device just has external storage
 			mConstValues.insert(make_pair(TW_HAS_DUAL_STORAGE, "0"));
 			mConstValues.insert(make_pair(TW_HAS_EXTERNAL, "0"));
@@ -596,13 +604,14 @@ void DataManager::SetDefaultValues()
 		mConstValues.insert(make_pair(TW_HAS_DUAL_STORAGE, "0"));
 	#endif
 	#ifdef RECOVERY_SDCARD_ON_DATA
-		LOGI("Device has /data/media defined.\n");
-		// Device has /data/media
+		LOGI("Device has %s/media defined.\n", datamedia_mount);
+		// Device has /datamedia/media
 		mConstValues.insert(make_pair(TW_USE_EXTERNAL_STORAGE, "0"));
 		mConstValues.insert(make_pair(TW_HAS_INTERNAL, "1"));
-		mValues.insert(make_pair(TW_INTERNAL_PATH, make_pair("/data/media", 0)));
-		mConstValues.insert(make_pair(TW_INTERNAL_MOUNT, "/data"));
-		mConstValues.insert(make_pair(TW_INTERNAL_LABEL, "data"));
+// FIXME-HASH: datamedia handling [FIXED]
+		mValues.insert(make_pair(TW_INTERNAL_PATH, make_pair(datamedia_mount + "/media", 0)));
+		mConstValues.insert(make_pair(TW_INTERNAL_MOUNT, datamedia_mount));
+		mConstValues.insert(make_pair(TW_INTERNAL_LABEL, "datamedia"));
 		#ifdef TW_EXTERNAL_STORAGE_PATH
 			if (strcmp(EXPAND(TW_EXTERNAL_STORAGE_PATH), "/sdcard") == 0) {
 				mValues.insert(make_pair(TW_ZIP_INTERNAL_VAR, make_pair("/emmc", 1)));
@@ -651,8 +660,9 @@ void DataManager::SetDefaultValues()
 #endif
 
 #ifdef RECOVERY_SDCARD_ON_DATA
-	if (PartitionManager.Mount_By_Path("/data", false) && TWFunc::Path_Exists("/data/media/0"))
-		SetValue(TW_INTERNAL_PATH, "/data/media/0");
+// FIXME-HASH: datamedia handling [FIXED]
+	if (PartitionManager.Mount_By_Path(datamedia_mount, false) && TWFunc::Path_Exists(datamedia_mount + "/media/0"))
+		SetValue(TW_INTERNAL_PATH, datamedia_mount + "/media/0");
 #endif
 	str = GetCurrentStoragePath();
 #ifdef RECOVERY_SDCARD_ON_DATA
@@ -811,6 +821,7 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair(TW_BACKUP_SP2_SIZE, make_pair("0", 0)));
 	mValues.insert(make_pair(TW_BACKUP_SP3_SIZE, make_pair("0", 0)));
 	mValues.insert(make_pair(TW_STORAGE_FREE_SIZE, make_pair("0", 0)));
+	mValues.insert(make_pair(TW_SS_STORAGE_FREE_SIZE, make_pair("0", 0)));
 
     mValues.insert(make_pair(TW_REBOOT_AFTER_FLASH_VAR, make_pair("0", 1)));
     mValues.insert(make_pair(TW_SIGNED_ZIP_VERIFY_VAR, make_pair("0", 1)));
@@ -883,6 +894,13 @@ void DataManager::SetDefaultValues()
 	}
 #endif
 	mValues.insert(make_pair(TW_MILITARY_TIME, make_pair("0", 0)));
+
+/* SAFESTRAP */
+	mValues.insert(make_pair("tw_rom-slot1_name", make_pair("XXXXXXXXXX", 0)));
+	mValues.insert(make_pair("tw_rom-slot2_name", make_pair("XXXXXXXXXX", 0)));
+	mValues.insert(make_pair("tw_rom-slot3_name", make_pair("XXXXXXXXXX", 0)));
+	mValues.insert(make_pair("tw_rom-slot4_name", make_pair("XXXXXXXXXX", 0)));
+
 }
 
 // Magic Values
@@ -928,10 +946,21 @@ int DataManager::GetMagicValue(const string varName, string& value)
 			char cap_s[4];
 #ifdef TW_CUSTOM_BATTERY_PATH
 			string capacity_file = EXPAND(TW_CUSTOM_BATTERY_PATH);
+#ifdef TW_CUSTOM_BATTERY_CAPACITY_FIELD
+			capacity_file += "/" + EXPAND(TW_CUSTOM_BATTERY_CAPACITY_FIELD);
+#else
 			capacity_file += "/capacity";
+#endif
 			FILE * cap = fopen(capacity_file.c_str(),"rt");
 #else
-			FILE * cap = fopen("/sys/class/power_supply/battery/capacity","rt");
+			string capacity_file = "/sys/class/power_supply/battery/";
+#ifdef TW_CUSTOM_BATTERY_CAPACITY_FIELD
+			capacity_file += "/";
+			capacity_file += EXPAND(TW_CUSTOM_BATTERY_CAPACITY_FIELD);
+#else
+			capacity_file += "/capacity";
+#endif
+			FILE * cap = fopen(capacity_file.c_str(),"rt");
 #endif
 			if (cap){
 				fgets(cap_s, 4, cap);

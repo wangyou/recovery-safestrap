@@ -105,7 +105,7 @@ LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/etc
 LOCAL_SRC_FILES := $(LOCAL_MODULE)
 include $(BUILD_PREBUILT)
 
-ifeq ($(BOARD_HAS_NO_REAL_SDCARD),)
+#ifeq ($(BOARD_HAS_NO_REAL_SDCARD),)
 	#parted
 	include $(CLEAR_VARS)
 	LOCAL_MODULE := parted
@@ -114,7 +114,7 @@ ifeq ($(BOARD_HAS_NO_REAL_SDCARD),)
 	LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/sbin
 	LOCAL_SRC_FILES := $(LOCAL_MODULE)
 	include $(BUILD_PREBUILT)
-endif
+#endif
 
 ifeq ($(TW_INCLUDE_DUMLOCK), true)
 	#htcdumlock for /system for dumlock

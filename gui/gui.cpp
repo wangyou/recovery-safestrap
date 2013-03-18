@@ -389,6 +389,7 @@ static int
 runPages (void)
 {
   // Raise the curtain
+#if 0
   if (gCurtain != NULL)
 	{
 	  gr_surface surface;
@@ -398,7 +399,7 @@ runPages (void)
 	  curtainRaise (surface);
 	  gr_free_surface (surface);
 	}
-
+#endif
   gGuiRunning = 1;
 
   DataManager::SetValue ("tw_loaded", 1);
@@ -573,7 +574,7 @@ gui_init ()
   int fd;
 
   gr_init ();
-
+#if 0
   if (res_create_surface ("/res/images/curtain.jpg", &gCurtain))
 	{
 	  printf
@@ -582,7 +583,7 @@ gui_init ()
 	}
 
   curtainSet ();
-
+#endif
   ev_init ();
   return 0;
 }

@@ -108,6 +108,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 	char* ptr;
 	string Flags;
 	strncpy(full_line, Line.c_str(), line_len);
+	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
 
 	for (index = 0; index < line_len; index++) {
 		if (full_line[index] <= 32)
@@ -196,7 +197,8 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 #ifdef RECOVERY_SDCARD_ON_DATA
 			Has_Data_Media = true;
 			Is_Storage = true;
-			Storage_Path = "/data/media";
+// FIXME-HASH: change to variable
+			Storage_Path = datamedia_mount + "/media";
 			Symlink_Path = Storage_Path;
 			if (strcmp(EXPAND(TW_EXTERNAL_STORAGE_PATH), "/sdcard") == 0) {
 				Make_Dir("/emmc", Display_Error);
@@ -205,10 +207,11 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				Make_Dir("/sdcard", Display_Error);
 				Symlink_Mount_Point = "/sdcard";
 			}
-			if (Mount(false) && TWFunc::Path_Exists("/data/media/0")) {
-				Storage_Path = "/data/media/0";
+// FIXME-HASH: change to variable
+			if (Mount(false) && TWFunc::Path_Exists(datamedia_mount + "/media/0")) {
+				Storage_Path = datamedia_mount + "/media/0";
 				Symlink_Path = Storage_Path;
-				DataManager::SetValue(TW_INTERNAL_PATH, "/data/media/0");
+				DataManager::SetValue(TW_INTERNAL_PATH, datamedia_mount + "/media/0");
 				UnMount(true);
 			}
 #endif
@@ -270,6 +273,10 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 		} else if (Mount_Point == "/boot") {
 			Display_Name = "Boot";
 			DataManager::SetValue("tw_boot_is_mountable", 1);
+		} else if (Mount_Point == datamedia_mount) {
+			Display_Name = "DataMedia";
+			Is_SubPartition = true;
+			SubPartition_Of = "/data";
 		}
 #ifdef TW_EXTERNAL_STORAGE_PATH
 		if (Mount_Point == EXPAND(TW_EXTERNAL_STORAGE_PATH)) {
@@ -1231,7 +1238,7 @@ bool TWPartition::Wipe_RMRF() {
 bool TWPartition::Wipe_Data_Without_Wiping_Media() {
 	string dir;
 
-	// This handles wiping data on devices with "sdcard" in /data/media
+	// This handles wiping data on devices with "sdcard" in /datamedia/media
 	if (!Mount(true))
 		return false;
 
@@ -1496,6 +1503,7 @@ bool TWPartition::Update_Size(bool Display_Error) {
 		if (Mount(Display_Error)) {
 			unsigned long long data_media_used, actual_data;
 			Used = TWFunc::Get_Folder_Size("/data", Display_Error);
+// FIXME-HASH: change to a setting
 			data_media_used = TWFunc::Get_Folder_Size("/data/media", Display_Error);
 			actual_data = Used - data_media_used;
 			Backup_Size = actual_data;
@@ -1546,6 +1554,7 @@ void TWPartition::Find_Actual_Block_Device(void) {
 void TWPartition::Recreate_Media_Folder(void) {
 	string Command;
 
+// FIXME-HASH: change to setting
 	if (!Mount(true)) {
 		LOGE("Unable to recreate /data/media folder.\n");
 	} else if (!TWFunc::Path_Exists("/data/media")) {

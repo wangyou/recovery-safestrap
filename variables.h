@@ -24,7 +24,8 @@
 #define TW_ZIP_INDEX                "tw_zip_index"
 #define TW_ZIP_QUEUE_COUNT       "tw_zip_queue_count"
 
-#define MAX_BACKUP_NAME_LEN 64
+// adjust max for slot names (-10 + hyphen)
+#define MAX_BACKUP_NAME_LEN 53
 #define TW_BACKUP_TEXT              "tw_backup_text"
 #define TW_BACKUP_NAME		        "tw_backup_name"
 #define TW_BACKUP_SYSTEM_VAR        "tw_backup_system"
@@ -114,7 +115,7 @@
 #define TW_HAS_DUAL_STORAGE         "tw_has_dual_storage"
 #define TW_USE_EXTERNAL_STORAGE     "tw_use_external_storage"
 #define TW_HAS_INTERNAL             "tw_has_internal"
-#define TW_INTERNAL_PATH            "tw_internal_path"         // /data/media or /internal
+#define TW_INTERNAL_PATH            "tw_internal_path"         // /datamedia/media or /internal
 #define TW_INTERNAL_MOUNT           "tw_internal_mount"        // /data or /internal
 #define TW_INTERNAL_LABEL           "tw_internal_label"        // data or internal
 #define TW_HAS_EXTERNAL             "tw_has_external"
@@ -178,5 +179,14 @@
 // For OpenRecoveryScript
 #define SCRIPT_FILE_CACHE "/cache/recovery/openrecoveryscript"
 #define SCRIPT_FILE_TMP "/tmp/openrecoveryscript"
+
+// Safestrap
+#ifndef SS_VERSION_STR
+#define SS_VERSION_STR                   "3.x"
+#endif
+#define SS_VERSION_VAR                   "ss_version"
+#define TW_SS_STORAGE_FREE_SIZE          "tw_ss_storage_free_size"
+#define TW_SS_DEFAULT_VIRT_SYSTEM_SIZE   "tw_ss_default_virt_system_size"
+#define TW_SS_DEFAULT_VIRT_CACHE_SIZE    "tw_ss_default_virt_cache_size"
 
 #endif  // _VARIABLES_HEADER_

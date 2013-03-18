@@ -44,6 +44,8 @@ int gui_start();
 #include "rapidxml.hpp"
 #include "objects.hpp"
 
+#include "action_safestrap.cpp"
+
 extern RecoveryUI* ui;
 extern blanktimer blankTimer;
 
@@ -155,6 +157,7 @@ void GUIAction::simulate_progress_bar(void)
 int GUIAction::flash_zip(std::string filename, std::string pageName, const int simulate, int* wipe_cache)
 {
     int ret_val = 0;
+    char cmd[512];
 
 	DataManager::SetValue("ui_progress", 0);
 
@@ -206,11 +209,26 @@ int GUIAction::flash_zip(std::string filename, std::string pageName, const int s
 	if (simulate) {
 		simulate_progress_bar();
 	} else {
+		string bootslot = "";
+		struct stat st;
+		string result;
+
+		DataManager::GetValue("tw_bootslot", bootslot);
+
+		// PROTECT Safestrap files if this is stock
+		if (bootslot == "stock") {
+			if (stat("/tmp/.dont-restore-ss", &st) == 0) {
+				TWFunc::Exec_Cmd("rm /tmp/.dont-restore-ss", result);
+			}
+			PartitionManager.Mount_By_Path("/system", true);
+			TWFunc::Exec_Cmd("/sbin/backup-ss.sh", result);
+			PartitionManager.UnMount_By_Path("/system", true);
+			if (result != "") return 1;
+		}
+
 		ret_val = TWinstall_zip(filename.c_str(), wipe_cache);
 
 		// Now, check if we need to ensure TWRP remains installed...
-		struct stat st;
-		string result;
 		if (stat("/sbin/installTwrp", &st) == 0)
 		{
 			DataManager::SetValue("tw_operation", "Configuring TWRP");
@@ -220,6 +238,21 @@ int GUIAction::flash_zip(std::string filename, std::string pageName, const int s
 			{
 				ui_print("Unable to configure TWRP with this kernel.\n");
 			}
+		}
+
+
+		// Check for special .zip which updates SS (creates a file as /tmp/.dont-restore-ss)
+		if (stat("/tmp/.dont-restore-ss", &st) != 0) {
+			// RESTORE Safestrap files if this is stock
+			if (bootslot == "stock") {
+				PartitionManager.Mount_By_Path("/system", true);
+				TWFunc::Exec_Cmd("/sbin/restore-ss.sh", result);
+				PartitionManager.UnMount_By_Path("/system", true);
+				if (result != "") return 1;
+			}
+		}
+		else {
+			TWFunc::Exec_Cmd("rm /tmp/.dont-restore-ss", result);
 		}
 	}
 
@@ -506,6 +539,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
         {
             string varName = arg.substr(0, arg.find('+'));
             string string_to_add = arg.substr(arg.find('+') + 1, string::npos);
+			DataManager::GetValue(string_to_add, string_to_add);
 			int amount_to_add = atoi(string_to_add.c_str());
 			int value;
 
@@ -517,6 +551,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
         {
             string varName = arg.substr(0, arg.find('-'));
             string string_to_subtract = arg.substr(arg.find('-') + 1, string::npos);
+			DataManager::GetValue(string_to_subtract, string_to_subtract);
 			int amount_to_subtract = atoi(string_to_subtract.c_str());
 			int value;
 
@@ -653,6 +688,11 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		return 0;
 	}
 
+	/* Non-Threaded Safestrap Functions */
+	if (doSafestrapAction(action, isThreaded) == 0)
+		return 0;
+
+
     if (isThreaded)
     {
         if (function == "fileexists")
@@ -711,10 +751,12 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
         }
         if (function == "wipe")
         {
+            char cmd[512];
+            int ret_val = 0;
             operation_start("Format");
             DataManager::SetValue("tw_partition", arg);
 
-			int ret_val = false;
+			string result = "";
 
 			if (simulate) {
 				simulate_progress_bar();
@@ -745,8 +787,27 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 					ret_val = PartitionManager.Wipe_By_Path(External_Path);
 				} else if (arg == "ANDROIDSECURE") {
 					ret_val = PartitionManager.Wipe_Android_Secure();
-				} else
+				} else {
+					string bootslot = "";
+					DataManager::GetValue("tw_bootslot", bootslot);
+
+					// PROTECT Safestrap if arg = "/system" and bootslot = "stock"
+					if ((bootslot == "stock") && (arg == "system")) {
+						PartitionManager.Mount_By_Path("/system", true);
+						TWFunc::Exec_Cmd("/sbin/backup-ss.sh", result);
+						PartitionManager.UnMount_By_Path("/system", true);
+						if (result != "") return 1;
+					}
+
 					ret_val = PartitionManager.Wipe_By_Path(arg);
+
+					// RESTORE Safestrap files if this is stock
+					if ((bootslot == "stock") && (arg == "system")) {
+						PartitionManager.Mount_By_Path("/system", true);
+						TWFunc::Exec_Cmd("/sbin/restore-ss.sh", result);
+						PartitionManager.UnMount_By_Path("/system", true);
+					}
+				}
 
 				if (arg == DataManager::GetSettingsStoragePath()) {
 					// If we wiped the settings storage path, recreate the TWRP folder and dump the settings
@@ -783,6 +844,9 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
         {
             operation_start("Nandroid");
 			int ret = 0;
+			char cmd[512];
+			int ret_val = 0;
+			string result = "";
 
 			if (simulate) {
 				DataManager::SetValue("tw_partition", "Simulation");
@@ -800,9 +864,28 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 					}
 					DataManager::SetValue(TW_BACKUP_NAME, "(Current Date)");
 				} else if (arg == "restore") {
+					string bootslot = "";
+					DataManager::GetValue("tw_bootslot", bootslot);
+
+					// PROTECT Safestrap files if this is stock
+					if (bootslot == "stock") {
+						PartitionManager.Mount_By_Path("/system", true);
+						TWFunc::Exec_Cmd("/sbin/backup-ss.sh", result);
+						PartitionManager.UnMount_By_Path("/system", true);
+						if (result != "") return 1;
+					}
+
 					string Restore_Name;
 					DataManager::GetValue("tw_restore", Restore_Name);
 					ret = PartitionManager.Run_Restore(Restore_Name);
+
+					// RESTORE Safestrap files if this is stock
+					if (bootslot == "stock") {
+						PartitionManager.Mount_By_Path("/system", true);
+						TWFunc::Exec_Cmd("/sbin/restore-ss.sh", result);
+						PartitionManager.UnMount_By_Path("/system", true);
+						if (result != "") return 1;
+					}
 				} else {
 					operation_end(1, simulate);
 					return -1;
@@ -1163,6 +1246,11 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			operation_end(op_status, simulate);
 			return 0;
 		}
+
+	/* Threaded Safestrap Functions */
+	if (doSafestrapThreadedAction(action, isThreaded) == 0)
+		return 0;
+
     }
     else
     {

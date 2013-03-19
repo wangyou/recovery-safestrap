@@ -777,9 +777,12 @@ print_property(const char *key, const char *name, void *cookie) {
 
 int
 main(int argc, char **argv) {
+    string result;
+
     // Recovery needs to install world-readable files, so clear umask
     // set by init
     umask(0);
+    TWFunc::Exec_Cmd("/sbin/fixboot.sh", result);
 
     time_t start = time(NULL);
 

@@ -522,9 +522,16 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		if (!simulate)
 		{
 			string dst;
+			string result;
 			PartitionManager.Mount_Current_Storage(true);
 			dst = DataManager::GetCurrentStoragePath() + "/recovery.log";
 			TWFunc::copy_file("/tmp/recovery.log", dst.c_str(), 0755);
+			dst = DataManager::GetCurrentStoragePath() + "/last_kmsg.txt";
+			TWFunc::copy_file("/proc/last_kmsg", dst.c_str(), 0755);
+			dst = "dmesg > ";
+			dst += DataManager::GetCurrentStoragePath();
+			dst += "/kmsg.txt";
+			TWFunc::Exec_Cmd(dst, result);
 			sync();
 			ui_print("Copied recovery log to %s.\n", DataManager::GetCurrentStoragePath().c_str());
 		} else

@@ -12,9 +12,9 @@ int createImagePartition(string slotName, string imageName, int imageSize, strin
 	TWFunc::Exec_Cmd(Command, result);
 
 #ifdef USE_NEW_LOOPBACK
-	Command = "/sbin/bbx losetup -d /dev/block/loop-" + imageName;
+	Command = "losetup -d /dev/block/loop-" + imageName;
 #else
-	Command = "/sbin/bbx losetup -d /dev/block/loop" + loopNum;
+	Command = "losetup -d /dev/block/loop" + loopNum;
 #endif
 	fprintf(stderr, "createImagePartition::%s\n", Command.c_str());
 	usleep(100000);
@@ -45,9 +45,9 @@ int createImagePartition(string slotName, string imageName, int imageSize, strin
 	DataManager::SetValue("tw_operation", "Writing filesystem on " + imageName + "...");
 	ui_print("Writing filesystem on %s...\n", imageName.c_str());
 #ifdef USE_NEW_LOOPBACK
-	Command = "/sbin/bbx losetup /dev/block/loop-" + imageName + " /ss/safestrap/" + slotName + "/" + imageName + ".img";
+	Command = "losetup /dev/block/loop-" + imageName + " /ss/safestrap/" + slotName + "/" + imageName + ".img";
 #else
-	Command = "/sbin/bbx losetup /dev/block/loop" + loopNum + " /ss/safestrap/" + slotName + "/" + imageName + ".img";
+	Command = "losetup /dev/block/loop" + loopNum + " /ss/safestrap/" + slotName + "/" + imageName + ".img";
 #endif
 	fprintf(stderr, "createImagePartition::%s\n", Command.c_str());
 	usleep(100000);

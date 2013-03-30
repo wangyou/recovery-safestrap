@@ -3,9 +3,10 @@
 #
 include $(all-subdir-makefiles)
 
-# Safestrap
 SAFESTRAP_VERSION := 3.50
+COMMON_GLOBAL_CFLAGS += -DSS_VERSION_STR=\"$(SAFESTRAP_VERSION)\"
 
+# Safestrap
 SS_DEVICE_FOLDER := device/generic/safestrap
 SS_COMMON_FOLDER := bootable/recovery/safestrap-common
 
@@ -36,15 +37,6 @@ PRODUCT_COPY_FILES += \
     $(SS_COMMON_FOLDER)/version:/root/../install-files/etc/safestrap/flags/version \
     $(SS_COMMON_FOLDER)/recovery_mode:/root/../install-files/etc/safestrap/flags/recovery_mode \
     $(SS_COMMON_FOLDER)/sbin/bbx:/root/../install-files/etc/safestrap/bbx \
-
-# Add battd
-ifdef BOARD_IS_MOTOROLA_DEVICE
-PRODUCT_COPY_FILES += \
-    $(SS_COMMON_FOLDER)/sbin/battd:/root/sbin/battd \
-    $(SS_COMMON_FOLDER)/sbin/libhardware_legacy.so:/root/sbin/libhardware_legacy.so \
-    $(SS_COMMON_FOLDER)/sbin/libnetutils.so:/root/sbin/libnetutils.so \
-    $(SS_COMMON_FOLDER)/sbin/libwpa_client.so:/root/sbin/libwpa_client.so
-endif
 
 # App files
 PRODUCT_COPY_FILES += \

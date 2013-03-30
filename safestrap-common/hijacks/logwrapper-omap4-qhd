@@ -40,7 +40,7 @@ fixReference()
 }
 
 if [ ! -f "/.safestraped" ]; then
-if [ "$2" = "userdata" ]; then
+if [ "$2" = "pds" ]; then
 	# remount root as rw
 	mount -o remount,rw rootfs
 
@@ -50,7 +50,7 @@ if [ "$2" = "userdata" ]; then
 	chown 0.2000 /sbin/bbx
 
 	POWERUP_REASON=$(/sbin/bbx cat /proc/bootinfo | /sbin/bbx grep POWERUPREASON | /sbin/bbx cut -c 19-)
-	MMCPARTS=$(/sbin/bbx cat /proc/cmdline | /sbin/bbx sed -n -e 's/^.*mmcparts=//p' | /sbin/bbx cut -d' ' -f0)
+	#MMCPARTS=$(/sbin/bbx cat /proc/cmdline | /sbin/bbx sed -n -e 's/^.*mmcparts=//p' | /sbin/bbx cut -d' ' -f0)
 
 	if [ "$CHARGER_MODE" != "1" ] || [ "$POWERUP_REASON" != "00000100" ]; then
 		# create SS loopdevs
@@ -112,39 +112,30 @@ if [ "$2" = "userdata" ]; then
 
 		if [ "$ALT_SYSTEM_MODE" = "2" ] || [ $($RECOVERY_DIR/safestrapmenu $ALT_SYSTEM_MODE > /dev/null 2>&1;echo $?) -eq 0 ]; then
 			# filesystem cleanup
+			/sbin/bbx rm /d
 			/sbin/bbx rm /etc
-			/sbin/bbx mkdir /etc
-			/sbin/bbx chmod 755 /etc
+			/sbin/bbx rm -rf /mnt
 			/sbin/bbx rm /sdcard
 			/sbin/bbx rm /sdcard-ext
-			/sbin/bbx rm -rf /mnt
+			/sbin/bbx rm /storage
 			/sbin/bbx rm /vendor
-			/sbin/bbx rm /d
 			/sbin/bbx rm /tmp
 			/sbin/bbx mkdir /tmp
+			# move bins out of the way so they don't block
+			/sbin/bbx mv /sbin/adbd /sbin/adbd.old
+			/sbin/bbx mv /init /init.old
 
 			# move apps into /tmp for execution later
 			/sbin/bbx unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
 			/sbin/bbx chmod 750 /sbin/*
 
-			# move bins out of the way
-			/sbin/bbx mv /sbin/adbd /sbin/adbd.old
-			/sbin/bbx mv /init /init.old
-
 			# extract recovery ramdisk
 			/sbin/bbx cd /
-			/sbin/bbx gzip -dc $RECOVERY_DIR/ss-recovery-ramdisk.img | /sbin/bbx cpio -iu
+			/sbin/bbx gzip -dc $RECOVERY_DIR/ramdisk-recovery.img | /sbin/bbx cpio -iu
 			#/sbin/bbx unzip -o $RECOVERY_DIR/recovery.zip -d /
-			/sbin/bbx cd /sbin
-			/sbin/bbx ln -s /sbin/busybox /sbin/sh
-			/sbin/bbx chmod -R 755 /res/*
-			/sbin/bbx chmod 644 /default.prop
-			/sbin/bbx chmod -R 755 /charger/*
-			/sbin/bbx chmod -R 755 /etc/*
-			/sbin/bbx chmod 755 /init
-			/sbin/bbx chmod 755 /*.rc
-			/sbin/bbx chmod 755 /*.sh
-			/sbin/bbx chmod -R 755 /sbin/*
+			#/sbin/bbx cd /sbin
+			#/sbin/bbx ln -s /sbin/busybox /sbin/sh
+			/sbin/bbx sync
 
 			# setup translate table
 			/sbin/bbx echo `/sbin/bbx ls -l $BLOCKNAME_DIR/ | /sbin/bbx grep "system ->" | /sbin/bbx tail -c 22`=$BLOCKNAME_DIR/system > $SS_DIR/translate

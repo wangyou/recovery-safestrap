@@ -11,6 +11,8 @@ on init
     export ANDROID_DATA /data
     export EXTERNAL_STORAGE /sdcard
 
+    exec /sbin/taskset -p -c 0,1 1
+
     symlink /system/etc /etc
 
     mkdir /boot

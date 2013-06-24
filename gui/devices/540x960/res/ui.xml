@@ -3,8 +3,8 @@
 <recovery>
 	<details>
 		<resolution width="540" height="960" />
-		<author>Hashcode</author>
-		<title>Safestrap</title>
+		<author>TeamWin</author>
+		<title>Backup Naowz</title>
 		<description>Safestrap basic theme</description>
 		<preview>preview.jpg</preview>
 	</details>
@@ -92,10 +92,10 @@
 		<variable name="slider_x" value="50" />
 		<variable name="slider_y" value="820" />
 		<variable name="slider_text_y" value="870" />
-		<variable name="button_text_color" value="#CCCCCC" />
-		<variable name="button_text_warn_color" value="#FF3333" />
+		<variable name="button_text_color" value="#AAAAAA" />
+		<variable name="button_text_warn_color" value="#FFAAAA" />
 		<variable name="button_text_disable_color" value="#666666" />
-		<variable name="button_text_highlight_color" value="#24b29a" />
+		<variable name="button_text_highlight_color" value="#AAFFFF" />
 		<variable name="text_color" value="#FFFFFF" />
 		<variable name="text_success_color" value="#33B5E5" />
 		<variable name="text_fail_color" value="#FF0101" />
@@ -120,8 +120,8 @@
 		<variable name="input_cursor_width" value="3" />
 		<variable name="console_x" value="0" />
 		<variable name="console_width" value="540" />
-		<variable name="console_foreground" value="#BBBBBB" />
-		<variable name="console_background" value="#000000" />
+		<variable name="console_foreground" value="#A0A0A0" />
+		<variable name="console_background" value="#303030" />
 		<variable name="console_scroll" value="#303030" />
 		<variable name="console_action_height" value="380" />
 		<variable name="console_install_height" value="580" />
@@ -129,13 +129,13 @@
 		<variable name="fileselector_x" value="5" />
 		<variable name="fileselector_width" value="530" />
 		<variable name="fileselector_install_height" value="590" />
-		<variable name="fileselector_header_background" value="#0c7c70" />
-		<variable name="fileselector_header_textcolor" value="#CCCCCC" />
-		<variable name="fileselector_header_separatorcolor" value="#24b29a" />
+		<variable name="fileselector_header_background" value="#202020" />
+		<variable name="fileselector_header_textcolor" value="#AAAAAA" />
+		<variable name="fileselector_header_separatorcolor" value="#33B5E5" />
 		<variable name="fileselector_header_separatorheight" value="3" />
-		<variable name="fileselector_separatorcolor" value="#333333" />
+		<variable name="fileselector_separatorcolor" value="#505050" />
 		<variable name="fileselector_separatorheight" value="2" />
-		<variable name="fileselector_background" value="#000000" />
+		<variable name="fileselector_background" value="#303030" />
 		<variable name="fileselector_highlight_color" value="#505050" />
 		<variable name="fileselector_highlight_font_color" value="#33B5E5" />
 		<variable name="fileselector_spacing" value="18" />
@@ -194,7 +194,7 @@
 
 	<templates>
 		<template name="header">
-			<background color="#303030FF" />
+			<background color="#000000FF" />
 
 			<object type="image">
 				<image resource="top_bar" />
@@ -204,7 +204,7 @@
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="100" y="10" />
-				<text>Safestrap Recovery v%ss_version% (TWRP v%tw_version%)</text>
+				<text>Team Win Recovery Project  v%tw_version% (Multi-ROM)</text>
 			</object>
 
 			<object type="text" color="%text_color_safe%">
@@ -435,6 +435,7 @@
 					<action function="page">install</action>
 				</actions>
 			</object>
+
 			<object type="button">
 				<highlight color="%highlight_color%" />
 				<condition var1="tw_bootslot" op="=" var2="stock" />
@@ -483,6 +484,7 @@
 				<image resource="main_button" />
 				<action function="page">wipe</action>
 			</object>
+
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
@@ -1827,19 +1829,6 @@
 				</actions>
 			</object>
 
-<!--
-			<object type="button">
-				<placement x="%col1_x%" y="%row8_text_y%" />
-				<font resource="font" color="%text_color%" />
-				<conditions>
-					<condition var1="tw_has_dual_storage" var2="1" />
-					<condition var1="tw_use_external_storage" var2="1" />
-				</conditions>
-				<text>Use external SD</text>
-				<image resource="radio_true" />
-				<action function="togglestorage">external</action>
-			</object>
-//-->
 			<object type="template" name="footer" />
 		</page>
 

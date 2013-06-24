@@ -194,8 +194,8 @@ static int vk_init(struct ev *e)
         e->vk_count /= 6;
         if (e->vk_count <= 0)
             return -1;
-	else
-            e->down = DOWN_NOT;
+
+        e->down = DOWN_NOT;
     }
 #endif
 

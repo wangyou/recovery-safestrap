@@ -1,3 +1,20 @@
+/*
+	Copyright 2013 bigbiff/Dees_Troy TeamWin
+	This file is part of TWRP/TeamWin Recovery Project.
+
+	TWRP is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	TWRP is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with TWRP.  If not, see <http://www.gnu.org/licenses/>.
+*/
 // objects.h - Base classes for object manager of GUI
 
 #ifndef _OBJECTS_HEADER
@@ -17,6 +34,7 @@ using namespace rapidxml;
 #include "../data.hpp"
 #include "resources.hpp"
 #include "pages.hpp"
+#include "../partitions.hpp"
 
 class RenderObject
 {
@@ -358,6 +376,8 @@ protected:
     bool mRendered;
 	bool hasHighlightColor;
 	bool renderHighlight;
+	bool hasFill;
+	COLOR mFillColor;
 	COLOR mHighlightColor;
 };
 
@@ -587,6 +607,92 @@ protected:
 	int touchDebounce;
 };
 
+class GUIPartitionList : public RenderObject, public ActionObject
+{
+public:
+    GUIPartitionList(xml_node<>* node);
+    virtual ~GUIPartitionList();
+
+public:
+    // Render - Render the full object to the GL surface
+    //  Return 0 on success, <0 on error
+    virtual int Render(void);
+
+    // Update - Update any UI component animations (called <= 30 FPS)
+    //  Return 0 if nothing to update, 1 on success and contiue, >1 if full render required, and <0 on error
+    virtual int Update(void);
+
+    // NotifyTouch - Notify of a touch event
+    //  Return 0 on success, >0 to ignore remainder of touch, and <0 on error
+    virtual int NotifyTouch(TOUCH_STATE state, int x, int y);
+
+    // NotifyVarChange - Notify of a variable change
+    virtual int NotifyVarChange(std::string varName, std::string value);
+
+    // SetPos - Update the position of the render object
+    //  Return 0 on success, <0 on error
+    virtual int SetRenderPos(int x, int y, int w = 0, int h = 0);
+
+    // SetPageFocus - Notify when a page gains or loses focus
+    virtual void SetPageFocus(int inFocus);
+
+protected:
+
+protected:
+    virtual int GetSelection(int x, int y);
+	virtual void MatchList(void);
+
+protected:
+    std::vector<PartitionList> mList;
+	std::string ListType;
+    std::string mVariable;
+	std::string selectedList;
+	std::string currentValue;
+	std::string mHeaderText;
+	std::string mLastValue;
+	int actualLineHeight;
+    int mStart;
+	int startY;
+	int mSeparatorH, mHeaderSeparatorH;
+    int mLineSpacing;
+    int mUpdate;
+    int mBackgroundX, mBackgroundY, mBackgroundW, mBackgroundH, mHeaderH;
+	int mFastScrollW;
+	int mFastScrollLineW;
+	int mFastScrollRectW;
+	int mFastScrollRectH;
+	int mFastScrollRectX;
+	int mFastScrollRectY;
+	int mIconWidth, mIconHeight, mSelectedIconWidth, mSelectedIconHeight, mUnselectedIconWidth, mUnselectedIconHeight, mHeaderIconHeight, mHeaderIconWidth;
+	int scrollingSpeed;
+	int scrollingY;
+	static int mSortOrder;
+    unsigned mFontHeight;
+    unsigned mLineHeight;
+	Resource* mHeaderIcon;
+    Resource* mIconSelected;
+    Resource* mIconUnselected;
+    Resource* mBackground;
+    Resource* mFont;
+    COLOR mBackgroundColor;
+    COLOR mFontColor;
+	COLOR mHeaderBackgroundColor;
+	COLOR mHeaderFontColor;
+	COLOR mSeparatorColor;
+	COLOR mHeaderSeparatorColor;
+	COLOR mFastScrollLineColor;
+	COLOR mFastScrollRectColor;
+	bool hasHighlightColor;
+	bool hasFontHighlightColor;
+	bool isHighlighted;
+	COLOR mHighlightColor;
+	COLOR mFontHighlightColor;
+	int mHeaderIsStatic;
+	int startSelection;
+	int touchDebounce;
+	bool updateList;
+};
+
 // GUIAnimation - Used for animations
 class GUIAnimation : public RenderObject
 {
@@ -802,6 +908,72 @@ public:
 	virtual int KeyDown(int key_code);
 	virtual int KeyUp(int key_code);
 	virtual int KeyRepeat(void);
+};
+
+class GUISliderValue: public RenderObject, public ActionObject, public Conditional
+{
+public:
+	GUISliderValue(xml_node<>* node);
+	virtual ~GUISliderValue();
+
+public:
+	// Render - Render the full object to the GL surface
+	//  Return 0 on success, <0 on error
+	virtual int Render(void);
+
+	// Update - Update any UI component animations (called <= 30 FPS)
+	//  Return 0 if nothing to update, 1 on success and contiue, >1 if full render required, and <0 on error
+	virtual int Update(void);
+
+	// SetPos - Update the position of the render object
+	//  Return 0 on success, <0 on error
+	virtual int SetRenderPos(int x, int y, int w = 0, int h = 0);
+
+	// NotifyTouch - Notify of a touch event
+	//  Return 0 on success, >0 to ignore remainder of touch, and <0 on error
+	virtual int NotifyTouch(TOUCH_STATE state, int x, int y);
+
+	// Notify of a variable change
+	virtual int NotifyVarChange(std::string varName, std::string value);
+
+	// SetPageFocus - Notify when a page gains or loses focus
+	virtual void SetPageFocus(int inFocus);
+
+protected:
+	int measureText(const std::string& str);
+	int valueFromPct(float pct);
+	float pctFromValue(int value);
+	void loadValue(bool force = false);
+
+	std::string mVariable;
+	int mMax;
+	int mMin;
+	int mValue;
+	char *mValueStr;
+	float mValuePct;
+	std::string mMaxStr;
+	std::string mMinStr;
+	Resource *mFont;
+	GUIText* mLabel;
+	int mLabelW;
+	COLOR mTextColor;
+	COLOR mLineColor;
+	COLOR mSliderColor;
+	bool mShowRange;
+	bool mShowCurr;
+	int mLineX;
+	int mLineY;
+	int mLineH;
+	int mLinePadding;
+	int mPadding;
+	int mSliderY;
+	int mSliderW;
+	int mSliderH;
+	bool mRendered;
+	int mFontHeight;
+	GUIAction *mAction;
+	bool mChangeOnDrag;
+	int lineW;
 };
 
 // Helper APIs

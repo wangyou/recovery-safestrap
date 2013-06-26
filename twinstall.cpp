@@ -76,7 +76,7 @@ static int Run_Update_Binary(const char *path, ZipArchive *Zip, int* wipe_cache)
 	} else {
 		// Use the update-binary that is included in the recovery
 		Temp_Binary = INCLUDED_BINARY_NAME;
-		LOGI("Using update-binary included in recovery: '%s'.\n", Temp_Binary.c_str());
+		LOGINFO("Using update-binary included in recovery: '%s'.\n", Temp_Binary.c_str());
 	}
 
 	pipe(pipe_fd);

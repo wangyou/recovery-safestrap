@@ -1,10 +1,15 @@
+#include <sstream>
+
 // action_safestrap.cpp - GUIAction extension
 
 int createImagePartition(string slotName, string imageName, int imageSize, string mountName, int loopNum, int progressBase1, int progressBase2, int progressBase3) {
 	string Command;
 	string result;
+	std::stringstream sstr;
+	string loopNumStr;
 
-
+	sstr << loopNum;
+	loopNumStr = sstr.str();
 	DataManager::SetValue("tw_operation", "Clearing old " + imageName + ".img...");
 	PartitionManager.Mount_By_Path("/" + mountName, true);
 	Command = "rm -rf /ss/safestrap/" + slotName + "/" + imageName + ".img";
@@ -14,7 +19,7 @@ int createImagePartition(string slotName, string imageName, int imageSize, strin
 #ifdef USE_NEW_LOOPBACK
 	Command = "losetup -d /dev/block/loop-" + imageName;
 #else
-	Command = "losetup -d /dev/block/loop" + loopNum;
+	Command = "losetup -d /dev/block/loop" + loopNumStr;
 #endif
 	fprintf(stderr, "createImagePartition::%s\n", Command.c_str());
 	usleep(100000);
@@ -22,7 +27,7 @@ int createImagePartition(string slotName, string imageName, int imageSize, strin
 	DataManager::SetValue("ui_progress", progressBase1);
 
 	DataManager::SetValue("tw_operation", "Creating " + imageName + ".img...");
-	ui_print("Creating %s.img...\n", imageName.c_str());
+	gui_print("Creating %s.img...\n", imageName.c_str());
 
 	Command = "dd if=/dev/zero of=/ss/safestrap/";
 	Command += slotName;
@@ -43,11 +48,11 @@ int createImagePartition(string slotName, string imageName, int imageSize, strin
 	DataManager::SetValue("ui_progress", progressBase2);
 
 	DataManager::SetValue("tw_operation", "Writing filesystem on " + imageName + "...");
-	ui_print("Writing filesystem on %s...\n", imageName.c_str());
+	gui_print("Writing filesystem on %s...\n", imageName.c_str());
 #ifdef USE_NEW_LOOPBACK
 	Command = "losetup /dev/block/loop-" + imageName + " /ss/safestrap/" + slotName + "/" + imageName + ".img";
 #else
-	Command = "losetup /dev/block/loop" + loopNum + " /ss/safestrap/" + slotName + "/" + imageName + ".img";
+	Command = "losetup /dev/block/loop" + loopNumStr + " /ss/safestrap/" + slotName + "/" + imageName + ".img";
 #endif
 	fprintf(stderr, "createImagePartition::%s\n", Command.c_str());
 	usleep(100000);
@@ -57,7 +62,7 @@ int createImagePartition(string slotName, string imageName, int imageSize, strin
 #ifdef USE_NEW_LOOPBACK
 	Command = "/sbin/build-fs.sh " + imageName + " -" + imageName + " " + slotName;
 #else
-	Command = "/sbin/build-fs.sh " + imageName + " " + loopNum + " " + slotName;
+	Command = "/sbin/build-fs.sh " + imageName + " " + loopNumStr + " " + slotName;
 #endif
 	fprintf(stderr, "createImagePartition::%s\n", Command.c_str());
 	usleep(100000);
@@ -75,8 +80,6 @@ int GUIAction::doSafestrapAction(Action action, int isThreaded /* = 0 */) {
 	std::string function = gui_parse_text(action.mFunction);
 	DataManager::GetValue(TW_SIMULATE_ACTIONS, simulate);
 	string result;
-
-	LOGD("doSafestrapAction(%s(%s, %d));\n", function.c_str(), arg.c_str(), isThreaded);
 
 	if (function == "refreshsizesnt")
 	{
@@ -111,19 +114,17 @@ int GUIAction::doSafestrapAction(Action action, int isThreaded /* = 0 */) {
 		// obtain file size:
 		fseek(in, 0, SEEK_END);
 		lSize = ftell(in);
-		LOGD("lSize=%d\n", lSize);
 		if (lSize > 0) {
 			fseek(in, 0, SEEK_SET);
 			// adjust for EOF
 			result_len = fread(array, 1, lSize, in);
-			LOGD("result=%d\n",(long)result_len);
 			if ((long)result_len == lSize) {
 				array[lSize-1] = '\0';
 				str = array;
 			}
 		}
 		fclose(in);
-//		ui_print("bootslot set: %s\n", str.c_str());
+//		gui_print("bootslot set: %s\n", str.c_str());
 		DataManager::SetValue(arg, str);
 		return 0;
 	}
@@ -167,12 +168,10 @@ int GUIAction::doSafestrapAction(Action action, int isThreaded /* = 0 */) {
 				// obtain file size:
 				fseek(in, 0, SEEK_END);
 				lSize = ftell(in);
-				LOGD("lSize=%d\n", lSize);
 				if (lSize > 0) {
 					fseek(in, 0, SEEK_SET);
 					// adjust for EOF
 					result = fread(array, 1, lSize, in);
-					LOGD("result=%d\n",(long)result);
 					if ((long)result == lSize) {
 						array[lSize-1] = '\0';
 						str = array;
@@ -236,7 +235,7 @@ int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */
 
 		if (simulate) {
 			simulate_progress_bar();
-			ui_print("Simulating actions...\n");
+			gui_print("Simulating actions...\n");
 		}
 		else {
 			int system_size = 600;
@@ -257,8 +256,8 @@ int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */
 			if (createImagePartition(arg, "system", system_size, "system", 7, 5, 20, 30) != 0) {
 				fprintf(stderr, "Error creating system partition!");
 				DataManager::SetValue("tw_operation", "Error creating system partition!");
-				ui_print("Error creating system partition!\n");
-				ui_print("Cleaning up files...\n");
+				gui_print("Error creating system partition!\n");
+				gui_print("Cleaning up files...\n");
 				TWFunc::Exec_Cmd("rm -rf /ss/safestrap/" + arg, result);
 				return -1;
 			}
@@ -266,8 +265,8 @@ int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */
 			// USERDATA
 			if (createImagePartition(arg, "userdata", data_size, "data", 6, 35, 60, 70) != 0) {
 				DataManager::SetValue("tw_operation", "Error creating data partition!");
-				ui_print("Error creating data partition!\n");
-				ui_print("Cleaning up files...\n");
+				gui_print("Error creating data partition!\n");
+				gui_print("Cleaning up files...\n");
 				TWFunc::Exec_Cmd("rm -rf /ss/safestrap/" + arg, result);
 				return -1;
 			}
@@ -280,8 +279,8 @@ int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */
 
 			if (createImagePartition(arg, "cache", cache_size, "cache", 5, 75, 85, 90) != 0) {
 				DataManager::SetValue("tw_operation", "Error creating cache partition!");
-				ui_print("Error creating cache partition!\n");
-				ui_print("Cleaning up files...\n");
+				gui_print("Error creating cache partition!\n");
+				gui_print("Cleaning up files...\n");
 				TWFunc::Exec_Cmd("rm -rf /ss/safestrap/" + arg, result);
 				PartitionManager.Mount_By_Path("/cache", true);
 				TWFunc::Exec_Cmd("rm -rf /cache/recovery", result);
@@ -296,12 +295,12 @@ int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */
 			TWFunc::Exec_Cmd("rm -rf /tmp/recovery", result);
 
 			DataManager::SetValue("tw_operation", "Activating ROM slot...");
-			ui_print("Activating ROM slot...\n");
+			gui_print("Activating ROM slot...\n");
 			TWFunc::Exec_Cmd("echo \"" + arg + "\" > /ss/safestrap/active_slot", result);
 			DataManager::SetValue("ui_progress", 95);
 
 			DataManager::SetValue("tw_operation", "Updating filesystem details...");
-			ui_print("Updating filesystem details...\n");
+			gui_print("Updating filesystem details...\n");
 			PartitionManager.Update_System_Details();
 			DataManager::SetValue("ui_progress", 100);
 			DataManager::SetValue("tw_bootslot", arg);
@@ -320,7 +319,7 @@ int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */
 
 		if (simulate) {
 			simulate_progress_bar();
-			ui_print("Simulating actions...\n");
+			gui_print("Simulating actions...\n");
 		}
 		else {
 			TWFunc::Exec_Cmd("rm -rf /ss/safestrap/" + arg, result);

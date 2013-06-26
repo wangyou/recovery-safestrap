@@ -793,7 +793,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
         if (function == "wipe")
         {
             char cmd[512];
-            int ret_val = 0;
+            int ret_val = false;
             operation_start("Format");
             DataManager::SetValue("tw_partition", arg);
 

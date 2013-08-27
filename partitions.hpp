@@ -122,6 +122,7 @@ protected:
 #ifdef TW_INCLUDE_CRYPTO_SAMSUNG
 	string EcryptFS_Password;                                                 // Have to store the encryption password to remount
 #endif
+	bool Hidden;                                                              // Dont show in lists
 
 private:
 	bool Process_Flags(string Flags, bool Display_Error);                     // Process custom fstab flags

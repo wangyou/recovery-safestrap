@@ -100,6 +100,7 @@ TWPartition::TWPartition(void) {
 #ifdef TW_INCLUDE_CRYPTO_SAMSUNG
 	EcryptFS_Password = "";
 #endif
+	Hidden = false;
 }
 
 TWPartition::~TWPartition(void) {
@@ -416,6 +417,8 @@ bool TWPartition::Process_Flags(string Flags, bool Display_Error) {
 			ptr += 15;
 			Is_SubPartition = true;
 			SubPartition_Of = ptr;
+		} else if (strcmp(ptr, "hidden") == 0) {
+			Hidden = true;
 		} else if (strcmp(ptr, "ignoreblkid") == 0) {
 			Ignore_Blkid = true;
 		} else if (strcmp(ptr, "retainlayoutversion") == 0) {

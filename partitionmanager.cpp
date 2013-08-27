@@ -1746,7 +1746,7 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 	std::vector<TWPartition*>::iterator iter;
 	if (ListType == "mount") {
 		for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
-			if ((*iter)->Can_Be_Mounted && !(*iter)->Is_SubPartition) {
+			if ((*iter)->Can_Be_Mounted && !(*iter)->Is_SubPartition && !(*iter)->Hidden) {
 				struct PartitionList part;
 				part.Display_Name = (*iter)->Display_Name;
 				part.Mount_Point = (*iter)->Mount_Point;
@@ -1758,7 +1758,7 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 		char free_space[255];
 		string Current_Storage = DataManager::GetCurrentStoragePath();
 		for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
-			if ((*iter)->Is_Storage) {
+			if ((*iter)->Is_Storage && !(*iter)->Hidden) {
 				struct PartitionList part;
 				sprintf(free_space, "%llu", (*iter)->Free / 1024 / 1024);
 				part.Display_Name = (*iter)->Storage_Name + " (";
@@ -1776,7 +1776,7 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 		char backup_size[255];
 		unsigned long long Backup_Size;
 		for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
-			if ((*iter)->Can_Be_Backed_Up && !(*iter)->Is_SubPartition && (*iter)->Is_Present) {
+			if ((*iter)->Can_Be_Backed_Up && !(*iter)->Is_SubPartition && (*iter)->Is_Present && !(*iter)->Hidden) {
 				struct PartitionList part;
 				Backup_Size = (*iter)->Backup_Size;
 				if ((*iter)->Has_SubPartition) {
@@ -1805,7 +1805,7 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 			size_t start_pos = 0, end_pos = Restore_List.find(";", start_pos);
 			while (end_pos != string::npos && start_pos < Restore_List.size()) {
 				restore_path = Restore_List.substr(start_pos, end_pos - start_pos);
-				if ((restore_part = Find_Partition_By_Path(restore_path)) != NULL && !restore_part->Is_SubPartition) {
+				if ((restore_part = Find_Partition_By_Path(restore_path)) != NULL && !restore_part->Is_SubPartition && !(*iter)->Hidden) {
 					if (restore_part->Backup_Name == "recovery") {
 						// Don't allow restore of recovery (causes problems on some devices)
 					} else {
@@ -1829,7 +1829,7 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 		dalvik.selected = 0;
 		Partition_List->push_back(dalvik);
 		for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
-			if ((*iter)->Wipe_Available_in_GUI && !(*iter)->Is_SubPartition) {
+			if ((*iter)->Wipe_Available_in_GUI && !(*iter)->Is_SubPartition && !(*iter)->Hidden) {
 				struct PartitionList part;
 				part.Display_Name = (*iter)->Display_Name;
 				part.Mount_Point = (*iter)->Mount_Point;

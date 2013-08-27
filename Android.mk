@@ -14,6 +14,9 @@
 
 LOCAL_PATH := $(call my-dir)
 
+SAFESTRAP_VERSION := 3.50
+COMMON_GLOBAL_CFLAGS += -DSS_VERSION_STR=\"$(SAFESTRAP_VERSION)\"
+
 TARGET_RECOVERY_GUI := true
 
 LOCAL_SRC_FILES := \
@@ -335,6 +338,10 @@ include $(commands_recovery_local_path)/libjpegtwrp/Android.mk \
     $(commands_recovery_local_path)/libcrecovery/Android.mk \
     $(commands_recovery_local_path)/libblkid/Android.mk \
     $(commands_recovery_local_path)/minuitwrp/Android.mk
+
+#includes for Safestrap
+include $(commands_recovery_local_path)/safestrap-common/Android.mk
+include $(commands_recovery_local_path)/../../external/safestrap/safestrap.mk
 
 ifeq ($(TW_INCLUDE_CRYPTO_SAMSUNG), true)
     include $(commands_recovery_local_path)/crypto/libcrypt_samsung/Android.mk

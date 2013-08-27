@@ -89,6 +89,7 @@ LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/res
 
 TWRP_RES_LOC := $(commands_recovery_local_path)/gui/devices
 TWRP_RES_GEN := $(intermediates)/twrp
+SS_COMMON := $(TWRP_RES_LOC)/../../safestrap-common
 
 $(TWRP_RES_GEN):
 	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res/
@@ -98,6 +99,19 @@ $(TWRP_RES_GEN):
 	ln -sf /sbin/busybox $(TARGET_RECOVERY_ROOT_OUT)/sbin/sh
 	ln -sf /sbin/pigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gzip
 	ln -sf /sbin/unpigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gunzip
+	# Safestrap Setup
+	rm -rf $(OUT)/2nd-init-files
+	rm -rf $(OUT)/APP
+	rm -rf $(OUT)/install-files
+	mkdir -p $(OUT)/2nd-init-files
+	mkdir -p $(OUT)/install-files/etc/safestrap/flags
+	mkdir -p $(OUT)/APP
+	cp -p $(SS_COMMON)/2nd-init-files/* $(OUT)/2nd-init-files
+	cp -p $(SS_COMMON)/flags/* $(OUT)/install-files/etc/safestrap/flags/
+	cp -p $(SS_COMMON)/bbx $(OUT)/install-files/etc/safestrap/bbx
+	cp -p $(SS_COMMON)/busybox $(OUT)/APP/busybox
+	# Call out to external/safestrap
+	$(SS_COMMON)/../../../external/safestrap/build-safestrap.sh
 
 LOCAL_GENERATED_SOURCES := $(TWRP_RES_GEN)
 LOCAL_SRC_FILES := twrp $(TWRP_RES_GEN)

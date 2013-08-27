@@ -48,6 +48,11 @@ blanktimer::blanktimer(void) {
 	setTime(0);
 	setConBlank(0);
 	orig_brightness = getBrightness();
+	screenoff = false;
+}
+
+bool blanktimer::IsScreenOff() {
+	return screenoff;
 }
 
 void blanktimer::setTime(int newtime) {
@@ -92,6 +97,8 @@ int  blanktimer::setClockTimer(void) {
 		if (sleepTimer && diff.tv_sec > sleepTimer && conblank < 2) {
 			setConBlank(2);
 			setBrightness(0);
+			screenoff = true;
+			TWFunc::check_and_run_script("/sbin/postscreenblank.sh", "blank");
 			PageManager::ChangeOverlay("lock");
 		}
 #ifndef TW_NO_SCREEN_BLANK
@@ -143,9 +150,11 @@ void blanktimer::resetTimerAndUnblank(void) {
 				break;
 			}
 #endif
+			TWFunc::check_and_run_script("/sbin/postscreenunblank.sh", "unblank");
 			// No break here, we want to keep going
 		case 2:
 			gui_forceRender();
+			screenoff = false;
 			// No break here, we want to keep going
 		case 1:
 			setBrightness(orig_brightness);

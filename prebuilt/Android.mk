@@ -46,8 +46,14 @@ RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libbmlutils.so
 RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libflashutils.so
 RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libstlport.so
 #RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libmincrypt.so
-RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libext4_utils.so
+ifeq ($(TARGET_USERIMAGES_USE_EXT4), true)
+    RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libext4_utils.so
+endif
 RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libaosprecovery.so
+RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libjpeg.so
+ifneq ($(wildcard external/libselinux/Android.mk),)
+    RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libselinux.so
+endif
 ifeq ($(BUILD_ID), GINGERBREAD)
     TW_NO_EXFAT := true
 endif
@@ -78,6 +84,10 @@ ifeq ($(TARGET_USERIMAGES_USE_EXT4), true)
 endif
 ifneq ($(wildcard system/core/libsparse/Android.mk),)
     RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libsparse.so
+endif
+ifneq ($(TW_EXCLUDE_ENCRYPTED_BACKUPS), true)
+    RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/sbin/openaes
+    RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libopenaes.so
 endif
 
 TWRP_AUTOGEN := $(intermediates)/teamwin
@@ -120,6 +130,17 @@ include $(BUILD_PREBUILT)
 	LOCAL_SRC_FILES := $(LOCAL_MODULE)
 	include $(BUILD_PREBUILT)
 #endif
+
+# copy license file for OpenAES
+ifneq ($(TW_EXCLUDE_ENCRYPTED_BACKUPS), true)
+	include $(CLEAR_VARS)
+	LOCAL_MODULE := ../openaes/LICENSE
+	LOCAL_MODULE_TAGS := eng
+	LOCAL_MODULE_CLASS := RECOVERY_EXECUTABLES
+	LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/license/openaes
+	LOCAL_SRC_FILES := $(LOCAL_MODULE)
+	include $(BUILD_PREBUILT)
+endif
 
 ifeq ($(TW_INCLUDE_DUMLOCK), true)
 	#htcdumlock for /system for dumlock

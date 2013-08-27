@@ -8,12 +8,12 @@ using namespace std;
 
 typedef enum
 {
-    rb_current = 0,
-    rb_system,
-    rb_recovery,
-    rb_poweroff,
-    rb_bootloader,     // May also be fastboot
-    rb_download,
+	rb_current = 0,
+	rb_system,
+	rb_recovery,
+	rb_poweroff,
+	rb_bootloader,     // May also be fastboot
+	rb_download,
 } RebootCommand;
 
 // Partition class
@@ -50,6 +50,11 @@ public:
 	static bool Fix_su_Perms(void); // sets proper permissions for su binaries and superuser apk
 	static int tw_chmod(string fn, string mode); // chmod function that converts a 4 char string into st_mode automatically
 	static bool Install_SuperSU(void); // Installs su binary and apk and sets proper permissions
+	static vector<string> split_string(const string &in, char del, bool skip_empty);
+	static int Get_File_Type(string fn); // Determines file type, 0 for unknown, 1 for gzip, 2 for OAES encrypted
+	static int Try_Decrypting_File(string fn, string password); // -1 for some error, 0 for failed to decrypt, 1 for decrypted, 3 for decrypted and found gzip format
+	static bool Try_Decrypting_Backup(string Restore_Path, string Password); // true for success, false for failed to decrypt
+	static int Wait_For_Child(pid_t pid, int *status, string Child_Name); // Waits for pid to exit and checks exit status
 
 private:
 	static void Copy_Log(string Source, string Destination);

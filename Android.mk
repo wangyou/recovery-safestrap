@@ -62,7 +62,7 @@ LOCAL_STATIC_LIBRARIES :=
 LOCAL_SHARED_LIBRARIES :=
 
 LOCAL_STATIC_LIBRARIES += libcrecovery libguitwrp
-LOCAL_SHARED_LIBRARIES += libz libc libstlport libcutils libstdc++ libext4_utils libtar libblkid libminuitwrp libminadbd libmtdutils libminzip libaosprecovery
+LOCAL_SHARED_LIBRARIES += libz libc libstlport libcutils libstdc++ libtar libblkid libminuitwrp libminadbd libmtdutils libminzip libaosprecovery
 
 ifneq ($(wildcard system/core/libsparse/Android.mk),)
 LOCAL_SHARED_LIBRARIES += libsparse
@@ -71,14 +71,24 @@ endif
 ifeq ($(TARGET_USERIMAGES_USE_EXT4), true)
     LOCAL_CFLAGS += -DUSE_EXT4
     LOCAL_C_INCLUDES += system/extras/ext4_utils
-    #LOCAL_STATIC_LIBRARIES += libext4_utils
+    LOCAL_SHARED_LIBRARIES += libext4_utils
 endif
-
+LOCAL_C_INCLUDES += external/libselinux/include
 ifeq ($(HAVE_SELINUX), true)
   #LOCAL_C_INCLUDES += external/libselinux/include
   #LOCAL_STATIC_LIBRARIES += libselinux
   #LOCAL_CFLAGS += -DHAVE_SELINUX -g
 endif # HAVE_SELINUX
+ifneq ($(wildcard external/libselinux/Android.mk),)
+    LOCAL_C_INCLUDES += external/libselinux/include
+    LOCAL_SHARED_LIBRARIES += libselinux
+    LOCAL_CFLAGS += -DHAVE_SELINUX -g
+    ifneq ($(TARGET_USERIMAGES_USE_EXT4), true)
+        LOCAL_CFLAGS += -DUSE_EXT4
+        LOCAL_C_INCLUDES += system/extras/ext4_utils
+        LOCAL_SHARED_LIBRARIES += libext4_utils
+    endif
+endif
 
 # This binary is in the recovery ramdisk, which is otherwise a copy of root.
 # It gets copied there in config/Makefile.  LOCAL_MODULE_TAGS suppresses
@@ -95,6 +105,9 @@ endif
 LOCAL_C_INCLUDES += system/extras/ext4_utils
 
 #TWRP Build Flags
+ifneq ($(TW_NO_SCREEN_TIMEOUT),)
+    LOCAL_CFLAGS += -DTW_NO_SCREEN_TIMEOUT
+endif
 ifeq ($(BOARD_HAS_NO_REAL_SDCARD), true)
     LOCAL_CFLAGS += -DBOARD_HAS_NO_REAL_SDCARD
 endif
@@ -241,6 +254,11 @@ endif
 ifeq ($(TARGET_BOARD_PLATFORM),rk30xx)
     LOCAL_CFLAGS += -DRK3066
 endif
+ifneq ($(TW_EXCLUDE_ENCRYPTED_BACKUPS), true)
+    LOCAL_SHARED_LIBRARIES += libopenaes
+else
+    LOCAL_CFLAGS += -DTW_EXCLUDE_ENCRYPTED_BACKUPS
+endif
 
 ifeq ($(TARGET_USERIMAGES_USE_EXT4), true)
     LOCAL_CFLAGS += -DUSE_EXT4
@@ -304,7 +322,7 @@ LOCAL_MODULE := libaosprecovery
 LOCAL_MODULE_TAGS := eng
 LOCAL_MODULES_TAGS = optional
 LOCAL_CFLAGS = 
-LOCAL_SRC_FILES = adb_install.cpp bootloader.cpp verifier.cpp
+LOCAL_SRC_FILES = adb_install.cpp bootloader.cpp verifier.cpp mtdutils/mtdutils.c
 LOCAL_SHARED_LIBRARIES += libc liblog libcutils libmtdutils
 LOCAL_STATIC_LIBRARIES += libmincrypt
 
@@ -321,8 +339,7 @@ include $(LOCAL_PATH)/minui/Android.mk \
     $(LOCAL_PATH)/applypatch/Android.mk
 
 #includes for TWRP
-include $(commands_recovery_local_path)/libjpegtwrp/Android.mk \
-    $(commands_recovery_local_path)/injecttwrp/Android.mk \
+include $(commands_recovery_local_path)/injecttwrp/Android.mk \
     $(commands_recovery_local_path)/htcdumlock/Android.mk \
     $(commands_recovery_local_path)/gui/Android.mk \
     $(commands_recovery_local_path)/mmcutils/Android.mk \
@@ -337,7 +354,8 @@ include $(commands_recovery_local_path)/libjpegtwrp/Android.mk \
     $(commands_recovery_local_path)/crypto/cryptfs/Android.mk \
     $(commands_recovery_local_path)/libcrecovery/Android.mk \
     $(commands_recovery_local_path)/libblkid/Android.mk \
-    $(commands_recovery_local_path)/minuitwrp/Android.mk
+    $(commands_recovery_local_path)/minuitwrp/Android.mk \
+    $(commands_recovery_local_path)/openaes/Android.mk
 
 #includes for Safestrap
 include $(commands_recovery_local_path)/safestrap-common/Android.mk
@@ -362,6 +380,11 @@ ifneq ($(TW_NO_EXFAT), true)
 endif
 ifeq ($(TW_INCLUDE_CRYPTO), true)
     include $(commands_recovery_local_path)/crypto/ics/Android.mk
+endif
+
+# FB2PNG
+ifeq ($(TW_INCLUDE_FB2PNG), true)
+    include $(commands_recovery_local_path)/fb2png/Android.mk
 endif
 
 commands_recovery_local_path :=

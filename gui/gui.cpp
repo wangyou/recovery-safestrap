@@ -580,6 +580,8 @@ extern "C" int gui_init(void)
 
 	gr_init();
 
+// HASH: Disable curtain for Safestrap (sorry Dees_Troy!)
+#if 0
 	if (res_create_surface("/res/images/curtain.jpg", &gCurtain))
 	{
 		printf
@@ -588,6 +590,7 @@ extern "C" int gui_init(void)
 	}
 
 	curtainSet();
+#endif
 
 	ev_init();
 	return 0;

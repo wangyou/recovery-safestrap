@@ -92,12 +92,12 @@
 		<variable name="slider_x" value="50" />
 		<variable name="slider_y" value="820" />
 		<variable name="slider_text_y" value="870" />
-		<variable name="button_text_color" value="#AAAAAA" />
-		<variable name="button_text_warn_color" value="#FFAAAA" />
+		<variable name="button_text_color" value="#CCCCCC" />
+		<variable name="button_text_warn_color" value="#FF3333" />
 		<variable name="button_text_disable_color" value="#666666" />
-		<variable name="button_text_highlight_color" value="#AAFFFF" />
+		<variable name="button_text_highlight_color" value="#33FFDD" />
 		<variable name="text_color" value="#FFFFFF" />
-		<variable name="text_success_color" value="#33B5E5" />
+		<variable name="text_success_color" value="#25B39B" />
 		<variable name="text_fail_color" value="#FF0101" />
 		<variable name="text_color_safe" value="#33E5B5" />
 		<variable name="text_color_unsafe" value="#FF0101" />
@@ -116,13 +116,13 @@
 		<variable name="input_width" value="520" />
 		<variable name="input_height" value="40" />
 		<variable name="input_background_color" value="#303030" />
-		<variable name="input_cursor_color" value="#33B5E5" />
+		<variable name="input_cursor_color" value="#25B39B" />
 		<variable name="input_cursor_width" value="3" />
 		<variable name="console_x" value="0" />
 		<variable name="console_width" value="540" />
 		<variable name="console_foreground" value="#A0A0A0" />
-		<variable name="console_background" value="#303030" />
-		<variable name="console_scroll" value="#303030" />
+		<variable name="console_background" value="#000000" />
+		<variable name="console_scroll" value="#000000" />
 		<variable name="console_action_height" value="380" />
 		<variable name="console_install_height" value="580" />
 		<variable name="console_installdone_height" value="380" />
@@ -131,13 +131,13 @@
 		<variable name="fileselector_install_height" value="590" />
 		<variable name="fileselector_header_background" value="#202020" />
 		<variable name="fileselector_header_textcolor" value="#AAAAAA" />
-		<variable name="fileselector_header_separatorcolor" value="#33B5E5" />
+		<variable name="fileselector_header_separatorcolor" value="#25B39B" />
 		<variable name="fileselector_header_separatorheight" value="3" />
 		<variable name="fileselector_separatorcolor" value="#505050" />
 		<variable name="fileselector_separatorheight" value="2" />
-		<variable name="fileselector_background" value="#303030" />
+		<variable name="fileselector_background" value="#000000" />
 		<variable name="fileselector_highlight_color" value="#505050" />
-		<variable name="fileselector_highlight_font_color" value="#33B5E5" />
+		<variable name="fileselector_highlight_font_color" value="#25B39B" />
 		<variable name="fileselector_spacing" value="18" />
 		<variable name="fastscroll_linecolor" value="#808080" />
 		<variable name="fastscroll_rectcolor" value="#808080" />
@@ -169,7 +169,7 @@
 		<variable name="row_dst_text_y" value="540" />
 		<variable name="row_offset_text_y" value="580" />
 		<variable name="row_offset_medium_y" value="630" />
-		<variable name="button_fill_color" value="#303030" />
+		<variable name="button_fill_color" value="#000000" />
 		<variable name="button_fill_full_width" value="520" />
 		<variable name="button_fill_main_width" value="253" />
 		<variable name="button_fill_main_height" value="162" />
@@ -185,7 +185,7 @@
 		<variable name="wipe_button_y" value="475" />
 		<variable name="slidervalue_w" value="520" />
 		<variable name="slidervalue_line_clr" value="#FFFFFF" />
-		<variable name="slidervalue_slider_clr" value="#33B5E5" />
+		<variable name="slidervalue_slider_clr" value="#25B39B" />
 		<variable name="slidervalue_lineh" value="2" />
 		<variable name="slidervalue_padding" value="15" />
 		<variable name="slidervalue_sliderw" value="8" />
@@ -194,7 +194,7 @@
 
 	<templates>
 		<template name="header">
-			<background color="#000000FF" />
+			<background color="#333333FF" />
 
 			<object type="image">
 				<image resource="top_bar" />
@@ -204,7 +204,7 @@
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="100" y="10" />
-				<text>Team Win Recovery Project  v%tw_version% (Multi-ROM)</text>
+				<text>Safestrap %ss_version% (TWRP v%tw_version%)</text>
 			</object>
 
 			<object type="text" color="%text_color_safe%">
@@ -357,7 +357,7 @@
 			<object type="console">
 				<slideout resource="slideout" x="240" y="920" />
 				<placement x="%console_x%" y="0" w="%console_width%" h="920" />
-				<color foreground="#A0A0A0" background="#303030" scroll="#303030" />
+				<color foreground="%console_foreground%" background="%console_background%" scroll="%console_scroll%" />
 				<font resource="fixed" />
 			</object>
 		</template>
@@ -478,6 +478,7 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
+				<condition var1="tw_bootslot" op="!=" var2="stock" />
 				<placement x="%col2_x%" y="%row3_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Wipe</text>
@@ -485,6 +486,15 @@
 				<action function="page">wipe</action>
 			</object>
 
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<condition var1="tw_bootslot" op="=" var2="stock" />
+				<placement x="%col2_x%" y="%row3_y%" />
+				<font resource="font" color="%button_text_warn_color%" />
+				<text>Wipe</text>
+				<image resource="main_button" />
+				<action function="page">wipe</action>
+			</object>
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
@@ -4077,7 +4087,7 @@
 				<placement x="%col_center_x%" y="%row4_y%" />
 				<font resource="font" color="%button_text_disable_color%" />
 				<text>Create ROM Slot</text>
-				<image resource="main_button_highlight" />
+				<image resource="main_button" />
 			</object>
 
 			<object type="button">

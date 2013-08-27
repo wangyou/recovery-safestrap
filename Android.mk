@@ -14,9 +14,6 @@
 
 LOCAL_PATH := $(call my-dir)
 
-SAFESTRAP_VERSION := 3.50
-COMMON_GLOBAL_CFLAGS += -DSS_VERSION_STR=\"$(SAFESTRAP_VERSION)\"
-
 TARGET_RECOVERY_GUI := true
 
 LOCAL_SRC_FILES := \
@@ -61,7 +58,7 @@ LOCAL_C_INCLUDES += bionic external/stlport/stlport
 LOCAL_STATIC_LIBRARIES :=
 LOCAL_SHARED_LIBRARIES :=
 
-LOCAL_STATIC_LIBRARIES += libcrecovery libguitwrp
+LOCAL_STATIC_LIBRARIES += libcrecovery libguitwrp libext4_utils_static
 LOCAL_SHARED_LIBRARIES += libz libc libstlport libcutils libstdc++ libtar libblkid libminuitwrp libminadbd libmtdutils libminzip libaosprecovery
 
 ifneq ($(wildcard system/core/libsparse/Android.mk),)
@@ -69,9 +66,9 @@ LOCAL_SHARED_LIBRARIES += libsparse
 endif
 
 ifeq ($(TARGET_USERIMAGES_USE_EXT4), true)
-    LOCAL_CFLAGS += -DUSE_EXT4
-    LOCAL_C_INCLUDES += system/extras/ext4_utils
-    LOCAL_SHARED_LIBRARIES += libext4_utils
+#    LOCAL_CFLAGS += -DUSE_EXT4
+#    LOCAL_C_INCLUDES += system/extras/ext4_utils
+#    LOCAL_SHARED_LIBRARIES += libext4_utils
 endif
 LOCAL_C_INCLUDES += external/libselinux/include
 ifeq ($(HAVE_SELINUX), true)
@@ -84,11 +81,14 @@ ifneq ($(wildcard external/libselinux/Android.mk),)
     LOCAL_SHARED_LIBRARIES += libselinux
     LOCAL_CFLAGS += -DHAVE_SELINUX -g
     ifneq ($(TARGET_USERIMAGES_USE_EXT4), true)
-        LOCAL_CFLAGS += -DUSE_EXT4
-        LOCAL_C_INCLUDES += system/extras/ext4_utils
-        LOCAL_SHARED_LIBRARIES += libext4_utils
+#        LOCAL_CFLAGS += -DUSE_EXT4
+#        LOCAL_C_INCLUDES += system/extras/ext4_utils
+#        LOCAL_SHARED_LIBRARIES += libext4_utils
     endif
 endif
+LOCAL_CFLAGS += -DUSE_EXT4
+LOCAL_C_INCLUDES += system/extras/ext4_utils
+#LOCAL_SHARED_LIBRARIES += libext4_utils
 
 # This binary is in the recovery ramdisk, which is otherwise a copy of root.
 # It gets copied there in config/Makefile.  LOCAL_MODULE_TAGS suppresses

@@ -18,6 +18,7 @@
 #define _VARIABLES_HEADER_
 
 #define TW_VERSION_STR              "2.6.0.4"
+#define SS_VERSION_STR              "3.50"
 
 #define TW_USE_COMPRESSION_VAR      "tw_use_compression"
 #define TW_FILENAME                 "tw_filename"
@@ -183,9 +184,6 @@
 #define TMP_LOG_FILE "/tmp/recovery.log"
 
 // Safestrap
-#ifndef SS_VERSION_STR
-#define SS_VERSION_STR                   "3.x"
-#endif
 #define SS_VERSION_VAR                   "ss_version"
 #define TW_SS_STORAGE_FREE_SIZE          "tw_ss_storage_free_size"
 #define TW_SS_DEFAULT_VIRT_SYSTEM_SIZE   "tw_ss_default_virt_system_size"

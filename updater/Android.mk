@@ -57,7 +57,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/..
 # any subsidiary static libraries required for your registered
 # extension libs.
 
-inc := $(call intermediates-dir-for,PACKAGING,updater_extensions)/register.inc
+#inc := $(call intermediates-dir-for,PACKAGING,updater_extensions)/register.inc
 
 # Encode the value of TARGET_RECOVERY_UPDATER_LIBS into the filename of the dependency.
 # So if TARGET_RECOVERY_UPDATER_LIBS is changed, a new dependency file will be generated.
@@ -85,7 +85,9 @@ LOCAL_C_INCLUDES += $(dir $(inc))
 inc :=
 inc_dep_file :=
 
-LOCAL_MODULE := updater
+LOCAL_MODULE := update-binary
+LOCAL_MODULE_CLASS := RECOVERY_EXECUTABLES
+LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/sbin
 
 LOCAL_FORCE_STATIC_EXECUTABLE := true
 

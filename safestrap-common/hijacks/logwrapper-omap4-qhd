@@ -125,16 +125,11 @@ if [ "$2" = "pds" ]; then
 			/sbin/bbx mv /sbin/adbd /sbin/adbd.old
 			/sbin/bbx mv /init /init.old
 
-			# move apps into /tmp for execution later
-			/sbin/bbx unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
-			/sbin/bbx chmod 750 /sbin/*
-
 			# extract recovery ramdisk
 			/sbin/bbx cd /
 			/sbin/bbx gzip -dc $RECOVERY_DIR/ramdisk-recovery.img | /sbin/bbx cpio -iu
-			#/sbin/bbx unzip -o $RECOVERY_DIR/recovery.zip -d /
-			#/sbin/bbx cd /sbin
-			#/sbin/bbx ln -s /sbin/busybox /sbin/sh
+			/sbin/bbx unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
+			/sbin/bbx chmod 750 /sbin/*
 			/sbin/bbx sync
 
 			# setup translate table

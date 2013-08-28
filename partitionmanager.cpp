@@ -50,7 +50,7 @@
 	#include "cutils/properties.h"
 #endif
 
-int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error) {
+int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error, bool Reset_Partition_List) {
 	FILE *fstabFile;
 	char fstab_line[MAX_FSTAB_LINE_LENGTH];
 	bool Found_Settings_Storage = false;
@@ -60,6 +60,9 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 		LOGERR("Critical Error: Unable to open fstab at '%s'.\n", Fstab_Filename.c_str());
 		return false;
 	}
+
+	if (Reset_Partition_List)
+		Partitions.clear();
 
 	while (fgets(fstab_line, sizeof(fstab_line), fstabFile) != NULL) {
 		if (fstab_line[0] != '/')
@@ -119,6 +122,7 @@ int TWPartitionManager::Write_Fstab(void) {
 	std::vector<TWPartition*>::iterator iter;
 	string Line;
 
+	LOGINFO("Updating /etc/fstab...");
 	fp = fopen("/etc/fstab", "w");
 	if (fp == NULL) {
 		LOGINFO("Can not open /etc/fstab.\n");
@@ -127,6 +131,7 @@ int TWPartitionManager::Write_Fstab(void) {
 	for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
 		if ((*iter)->Can_Be_Mounted) {
 			Line = (*iter)->Actual_Block_Device + " " + (*iter)->Mount_Point + " " + (*iter)->Current_File_System + " rw\n";
+			LOGINFO("Fstab: Adding %s", Line.c_str());
 			fputs(Line.c_str(), fp);
 		}
 		// Handle subpartition tracking
@@ -1831,7 +1836,7 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 			while (end_pos != string::npos && start_pos < Restore_List.size()) {
 				restore_path = Restore_List.substr(start_pos, end_pos - start_pos);
 				if ((restore_part = Find_Partition_By_Path(restore_path)) != NULL) {
-					if ((restore_part->Backup_Name == "recovery" || restore_part->Is_SubPartition) && !(*iter)->Hidden) {
+					if ((restore_part->Backup_Name == "recovery" || restore_part->Is_SubPartition) && !restore_part->Hidden) {
 						// Don't allow restore of recovery (causes problems on some devices)
 						// Don't add subpartitions to the list of items
 					} else {

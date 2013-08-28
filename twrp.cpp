@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
 	printf("=> Linking mtab\n");
 	symlink("/proc/mounts", "/etc/mtab");
 	printf("=> Processing recovery.fstab\n");
-	if (!PartitionManager.Process_Fstab("/etc/recovery.fstab", 1)) {
+	if (!PartitionManager.Process_Fstab("/etc/recovery.fstab", true, true)) {
 		LOGERR("Failing out of recovery due to problem with recovery.fstab.\n");
 		return -1;
 	}

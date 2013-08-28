@@ -85,8 +85,9 @@ int GUIAction::doSafestrapAction(Action action, int isThreaded /* = 0 */) {
 	{
 		if (simulate) {
 			simulate_progress_bar();
-		} else
+		} else {
 			PartitionManager.Update_System_Details();
+		}
 		return 0;
 	}
 
@@ -95,8 +96,9 @@ int GUIAction::doSafestrapAction(Action action, int isThreaded /* = 0 */) {
 		PartitionManager.UnMount_By_Path("/data", true);
 		PartitionManager.UnMount_By_Path("/cache", true);
 		TWFunc::Exec_Cmd("/sbin/changeslot.sh " + arg, result);
-		PartitionManager.Mount_By_Path("/cache", true);
+		PartitionManager.Process_Fstab("/etc/recovery.fstab", true, true);
 		PartitionManager.Update_System_Details();
+		PartitionManager.Mount_By_Path("/cache", true);
 		DataManager::SetValue("tw_bootslot", arg);
 		return 0;
 	}
@@ -296,11 +298,12 @@ int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */
 
 			DataManager::SetValue("tw_operation", "Activating ROM slot...");
 			gui_print("Activating ROM slot...\n");
-			TWFunc::Exec_Cmd("echo \"" + arg + "\" > /ss/safestrap/active_slot", result);
+			TWFunc::Exec_Cmd("/sbin/changeslot.sh " + arg, result);
 			DataManager::SetValue("ui_progress", 95);
 
 			DataManager::SetValue("tw_operation", "Updating filesystem details...");
 			gui_print("Updating filesystem details...\n");
+			PartitionManager.Process_Fstab("/etc/recovery.fstab", true, true);
 			PartitionManager.Update_System_Details();
 			DataManager::SetValue("ui_progress", 100);
 			DataManager::SetValue("tw_bootslot", arg);

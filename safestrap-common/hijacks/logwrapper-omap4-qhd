@@ -1,6 +1,6 @@
 #!/system/bin/sh
 # By: Hashcode
-# Last Editted: 03/22/2013
+# Last Editted: 08/28/2013
 # Added Stock Hijack
 PATH=/system/xbin:/system/bin:/sbin
 BLOCK_DIR=/dev/block
@@ -21,6 +21,7 @@ DEVICE=$(getprop ro.product.device)
 CHARGER_MODE=$(cat /sys/class/power_supply/ac/online)
 CHECK_BOOTMODE="bp-tools"
 HIJACK_BIN=logwrapper
+SS_CHECK_FILE=.safestrapped
 
 # Function for search/replace partition names with symlink generics
 fixReference()
@@ -39,7 +40,7 @@ fixReference()
 	fi
 }
 
-if [ ! -f "/.safestraped" ]; then
+if [ ! -f "/$SS_CHECK_FILE" ]; then
 if [ "$2" = "pds" ]; then
 	# remount root as rw
 	mount -o remount,rw rootfs
@@ -158,7 +159,7 @@ if [ "$2" = "pds" ]; then
 
 		# check for active virtual system or rootfs on main system
 		if [ "$ALT_SYSTEM_MODE" = "1" ]; then
-			/sbin/bbx touch /.safestrapped
+			/sbin/bbx touch /$SS_CHECK_FILE
 
 			/sbin/bbx unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
 			/sbin/bbx chmod 750 /sbin/*
@@ -263,7 +264,7 @@ if [ "$2" = "pds" ]; then
 
 		# check for stock system bootstrap
 		if [ -d "/system/etc/rootfs" ]; then
-			/sbin/bbx touch /.safestrapped
+			/sbin/bbx touch /$SS_CHECK_FILE
 
 			/sbin/bbx unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
 			/sbin/bbx chmod 750 /sbin/*

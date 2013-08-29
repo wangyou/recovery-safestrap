@@ -511,6 +511,7 @@ bool TWPartition::Is_File_System(string File_System) {
 		File_System == "ntfs" ||
 		File_System == "yaffs2" ||
 		File_System == "exfat" ||
+		File_System == "f2fs" ||
 		File_System == "auto")
 		return true;
 	else
@@ -1016,6 +1017,8 @@ bool TWPartition::Wipe(string New_File_System) {
 			wiped = Wipe_EXFAT();
 		else if (New_File_System == "yaffs2")
 			wiped = Wipe_MTD();
+		else if (New_File_System == "f2fs")
+			wiped = Wipe_F2FS();
 		else {
 			LOGERR("Unable to wipe '%s' -- unknown file system '%s'\n", Mount_Point.c_str(), New_File_System.c_str());
 			unlink("/.layout_version");
@@ -1409,6 +1412,32 @@ bool TWPartition::Wipe_RMRF() {
 	return true;
 }
 
+bool TWPartition::Wipe_F2FS() {
+	string command, result;
+
+	if (TWFunc::Path_Exists("/sbin/mkfs.f2fs")) {
+		if (!UnMount(true))
+			return false;
+
+		gui_print("Formatting %s using mkfs.f2fs...\n", Display_Name.c_str());
+		Find_Actual_Block_Device();
+		command = "mkfs.f2fs " + Actual_Block_Device;
+		if (TWFunc::Exec_Cmd(command, result) == 0) {
+			Recreate_AndSec_Folder();
+			gui_print("Done.\n");
+			return true;
+		} else {
+			LOGERR("Unable to wipe '%s'.\n", Mount_Point.c_str());
+			return false;
+		}
+		return true;
+	} else {
+		gui_print("mkfs.f2fs binary not found, using rm -rf to wipe.\n");
+		return Wipe_RMRF();
+	}
+	return false;
+}
+
 bool TWPartition::Wipe_Data_Without_Wiping_Media() {
 	string dir;
 
@@ -1463,6 +1492,8 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 
 	DataManager::GetValue(TW_USE_COMPRESSION_VAR, use_compression);
 	tar.use_compression = use_compression;
+	//exclude Google Music Cache
+	tar.setexcl("/data/data/com.google.android.music/files");
 #ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
 	DataManager::GetValue("tw_encrypt_backup", use_encryption);
 	if (use_encryption && Can_Encrypt_Backup) {

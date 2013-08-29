@@ -4142,8 +4142,78 @@
 			</object>
 		</page>
 
+		<page name="boot_slot_checkfs">
+			<object type="action">
+				<action function="checkslot"></action>
+			</object>
+
+			<object type="action">
+				<condition var1="tw_operation_state" var2="1" />
+				<action function="page">boot_slot_checkfs_done</action>
+			</object>
+
+			<object type="template" name="header" />
+
+			<object type="console">
+				<placement x="%console_x%" y="%row1_y%" w="%console_width%" h="%console_install_height%" />
+				<color foreground="%console_foreground%" background="%console_background%" scroll="%console_scroll%" />
+				<font resource="fixed" />
+			</object>
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row17_text_y%" placement="5" />
+				<text>Checking FS</text>
+			</object>
+
+			<object type="template" name="progress_bar" />
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="page">boot_options</action>
+			</object>
+
+			<object type="template" name="footer" />
+		</page>
+
+		<page name="boot_slot_checkfs_done">
+			<object type="template" name="header" />
+
+			<object type="console">
+				<placement x="%console_x%" y="%row1_y%" w="%console_width%" h="%console_install_height%" />
+				<color foreground="%console_foreground%" background="%console_background%" scroll="%console_scroll%" />
+				<font resource="fixed" />
+			</object>
+
+			<object type="button">
+				<placement x="%col_center_x%" y="%row4_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Close</text>
+				<image resource="main_button" />
+				<action function="page">boot_slot_manage</action>
+			</object>
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="page">boot_options</action>
+			</object>
+
+			<object type="template" name="footer" />
+		</page>
+
 		<page name="boot_slot_manage">
 			<object type="action">
+				<action function="loadsizes"></action>
 				<action function="setslotvarname">%tw_trybootslot%</action>
 			</object>
 
@@ -4188,42 +4258,42 @@
 			</object>
 
 			<object type="text" color="%text_color%">
-				<condition var1="tw_trybootslot" op="!=" var2="stock" />
+				<condition var1="tw_trybootslot" op="=" var2="tw_bootslot" />
 				<font resource="font" />
 				<placement x="%col1_x%" y="%row7_text_y%" />
 				<text>System partition size:</text>
 			</object>
 			<object type="text" color="%text_color%">
-				<condition var1="tw_trybootslot" op="!=" var2="stock" />
+				<condition var1="tw_trybootslot" op="=" var2="tw_bootslot" />
 				<font resource="font" />
 				<placement x="%center_x%" y="%row7_text_y%" />
-				<text>(coming soon)</text>
+				<text>%tw_slot_system_size%MB (%tw_slot_system_free%MB Free)</text>
 			</object>
 
 			<object type="text" color="%text_color%">
-				<condition var1="tw_trybootslot" op="!=" var2="stock" />
+				<condition var1="tw_trybootslot" op="=" var2="tw_bootslot" />
 				<font resource="font" />
 				<placement x="%col1_x%" y="%row8_text_y%" />
 				<text>Data partition size:</text>
 			</object>
 			<object type="text" color="%text_color%">
-				<condition var1="tw_trybootslot" op="!=" var2="stock" />
+				<condition var1="tw_trybootslot" op="=" var2="tw_bootslot" />
 				<font resource="font" />
 				<placement x="%center_x%" y="%row8_text_y%" />
-				<text>(coming soon)</text>
+				<text>%tw_slot_data_size%MB (%tw_slot_data_free%MB Free)</text>
 			</object>
 
 			<object type="text" color="%text_color%">
-				<condition var1="tw_trybootslot" op="!=" var2="stock" />
+				<condition var1="tw_trybootslot" op="=" var2="tw_bootslot" />
 				<font resource="font" />
 				<placement x="%col1_x%" y="%row9_text_y%" />
 				<text>Cache partition size:</text>
 			</object>
 			<object type="text" color="%text_color%">
-				<condition var1="tw_trybootslot" op="!=" var2="stock" />
+				<condition var1="tw_trybootslot" op="=" var2="tw_bootslot" />
 				<font resource="font" />
 				<placement x="%center_x%" y="%row9_text_y%" />
-				<text>(coming soon)</text>
+				<text>%tw_slot_cache_size%MB (%tw_slot_cache_free%MB Free)</text>
 			</object>
 
 			<object type="button">
@@ -4239,20 +4309,23 @@
 			</object>
 
 			<object type="button">
-				<condition var1="tw_trybootslot" op="=" var2="tw_bootslot" />
-				<condition var1="tw_trybootslot" op="!=" var2="stock" />
-				<placement x="%col1_x%" y="%row4_y%" />
-				<font resource="font" color="%button_text_disable_color%" />
-				<text>Fix FS (coming)</text>
-				<image resource="main_button" />
-			</object>
-			<object type="button">
 				<condition var1="tw_trybootslot" op="!=" var2="tw_bootslot" />
 				<condition var1="tw_trybootslot" op="!=" var2="stock" />
 				<placement x="%col1_x%" y="%row4_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>Fix FS (coming)</text>
+				<font resource="font" color="%button_text_disable_color%" />
+				<text>FS Check (Not Active)</text>
 				<image resource="main_button" />
+			</object>
+			<object type="button">
+				<condition var1="tw_trybootslot" op="=" var2="tw_bootslot" />
+				<condition var1="tw_trybootslot" op="!=" var2="stock" />
+				<placement x="%col1_x%" y="%row4_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>FS Check</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="page">boot_slot_checkfs</action>
+				</actions>
 			</object>
 
 			<object type="button">

@@ -64,6 +64,25 @@ error_out:
 	return 1;
 }
 
+int checkRomSlot(string path, bool remount) {
+	TWPartition* Part = PartitionManager.Find_Partition_By_Path(path);
+	string result;
+	if (Part) {
+		if (Part->Is_Mounted())
+			Part->UnMount(true);
+		DataManager::SetValue("tw_operation", "Checking filesystem on " + Part->Display_Name + "...");
+		gui_print("Checking filesystem on %s...\n", Part->Display_Name.c_str());
+		if (TWFunc::Exec_Cmd("e2fsck -pfv " + Part->Primary_Block_Device, result) < 0) {
+			gui_print("Check FAILED for %s\n", Part->Display_Name.c_str());
+			return -1;
+		}
+		gui_print("Filesystem on %s checked OK\n\n", Part->Display_Name.c_str());
+		if (remount)
+			Part->Mount(true);
+	}
+	return 0;
+}
+
 int GUIAction::doSafestrapAction(Action action, int isThreaded /* = 0 */) {
 	int simulate;
 	std::string arg = gui_parse_text(action.mArg);
@@ -77,6 +96,36 @@ int GUIAction::doSafestrapAction(Action action, int isThreaded /* = 0 */) {
 			simulate_progress_bar();
 		} else {
 			PartitionManager.Update_System_Details();
+		}
+		return 0;
+	}
+
+	if (function == "loadsizes") {
+		if (simulate) {
+			simulate_progress_bar();
+		} else {
+			unsigned long long mb = 1048576;
+			TWPartition* Part;
+
+			// Fill the following vars:
+			//tw_slot_system_size / tw_slot_system_free
+			//tw_slot_data_size / tw_slot_data_free
+			//tw_slot_cache_size / tw_slot_cache_free
+			Part = PartitionManager.Find_Partition_By_Path("/system");
+			if (Part) {
+				DataManager::SetValue("tw_slot_system_size", (int)(Part->Size / mb));
+				DataManager::SetValue("tw_slot_system_free", (int)(Part->Free / mb));
+			}
+			Part = PartitionManager.Find_Partition_By_Path("/data");
+			if (Part) {
+				DataManager::SetValue("tw_slot_data_size", (int)(Part->Size / mb));
+				DataManager::SetValue("tw_slot_data_free", (int)(Part->Free / mb));
+			}
+			Part = PartitionManager.Find_Partition_By_Path("/cache");
+			if (Part) {
+				DataManager::SetValue("tw_slot_cache_size", (int)(Part->Size / mb));
+				DataManager::SetValue("tw_slot_cache_free", (int)(Part->Free / mb));
+			}
 		}
 		return 0;
 	}
@@ -233,9 +282,10 @@ int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */
 	string result;
 
 	if (function == "createslot") {
-		operation_start("createslot");
 		if (arg == "stock")
 			return 0;
+
+		operation_start("createslot");
 
 		if (simulate) {
 			simulate_progress_bar();
@@ -318,9 +368,10 @@ int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */
 	}
 
 	if (function == "deleteslot") {
-		operation_start("deleteslot");
 		if (arg == "stock")
 			return 0;
+
+		operation_start("deleteslot");
 
 		if (simulate) {
 			simulate_progress_bar();
@@ -332,6 +383,29 @@ int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */
 		operation_end(0, simulate);
 		return 0;
 	}
+
+	if (function == "checkslot") {
+		operation_start("deleteslot");
+
+		if (simulate) {
+			simulate_progress_bar();
+			gui_print("Simulating actions...\n");
+		}
+		else {
+			// 1 at a time unmount partition and run e2fsck -pfv <block>
+
+			DataManager::SetValue("ui_progress", 0);
+			checkRomSlot("/system", false);
+			DataManager::SetValue("ui_progress", 20);
+			checkRomSlot("/data", false);
+			DataManager::SetValue("ui_progress", 80);
+			checkRomSlot("/cache", true);
+		}
+
+		operation_end(0, simulate);
+		return 0;
+	}
+
 	return -1;
 }
 

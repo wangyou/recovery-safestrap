@@ -73,6 +73,12 @@ public:
 	string Actual_Block_Device;                                               // Actual block device (one of primary, alternate, or decrypted)
 	string MTD_Name;                                                          // Name of the partition for MTD devices
 
+	string Display_Name;                                                      // Display name for the GUI
+	string Primary_Block_Device;                                              // Block device (e.g. /dev/block/mmcblk1p1)
+	unsigned long long Size;                                                  // Overall size of the partition
+	unsigned long long Used;                                                  // Overall used space
+	unsigned long long Free;                                                  // Overall free space
+
 private:
 	bool Process_Fstab_Line(string Line, bool Display_Error);                 // Processes a fstab line
 	void Find_Actual_Block_Device();                                          // Determines the correct block device and stores it in Actual_Block_Device
@@ -119,20 +125,15 @@ private:
 	string Symlink_Mount_Point;                                               // /sdcard could be the symlink mount point for /data/media
 	string Mount_Point;                                                       // Mount point for this partition (e.g. /system or /data)
 	string Backup_Path;                                                       // Path for backup
-	string Primary_Block_Device;                                              // Block device (e.g. /dev/block/mmcblk1p1)
 	string Alternate_Block_Device;                                            // Alternate block device (e.g. /dev/block/mmcblk1)
 	string Decrypted_Block_Device;                                            // Decrypted block device available after decryption
 	bool Removable;                                                           // Indicates if this partition is removable -- affects how often we check overall size, if present, etc.
 	bool Is_Present;                                                          // Indicates if the partition is currently present as a block device
 	int Length;                                                               // Used by make_ext4fs to leave free space at the end of the partition block for things like a crypto footer
-	unsigned long long Size;                                                  // Overall size of the partition
-	unsigned long long Used;                                                  // Overall used space
-	unsigned long long Free;                                                  // Overall free space
 	unsigned long long Backup_Size;                                           // Backup size -- may be different than used space especially when /data/media is present
 	bool Can_Be_Encrypted;                                                    // This partition might be encrypted, affects error handling, can only be true if crypto support is compiled in
 	bool Is_Encrypted;                                                        // This partition is thought to be encrypted -- it wouldn't mount for some reason, only avialble with crypto support
 	bool Is_Decrypted;                                                        // This partition has successfully been decrypted
-	string Display_Name;                                                      // Display name for the GUI
 	string Backup_Name;                                                       // Backup name -- used for backup filenames
 	string Backup_Display_Name;                                               // Name displayed in the partition list for backup selection
 	string Storage_Name;                                                      // Name displayed in the partition list for storage selection

@@ -1,24 +1,30 @@
 #!/system/bin/sh
 # By Hashcode
-# Last Editted: 11/07/2012
+# Last Editted: 08/28/2013
 PATH=/system/bin:/system/xbin
 BLOCK_DIR=/dev/block
 BLOCKNAME_DIR=$BLOCK_DIR
-SYS_BLOCK=$BLOCKNAME_DIR/systemorig
 SYS_BLOCK_FSTYPE=ext3
+HIJACK_BIN=bin/logwrapper
+
+INSTALLPATH=$1
+RECOVERY_DIR=etc/safestrap
+LOGFILE=$INSTALLPATH/action-check.log
+
+chmod 755 $INSTALLPATH/busybox
+
+CURRENTSYS=`$INSTALLPATH/busybox readlink $BLOCKNAME_DIR/system`
+PRIMARYSYS=`$INSTALLPATH/busybox readlink $BLOCKNAME_DIR/systemorig`
+if [ "$PRIMARYSYS" = "" ]; then
+	PRIMARYSYS=`$INSTALLPATH/busybox readlink $BLOCKNAME_DIR/system`
+fi
+
+$INSTALLPATH/busybox echo '' > $LOGFILE
+$INSTALLPATH/busybox echo "CURRENTSYS=$CURRENTSYS" >> $LOGFILE
+$INSTALLPATH/busybox echo "PRIMARYSYS=$PRIMARYSYS" >> $LOGFILE
 
 vers=0
 alt_boot_mode=0
-
-INSTALLPATH=$1
-RECOVERY_DIR=/etc/safestrap
-
-if [ -f $SYS_BLOCK ]; then
-	PRIMARYSYS=`$INSTALLPATH/busybox ls -l $BLOCKNAME_DIR/ | $INSTALLPATH/busybox grep systemorig | $INSTALLPATH/busybox tail -c 22`
-else
-	PRIMARYSYS=`$INSTALLPATH/busybox ls -l $BLOCKNAME_DIR/ | $INSTALLPATH/busybox grep system | $INSTALLPATH/busybox tail -c 22`
-fi
-CURRENTSYS=`$INSTALLPATH/busybox ls -l $BLOCKNAME_DIR/system | $INSTALLPATH/busybox tail -c 22`
 
 if [ ! "$CURRENTSYS" = "$PRIMARYSYS" ]; then
 	# alt-system, needs to mount original /system
@@ -32,8 +38,8 @@ else
 	DESTMOUNT=/system
 fi
 
-if [ -f "$DESTMOUNT$RECOVERY_DIR/flags/version" ]; then
-	vers=`$INSTALLPATH/busybox cat $DESTMOUNT$RECOVERY_DIR/flags/version`
+if [ -f "$DESTMOUNT/$RECOVERY_DIR/flags/version" ]; then
+	vers=`$INSTALLPATH/busybox cat $DESTMOUNT/$RECOVERY_DIR/flags/version`
 fi
 
 if [ ! "$CURRENTSYS" = "$PRIMARYSYS" ]; then

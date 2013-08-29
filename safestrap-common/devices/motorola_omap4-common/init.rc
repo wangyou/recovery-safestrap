@@ -33,8 +33,6 @@ on init
     chown root shell /tmp
     chmod 0775 /tmp
 
-    symlink /sys/devices/omapdss/display0/backlight/430_540_960_amoled_bl /backlight
-
     mkdir /tmp/trace 0777 root root
 
 #battd

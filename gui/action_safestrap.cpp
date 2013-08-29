@@ -1,77 +1,67 @@
-#include <sstream>
 
 // action_safestrap.cpp - GUIAction extension
 
-int createImagePartition(string slotName, string imageName, int imageSize, string mountName, int loopNum, int progressBase1, int progressBase2, int progressBase3) {
-	string Command;
+int createImagePartition(string slotName, string imageName, int imageSize, string mountName,
+		int loopNum, int progressBase1, int progressBase2, int progressBase3) {
+	char cmd[255];
 	string result;
-	std::stringstream sstr;
-	string loopNumStr;
 
-	sstr << loopNum;
-	loopNumStr = sstr.str();
 	DataManager::SetValue("tw_operation", "Clearing old " + imageName + ".img...");
-	PartitionManager.Mount_By_Path("/" + mountName, true);
-	Command = "rm -rf /ss/safestrap/" + slotName + "/" + imageName + ".img";
-	fprintf(stderr, "createImagePartition::%s\n", Command.c_str());
-	TWFunc::Exec_Cmd(Command, result);
+	PartitionManager.UnMount_By_Path("/" + mountName, true);
+	sprintf(cmd, "rm -rf /ss/safestrap/%s/%s.img", slotName.c_str(), imageName.c_str());
+	fprintf(stderr, "createImagePartition::%s\n", cmd);
+	TWFunc::Exec_Cmd(cmd, result);
 
-#ifdef USE_NEW_LOOPBACK
-	Command = "losetup -d /dev/block/loop-" + imageName;
-#else
-	Command = "losetup -d /dev/block/loop" + loopNumStr;
-#endif
-	fprintf(stderr, "createImagePartition::%s\n", Command.c_str());
+	sprintf(cmd, "losetup -d /dev/block/loop-%s", imageName.c_str());
+	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
-	TWFunc::Exec_Cmd(Command, result);
+	TWFunc::Exec_Cmd(cmd, result);
 	DataManager::SetValue("ui_progress", progressBase1);
 
 	DataManager::SetValue("tw_operation", "Creating " + imageName + ".img...");
 	gui_print("Creating %s.img...\n", imageName.c_str());
 
-	Command = "dd if=/dev/zero of=/ss/safestrap/";
-	Command += slotName;
-	Command += "/";
-	Command += imageName;
-	Command += ".img bs=1M count=";
-	Command += imageSize;
-	fprintf(stderr, "createImagePartition::%s\n", Command.c_str());
+	sprintf(cmd, "dd if=/dev/zero of=/ss/safestrap/%s/%s.img bs=1M count=%d", slotName.c_str(), imageName.c_str(), imageSize);
+	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
-	TWFunc::Exec_Cmd(Command, result);
-	if (result != "") return 1;
+	TWFunc::Exec_Cmd(cmd, result);
+	if (result != "")
+		goto error_out;
 
-	Command = "/sbin/fsync /ss/safestrap/" + slotName + "/" + imageName + ".img";
-	fprintf(stderr, "createImagePartition::%s\n", Command.c_str());
+	sprintf(cmd, "/sbin/fsync /ss/safestrap/%s/%s.img", slotName.c_str(), imageName.c_str());
+	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
-	TWFunc::Exec_Cmd(Command, result);
-	if (result != "") return 1;
+	TWFunc::Exec_Cmd(cmd, result);
+	if (result != "")
+		goto error_out;
+
 	DataManager::SetValue("ui_progress", progressBase2);
 
 	DataManager::SetValue("tw_operation", "Writing filesystem on " + imageName + "...");
 	gui_print("Writing filesystem on %s...\n", imageName.c_str());
-#ifdef USE_NEW_LOOPBACK
-	Command = "losetup /dev/block/loop-" + imageName + " /ss/safestrap/" + slotName + "/" + imageName + ".img";
-#else
-	Command = "losetup /dev/block/loop" + loopNumStr + " /ss/safestrap/" + slotName + "/" + imageName + ".img";
-#endif
-	fprintf(stderr, "createImagePartition::%s\n", Command.c_str());
+	sprintf(cmd, "losetup /dev/block/loop-%s /ss/safestrap/%s/%s.img", imageName.c_str(), slotName.c_str(), imageName.c_str());
+	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
-	TWFunc::Exec_Cmd(Command, result);
-	if (result != "") return 1;
+	TWFunc::Exec_Cmd(cmd, result);
+	if (result != "")
+		goto error_out;
 
-#ifdef USE_NEW_LOOPBACK
-	Command = "/sbin/build-fs.sh " + imageName + " -" + imageName + " " + slotName;
-#else
-	Command = "/sbin/build-fs.sh " + imageName + " " + loopNumStr + " " + slotName;
-#endif
-	fprintf(stderr, "createImagePartition::%s\n", Command.c_str());
+	sprintf(cmd, "/sbin/build-fs.sh %s -%s %s", imageName.c_str(), imageName.c_str(), slotName.c_str());
+	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
-	TWFunc::Exec_Cmd(Command, result);
-	if (result != "") return 1;
+	TWFunc::Exec_Cmd(cmd, result);
+// HASH: This is currently always erroring out.
+//	if (result != "")
+//		goto error_out;
 
 	DataManager::SetValue("ui_progress", progressBase3);
 
 	return 0;
+
+error_out:
+	gui_print("ERROR=%s\n", result.c_str());
+	fprintf(stderr, "createImagePartition::ERROR=%s\n", result.c_str());
+	return 1;
 }
 
 int GUIAction::doSafestrapAction(Action action, int isThreaded /* = 0 */) {
@@ -94,11 +84,23 @@ int GUIAction::doSafestrapAction(Action action, int isThreaded /* = 0 */) {
 	if (function == "changeslot") {
 		PartitionManager.UnMount_By_Path("/system", true);
 		PartitionManager.UnMount_By_Path("/data", true);
+
+		// CACHE COPY
+		PartitionManager.Mount_By_Path("/cache", true);
+		TWFunc::Exec_Cmd("rm -rf /tmp/recovery", result);
+		TWFunc::Exec_Cmd("cp -R /cache/recovery /tmp", result);
+		TWFunc::Exec_Cmd("rm -rf /cache/recovery", result);
 		PartitionManager.UnMount_By_Path("/cache", true);
+
 		TWFunc::Exec_Cmd("/sbin/changeslot.sh " + arg, result);
 		PartitionManager.Process_Fstab("/etc/recovery.fstab", true, true);
 		PartitionManager.Update_System_Details();
+
 		PartitionManager.Mount_By_Path("/cache", true);
+		TWFunc::Exec_Cmd("rm -rf /cache/recovery", result);
+		TWFunc::Exec_Cmd("cp -R /tmp/recovery /cache", result);
+		TWFunc::Exec_Cmd("rm -rf /tmp/recovery", result);
+
 		DataManager::SetValue("tw_bootslot", arg);
 		return 0;
 	}
@@ -256,7 +258,6 @@ int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */
 
 			// SYSTEM
 			if (createImagePartition(arg, "system", system_size, "system", 7, 5, 20, 30) != 0) {
-				fprintf(stderr, "Error creating system partition!");
 				DataManager::SetValue("tw_operation", "Error creating system partition!");
 				gui_print("Error creating system partition!\n");
 				gui_print("Cleaning up files...\n");
@@ -291,11 +292,6 @@ int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */
 				return -1;
 			}
 
-			PartitionManager.Mount_By_Path("/cache", true);
-			TWFunc::Exec_Cmd("rm -rf /cache/recovery", result);
-			TWFunc::Exec_Cmd("cp -R /tmp/recovery /cache", result);
-			TWFunc::Exec_Cmd("rm -rf /tmp/recovery", result);
-
 			DataManager::SetValue("tw_operation", "Activating ROM slot...");
 			gui_print("Activating ROM slot...\n");
 			TWFunc::Exec_Cmd("/sbin/changeslot.sh " + arg, result);
@@ -305,6 +301,12 @@ int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */
 			gui_print("Updating filesystem details...\n");
 			PartitionManager.Process_Fstab("/etc/recovery.fstab", true, true);
 			PartitionManager.Update_System_Details();
+
+			PartitionManager.Mount_By_Path("/cache", true);
+			TWFunc::Exec_Cmd("rm -rf /cache/recovery", result);
+			TWFunc::Exec_Cmd("cp -R /tmp/recovery /cache", result);
+			TWFunc::Exec_Cmd("rm -rf /tmp/recovery", result);
+
 			DataManager::SetValue("ui_progress", 100);
 			DataManager::SetValue("tw_bootslot", arg);
 

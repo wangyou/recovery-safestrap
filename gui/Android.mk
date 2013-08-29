@@ -75,10 +75,6 @@ ifndef BOARD_DEFAULT_VIRT_CACHE_SIZE
 endif
 LOCAL_CFLAGS += -DDEFAULT_VIRT_CACHE_SIZE=\"$(BOARD_DEFAULT_VIRT_CACHE_SIZE)\"
 
-ifdef BOARD_USE_NEW_LOOPBACK
-  LOCAL_CFLAGS += -DUSE_NEW_LOOPBACK
-endif
-
 LOCAL_C_INCLUDES += bionic external/stlport/stlport $(commands_recovery_local_path)/gui/devices/$(DEVICE_RESOLUTION)
 
 include $(BUILD_STATIC_LIBRARY)

@@ -55,8 +55,11 @@ endif
 endif
 RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libaosprecovery.so
 RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libjpeg.so
-ifneq ($(wildcard external/libselinux/Android.mk),)
+ifeq ($(HAVE_SELINUX), true)
     RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libselinux.so
+    ifneq ($(TARGET_USERIMAGES_USE_EXT4), true)
+        RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libext4_utils.so
+    endif
 endif
 ifeq ($(BUILD_ID), GINGERBREAD)
     TW_NO_EXFAT := true
@@ -229,6 +232,24 @@ ifneq ($(TW_EXCLUDE_SUPERSU), true)
 	#su binary
 	include $(CLEAR_VARS)
 	LOCAL_MODULE := su
+	LOCAL_MODULE_TAGS := eng
+	LOCAL_MODULE_CLASS := RECOVERY_EXECUTABLES
+	LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/supersu
+	LOCAL_SRC_FILES := $(LOCAL_MODULE)
+	include $(BUILD_PREBUILT)
+
+       #install-recovery.sh
+	include $(CLEAR_VARS)
+	LOCAL_MODULE := install-recovery.sh
+	LOCAL_MODULE_TAGS := eng
+	LOCAL_MODULE_CLASS := RECOVERY_EXECUTABLES
+	LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/supersu
+	LOCAL_SRC_FILES := $(LOCAL_MODULE)
+	include $(BUILD_PREBUILT)
+
+       #99SuperSUDaemon
+	include $(CLEAR_VARS)
+	LOCAL_MODULE := 99SuperSUDaemon
 	LOCAL_MODULE_TAGS := eng
 	LOCAL_MODULE_CLASS := RECOVERY_EXECUTABLES
 	LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/supersu

@@ -890,25 +890,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 						}
 					}
 				} else {
-					string bootslot = "";
-					DataManager::GetValue("tw_bootslot", bootslot);
-
-					// PROTECT Safestrap if arg = "/system" and bootslot = "stock"
-					if ((bootslot == "stock") && (arg == "system")) {
-						PartitionManager.Mount_By_Path("/system", true);
-						TWFunc::Exec_Cmd("/sbin/backup-ss.sh", result);
-						PartitionManager.UnMount_By_Path("/system", true);
-						if (result != "") return 1;
-					}
-
 					ret_val = PartitionManager.Wipe_By_Path(arg);
-
-					// RESTORE Safestrap files if this is stock
-					if ((bootslot == "stock") && (arg == "system")) {
-						PartitionManager.Mount_By_Path("/system", true);
-						TWFunc::Exec_Cmd("/sbin/restore-ss.sh", result);
-						PartitionManager.UnMount_By_Path("/system", true);
-					}
 				}
 
 				if (arg == DataManager::GetSettingsStoragePath()) {

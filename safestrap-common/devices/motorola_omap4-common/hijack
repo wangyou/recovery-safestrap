@@ -1,6 +1,6 @@
-#!/system/bin/sh
+#!/system/etc/safestrap/bbx sh
 # By: Hashcode
-# Last Editted: 08/28/2013
+# Last Editted: 08/29/2013
 # Added Stock Hijack
 PATH=/system/xbin:/system/bin:/sbin
 BLOCK_DIR=/dev/block
@@ -21,7 +21,9 @@ DEVICE=$(getprop ro.product.device)
 CHARGER_MODE=$(cat /sys/class/power_supply/ac/online)
 CHECK_BOOTMODE="bp-tools"
 HIJACK_BIN=logwrapper
+HIJACK_LOC=bin
 SS_CHECK_FILE=.safestrapped
+CURRENT_SYS_DIR=/system
 
 # Function for search/replace partition names with symlink generics
 fixReference()
@@ -42,16 +44,18 @@ fixReference()
 
 if [ ! -f "/$SS_CHECK_FILE" ]; then
 if [ "$2" = "pds" ]; then
+	# don't do this processing again
+	$RECOVERY_DIR/bbx touch /$SS_CHECK_FILE
+
 	# remount root as rw
-	mount -o remount,rw rootfs
+	$RECOVERY_DIR/bbx mount -o remount,rw rootfs
 
 	# need busybox
-	cp $RECOVERY_DIR/bbx /sbin/bbx
-	chmod 755 /sbin/bbx
-	chown 0.2000 /sbin/bbx
+	$RECOVERY_DIR/bbx cp $RECOVERY_DIR/bbx /sbin/bbx
+	$RECOVERY_DIR/bbx chmod 755 /sbin/bbx
+	$RECOVERY_DIR/bbx chown 0.2000 /sbin/bbx
 
 	POWERUP_REASON=$(/sbin/bbx cat /proc/bootinfo | /sbin/bbx grep POWERUPREASON | /sbin/bbx cut -c 19-)
-	#MMCPARTS=$(/sbin/bbx cat /proc/cmdline | /sbin/bbx sed -n -e 's/^.*mmcparts=//p' | /sbin/bbx cut -d' ' -f0)
 
 	if [ "$CHARGER_MODE" != "1" ] || [ "$POWERUP_REASON" != "00000100" ]; then
 		# create SS loopdevs
@@ -138,9 +142,6 @@ if [ "$2" = "pds" ]; then
 			/sbin/bbx echo `/sbin/bbx ls -l $BLOCKNAME_DIR/ | /sbin/bbx grep "userdata ->" | /sbin/bbx tail -c 22`=$BLOCKNAME_DIR/userdata >> $SS_DIR/translate
 			/sbin/bbx echo `/sbin/bbx ls -l $BLOCKNAME_DIR/ | /sbin/bbx grep "cache ->" | /sbin/bbx tail -c 22`=$BLOCKNAME_DIR/cache >> $SS_DIR/translate
 			/sbin/bbx echo `/sbin/bbx ls -l $BLOCKNAME_DIR/ | /sbin/bbx grep pds | /sbin/bbx tail -c 22`=$BLOCKNAME_DIR/pds >> $SS_DIR/translate
-			# fix SS2 hard references
-			/sbin/bbx echo `/sbin/bbx ls -l $BLOCKNAME_DIR/ | /sbin/bbx grep preinstall | /sbin/bbx tail -c 22`=$BLOCKNAME_DIR/system >> $SS_DIR/translate
-			/sbin/bbx echo `/sbin/bbx ls -l $BLOCKNAME_DIR/ | /sbin/bbx grep webtop | /sbin/bbx tail -c 22`=$BLOCKNAME_DIR/system >> $SS_DIR/translate
 			# meager attempt at stopping writes to the boot device
 			/sbin/bbx echo `/sbin/bbx ls -l $BLOCKNAME_DIR/ | /sbin/bbx grep "boot ->" | /sbin/bbx tail -c 22`=/dev/null >> $SS_DIR/translate
 			/sbin/bbx echo $BLOCKNAME_DIR/boot=/dev/null >> $SS_DIR/translate
@@ -157,39 +158,43 @@ if [ "$2" = "pds" ]; then
 			exit
 		fi
 
-		# check for active virtual system or rootfs on main system
+		# either way we mount virtual "system" or real "system" and check for:
+		# 1. /system/etc/rootfs (2nd-init boot)
+		# 2. /system/etc/kexec (kexec boot)
+
+		# if we're on a virtual system set it up and change CURRENT_SYS_DIR
 		if [ "$ALT_SYSTEM_MODE" = "1" ]; then
-			/sbin/bbx touch /$SS_CHECK_FILE
+			# setup loopback
+			/sbin/bbx losetup $BLOCK_DIR/loop-system $SS_DIR/$SLOT_LOC/system.img
+			/sbin/bbx mount -t $IMG_TYPE $BLOCK_DIR/loop-system $SYS2_MNT
+			CURRENT_SYS_DIR=$SYS2_MNT
+		fi
+
+		if [ -d "$CURRENT_SYS_DIR/etc/rootfs" ] || [ -d "$CURRENT_SYS_DIR/etc/kexec" ]; then
 
 			/sbin/bbx unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
 			/sbin/bbx chmod 750 /sbin/*
 
-			# setup loopback
-			/sbin/bbx losetup $BLOCK_DIR/loop-system $SS_DIR/$SLOT_LOC/system.img
-			/sbin/bbx mount -t $IMG_TYPE $BLOCK_DIR/loop-system $SYS2_MNT
-
-			# check for old-school original hijacks, and remove
-			if [ -f "$SYS2_MNT/bin/$HIJACK_BIN.orig" ]; then
-				/sbin/bbx rm $SYS2_MNT/bin/$HIJACK_BIN
-				/sbin/bbx mv $SYS2_MNT/bin/$HIJACK_BIN.orig $SYS2_MNT/bin/$HIJACK_BIN
-				/sbin/bbx chmod 755 $SYS2_MNT/bin/$HIJACK_BIN
-				/sbin/bbx chown 0.2000 $SYS2_MNT/bin/$HIJACK_BIN
-			fi
-			# check for hijacks, and remove
-			if [ -f "$SYS2_MNT/bin/$HIJACK_BIN.bin" ]; then
-				/sbin/bbx rm $SYS2_MNT/bin/$HIJACK_BIN
-				/sbin/bbx mv $SYS2_MNT/bin/$HIJACK_BIN.bin $SYS2_MNT/bin/$HIJACK_BIN
-				/sbin/bbx chmod 755 $SYS2_MNT/bin/$HIJACK_BIN
-				/sbin/bbx chown 0.2000 $SYS2_MNT/bin/$HIJACK_BIN
+			# on virtual systems, check for hijacks, and remove
+			if [ "$ALT_SYSTEM_MODE" = "1" ] && [ -f "$SYS2_MNT/$HIJACK_LOC/$HIJACK_BIN.bin" ]; then
+				/sbin/bbx rm $CURRENT_SYS_DIR/$HIJACK_LOC/$HIJACK_BIN
+				/sbin/bbx mv $CURRENT_SYS_DIR/$HIJACK_LOC/$HIJACK_BIN.bin $SYS2_MNT/$HIJACK_LOC/$HIJACK_BIN
+				/sbin/bbx chmod 755 $SYS2_MNT/$HIJACK_LOC/$HIJACK_BIN
+				/sbin/bbx chown 0.2000 $SYS2_MNT/$HIJACK_LOC/$HIJACK_BIN
 			fi
 
 			# check for kexec files
-			if [ -d "$SYS2_MNT/etc/kexec" ]; then
-				/sbin/bbx cp $SYS2_MNT/etc/kexec/* /
+			if [ -d "$CURRENT_SYS_DIR/etc/kexec" ]; then
+				/sbin/bbx cp $CURRENT_SYS_DIR/etc/kexec/* /
 
-				# unmount new /system
-				/sbin/bbx umount $SYS2_MNT
-				/sbin/bbx losetup -d $BLOCK_DIR/loop-system
+				# if virtual system is mounted unmount it
+				if [ "$ALT_SYSTEM_MODE" = "1" ]; then
+					# cleanup loopback
+					/sbin/bbx umount $SYS2_MNT
+					/sbin/bbx losetup -d $BLOCK_DIR/loop-system
+				fi
+
+				# unmount SS
 				/sbin/bbx umount $SS_MNT
 
 				/sbin/hijack.killall
@@ -206,98 +211,72 @@ if [ "$2" = "pds" ]; then
 				exit
 			fi
 
-			# adjust stock init.rc file to include /sbin/fixboot.sh
-			/sbin/bbx cat /init.rc | /sbin/bbx sed "s/on init/on init\nexec \/sbin\/fixboot.sh/" > /init.rc.new
-			/sbin/bbx mv /init.rc /init.rc.old
-			/sbin/bbx mv /init.rc.new /init.rc
+			# check for rootfs files
+			if [ -d "$CURRENT_SYS_DIR/etc/rootfs" ]; then
+				# BEGIN CLEANUP TODO: this should really be a device independant cleanup file
 
-			# if there's a ramdisk then extract it
-			if [ -d "$SYS2_MNT/etc/rootfs" ]; then
-				if [ -f "$SYS2_MNT/etc/rootfs/sbin/adbd" ]; then
+				# adjust init.rc file to include /sbin/fixboot.sh
+				/sbin/bbx cat /init.rc | /sbin/bbx sed "s/on init/on init\nexec \/sbin\/fixboot.sh/" > /init.rc.new
+				/sbin/bbx mv /init.rc /init.rc.old
+				/sbin/bbx mv /init.rc.new /init.rc
+
+				if [ -f "$CURRENT_SYS_DIR/etc/rootfs/sbin/adbd" ]; then
 					/sbin/bbx mv /sbin/adbd /sbin/adbd.old
 				fi
-				if [ -f "$SYS2_MNT/etc/rootfs/init" ]; then
+				if [ -f "$CURRENT_SYS_DIR/etc/rootfs/init" ]; then
 					/sbin/bbx mv /init /init.old
 				fi
-				/sbin/bbx cp -R $SYS2_MNT/etc/rootfs/* /
+				/sbin/bbx cp -R $CURRENT_SYS_DIR/etc/rootfs/* /
+
+				# fix "old" style mounts
+				for f in /init.*.rc
+				do
+					fixReference "$f" system system
+					fixReference "$f" userdata userdata
+					fixReference "$f" cache cache
+					fixReference "$f" pds pds
+				done
+
+				# END CLEANUP
+
+				# reset permissions
+				/sbin/bbx chmod -R 750 /sbin/*
+				/sbin/bbx chmod 755 /init
+				/sbin/bbx chmod 755 /charger
+				/sbin/bbx chmod 644 /default.prop
+				/sbin/bbx chmod 755 /*.rc
+				/sbin/bbx chmod 755 /*.sh
+
+				# if virtual system is mounted unmount it
+				if [ "$ALT_SYSTEM_MODE" = "1" ]; then
+					# cleanup loopback
+					/sbin/bbx umount $SYS2_MNT
+					/sbin/bbx losetup -d $BLOCK_DIR/loop-system
+				fi
+
+				# unmount SS
+				/sbin/bbx umount $SS_MNT
+
+				# unmount old /system
+				/sbin/bbx umount -l /system
+
+				/sbin/hijack.killall
+
+				# mount point / symlink cleanup
+				/sbin/bbx rm /sdcard
+				/sbin/bbx rm /sdcard-ext
+
+				/sbin/taskset -p -c 0 1
+				/sbin/bbx sync
+				/sbin/taskset -c 0 /sbin/2nd-init
+				exit
 			fi
-
-			# fix "old" style mounts
-			for f in /init.*.rc
-			do
-				fixReference "$f" system system
-				fixReference "$f" userdata userdata
-				fixReference "$f" cache cache
-				fixReference "$f" pds pds
-				# include translations for older SS2 style ROMs (preinstall / webtop used as system)
-				fixReference "$f" preinstall system
-				fixReference "$f" webtop system
-			done
-
-			# reset permissions
-			/sbin/bbx chmod -R 750 /sbin/*
-			/sbin/bbx chmod 755 /init
-			/sbin/bbx chmod 755 /charger
-			/sbin/bbx chmod 644 /default.prop
-			/sbin/bbx chmod 755 /*.rc
-			/sbin/bbx chmod 755 /*.sh
-
-			# unmount new /system
-			/sbin/bbx umount $SYS2_MNT
-			/sbin/bbx losetup -d $BLOCK_DIR/loop-system
-			/sbin/bbx umount $SS_MNT
-
-			# unmount old /system
-			/sbin/bbx umount -l /system
-
-			/sbin/hijack.killall
-
-			# mount point / symlink cleanup
-			/sbin/bbx rm /sdcard
-			/sbin/bbx rm /sdcard-ext
-
-			/sbin/taskset -p -c 0 1
-			/sbin/bbx sync
-			/sbin/taskset -c 0 /sbin/2nd-init
-			exit
 		fi
 
-		# check for stock system bootstrap
-		if [ -d "/system/etc/rootfs" ]; then
-			/sbin/bbx touch /$SS_CHECK_FILE
-
-			/sbin/bbx unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
-			/sbin/bbx chmod 750 /sbin/*
-
-			if [ -f "/system/etc/rootfs/sbin/adbd" ]; then
-				/sbin/bbx mv /sbin/adbd /sbin/adbd.old
-			fi
-			if [ -f "/system/etc/rootfs/init" ]; then
-				/sbin/bbx mv /init /init.old
-			fi
-			/sbin/bbx cp -R $SYS2_MNT/etc/rootfs/* /
-
-			# reset permissions
-			/sbin/bbx chmod -R 750 /sbin/*
-			/sbin/bbx chmod 755 /init
-			/sbin/bbx chmod 755 /charger
-			/sbin/bbx chmod 644 /default.prop
-			/sbin/bbx chmod 755 /*.rc
-			/sbin/bbx chmod 755 /*.sh
-
-			# unmount old /system
-			/sbin/bbx umount -l /system
-
-			/sbin/hijack.killall
-
-			# mount point / symlink cleanup
-			/sbin/bbx rm /sdcard
-			/sbin/bbx rm /sdcard-ext
-
-			/sbin/taskset -p -c 0 1
-			/sbin/bbx sync
-			/sbin/taskset -c 0 /sbin/2nd-init
-			exit
+		if [ "$ALT_SYSTEM_MODE" = "1" ]; then
+			# cleanup loopback
+			/sbin/bbx umount $SYS2_MNT
+			/sbin/bbx losetup -d $BLOCK_DIR/loop-system
 		fi
 
 		# unmount safestrap partition
@@ -306,5 +285,5 @@ if [ "$2" = "pds" ]; then
 fi
 fi
 
-/system/bin/$HIJACK_BIN.bin "$@"
+/system/$HIJACK_LOC/$HIJACK_BIN.bin "$@"
 

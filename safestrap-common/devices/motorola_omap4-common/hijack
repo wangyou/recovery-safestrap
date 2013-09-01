@@ -44,11 +44,11 @@ fixReference()
 
 if [ ! -f "/$SS_CHECK_FILE" ]; then
 if [ "$2" = "pds" ]; then
-	# don't do this processing again
-	$RECOVERY_DIR/bbx touch /$SS_CHECK_FILE
-
 	# remount root as rw
 	$RECOVERY_DIR/bbx mount -o remount,rw rootfs
+
+	# don't do this processing again
+	$RECOVERY_DIR/bbx touch /$SS_CHECK_FILE
 
 	# need busybox
 	$RECOVERY_DIR/bbx cp $RECOVERY_DIR/bbx /sbin/bbx
@@ -178,9 +178,9 @@ if [ "$2" = "pds" ]; then
 			# on virtual systems, check for hijacks, and remove
 			if [ "$ALT_SYSTEM_MODE" = "1" ] && [ -f "$SYS2_MNT/$HIJACK_LOC/$HIJACK_BIN.bin" ]; then
 				/sbin/bbx rm $CURRENT_SYS_DIR/$HIJACK_LOC/$HIJACK_BIN
-				/sbin/bbx mv $CURRENT_SYS_DIR/$HIJACK_LOC/$HIJACK_BIN.bin $SYS2_MNT/$HIJACK_LOC/$HIJACK_BIN
-				/sbin/bbx chmod 755 $SYS2_MNT/$HIJACK_LOC/$HIJACK_BIN
-				/sbin/bbx chown 0.2000 $SYS2_MNT/$HIJACK_LOC/$HIJACK_BIN
+				/sbin/bbx mv $CURRENT_SYS_DIR/$HIJACK_LOC/$HIJACK_BIN.bin $CURRENT_SYS_DIR/$HIJACK_LOC/$HIJACK_BIN
+				/sbin/bbx chmod 755 $CURRENT_SYS_DIR/$HIJACK_LOC/$HIJACK_BIN
+				/sbin/bbx chown 0.2000 $CURRENT_SYS_DIR/$HIJACK_LOC/$HIJACK_BIN
 			fi
 
 			# check for kexec files
@@ -216,7 +216,7 @@ if [ "$2" = "pds" ]; then
 				# BEGIN CLEANUP TODO: this should really be a device independant cleanup file
 
 				# adjust init.rc file to include /sbin/fixboot.sh
-				/sbin/bbx cat /init.rc | /sbin/bbx sed "s/on init/on init\nexec \/sbin\/fixboot.sh/" > /init.rc.new
+				/sbin/bbx cat /init.rc | /sbin/bbx sed "s/on fs/on fs\nexec \/sbin\/fixboot.sh/" > /init.rc.new
 				/sbin/bbx mv /init.rc /init.rc.old
 				/sbin/bbx mv /init.rc.new /init.rc
 

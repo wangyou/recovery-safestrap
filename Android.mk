@@ -14,6 +14,9 @@
 
 LOCAL_PATH := $(call my-dir)
 
+# Device Group includes for Safestrap
+include $(LOCAL_PATH)/../../external/safestrap/safestrap.mk
+
 TARGET_RECOVERY_GUI := true
 
 LOCAL_SRC_FILES := \
@@ -70,6 +73,8 @@ ifeq ($(TARGET_USERIMAGES_USE_EXT4), true)
 #    LOCAL_C_INCLUDES += system/extras/ext4_utils
 #    LOCAL_SHARED_LIBRARIES += libext4_utils
 endif
+# SElinux
+HAVE_SELINUX := true
 LOCAL_C_INCLUDES += external/libselinux/include
 ifeq ($(HAVE_SELINUX), true)
   #LOCAL_C_INCLUDES += external/libselinux/include
@@ -86,9 +91,11 @@ ifeq ($(HAVE_SELINUX), true)
 #        LOCAL_SHARED_LIBRARIES += libext4_utils
     endif
 endif
+
+# EXT4 Utils
 LOCAL_CFLAGS += -DUSE_EXT4
 LOCAL_C_INCLUDES += system/extras/ext4_utils
-#LOCAL_SHARED_LIBRARIES += libext4_utils
+LOCAL_SHARED_LIBRARIES += libext4_utils
 
 # This binary is in the recovery ramdisk, which is otherwise a copy of root.
 # It gets copied there in config/Makefile.  LOCAL_MODULE_TAGS suppresses
@@ -353,9 +360,10 @@ include $(commands_recovery_local_path)/injecttwrp/Android.mk \
     $(commands_recovery_local_path)/minuitwrp/Android.mk \
     $(commands_recovery_local_path)/openaes/Android.mk
 
-#includes for Safestrap
-include $(commands_recovery_local_path)/safestrap-common/Android.mk
-include $(commands_recovery_local_path)/../../external/safestrap/safestrap.mk
+# splashmenu
+ifeq ($(TW_INCLUDE_SPLASHMENU), true)
+    include $(commands_recovery_local_path)/safestrap-common/splashmenu/Android.mk
+endif
 
 ifeq ($(TW_INCLUDE_CRYPTO_SAMSUNG), true)
     include $(commands_recovery_local_path)/crypto/libcrypt_samsung/Android.mk

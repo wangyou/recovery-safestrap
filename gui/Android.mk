@@ -104,11 +104,13 @@ $(TWRP_RES_GEN):
 	rm -rf $(OUT)/install-files
 	mkdir -p $(OUT)/2nd-init-files
 	mkdir -p $(OUT)/install-files/etc/safestrap/flags
+	mkdir -p $(OUT)/install-files/etc/safestrap/res
 	mkdir -p $(OUT)/APP
 	cp -p $(SS_COMMON)/2nd-init-files/* $(OUT)/2nd-init-files
 	cp -p $(SS_COMMON)/flags/* $(OUT)/install-files/etc/safestrap/flags/
 	cp -p $(SS_COMMON)/bbx $(OUT)/install-files/etc/safestrap/bbx
 	cp -p $(SS_COMMON)/busybox $(OUT)/APP/busybox
+	cp -p $(SS_COMMON)/devices/res/$(DEVICE_RESOLUTION)/* $(OUT)/install-files/etc/safestrap/res/
 	# Call out to external/safestrap
 	$(SS_COMMON)/../../../external/safestrap/build-safestrap.sh
 

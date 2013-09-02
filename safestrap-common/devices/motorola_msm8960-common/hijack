@@ -21,8 +21,8 @@ BOOTMODE=$(getprop ro.bootmode)
 DEVICE=$(getprop ro.product.device)
 CHARGER_MODE=$(cat /sys/class/power_supply/ac/online)
 CHECK_BOOTMODE="bp-tools"
-HIJACK_BIN=logwrapper
-HIJACK_LOC=bin
+HIJACK_BIN=init.qcom.modem_links.sh
+HIJACK_LOC=etc
 SS_CHECK_FILE=.safestrapped
 CURRENT_SYS_DIR=/system
 
@@ -135,15 +135,14 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 			/sbin/bbx echo $BLOCKNAME_DIR/boot=/dev/null >> $SS_DIR/translate
 
 			# unmount partitions
-			/sbin/bbx umount /system
+			/sbin/bbx umount -l /system
 			/sbin/bbx umount $SS_MNT
 			/sbin/bbx umount $USER_MNT
 
 			/sbin/hijack.killall
-
-			/sbin/taskset -p -c 0 1
+			/sbin/taskset -p -c 0 1 > /dev/kmsg
 			/sbin/bbx sync
-			/sbin/taskset -c 0 /sbin/2nd-init
+			/sbin/taskset -c 0 /sbin/2nd-init > /dev/kmsg
 			exit
 		fi
 

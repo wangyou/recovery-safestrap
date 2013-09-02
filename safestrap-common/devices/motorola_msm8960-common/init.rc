@@ -35,10 +35,6 @@ on init
     chown root shell /tmp
     chmod 0775 /tmp
 
-    write /sys/bus/usb/devices/usb1/power/control on
-    write /sys/bus/usb/devices/usb2/power/control on
-    write /sys/bus/usb/devices/usb3/power/control on
-
     write /sys/class/android_usb/android0/enable 0
     write /sys/class/android_usb/android0/idVendor 22b8
     write /sys/class/android_usb/android0/idProduct 4366

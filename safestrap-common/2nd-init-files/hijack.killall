@@ -7,14 +7,14 @@ bbx sleep 1s
 # kill all services
 for i in $(getprop | bbx grep init.svc | bbx sed -r 's/^\[init\.svc\.(.+)\]:.*$/\1/'); do
 	if bbx [[ ! "${i}" = "$SKIP_SERVICE" ]]; then
-		echo "stopping ${i}"
+		echo "stopping ${i}" > /dev/kmsg
 		stop ${i}
 		bbx sleep 1
 	fi
 done
 
 # unmount /tmp
-echo "umount /tmp"
+echo "umount /tmp" > /dev/kmsg
 for i in $(bbx seq 1 10); do
 	TMP=$(bbx mount | bbx grep /tmp)
 	if bbx [[ -z "$TMP" ]] ; then
@@ -31,7 +31,7 @@ for i in $(bbx seq 1 10); do
 		break;
 	fi
 	for j in $(bbx mount | bbx grep yaffs2 | bbx awk '{print $3}'); do
-		echo "umount -l $j"
+		echo "umount -l $j" > /dev/kmsg
 		bbx umount -l "$j"
 	done
 	bbx sleep 1
@@ -44,6 +44,7 @@ for i in $(bbx seq 1 10); do
 		break;
 	fi
 	for j in $(bbx mount | bbx grep ext3 | bbx awk '{print $3}'); do
+		echo "umount -l $j" > /dev/kmsg
 		bbx umount -l "$j"
 	done
 	bbx sleep 1
@@ -56,6 +57,7 @@ for i in $(bbx seq 1 10); do
 		break;
 	fi
 	for j in $(bbx mount | bbx grep ext4 | bbx awk '{print $3}'); do
+		echo "umount -l $j" > /dev/kmsg
 		bbx umount -l "$j"
 	done
 	bbx sleep 1

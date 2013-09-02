@@ -1914,3 +1914,50 @@ void TWPartitionManager::Output_Storage_Fstab(void) {
 	}
 	fclose(fp);
 }
+
+// SAFESTRAP
+int TWPartitionManager::Backup_Safestrap(void) {
+	string bootslot = "";
+	struct stat st;
+	int returnVal = 0;
+	string result;
+
+	DataManager::GetValue("tw_bootslot", bootslot);
+
+	// PROTECT Safestrap files if this is stock
+	if (bootslot == "stock") {
+		if (stat("/tmp/.dont-restore-ss", &st) == 0) {
+			TWFunc::Exec_Cmd("rm /tmp/.dont-restore-ss", result);
+		}
+		PartitionManager.Mount_By_Path("/system", true);
+		TWFunc::Exec_Cmd("/sbin/backup-ss.sh", result);
+		PartitionManager.UnMount_By_Path("/system", true);
+		if (result != "") returnVal = 1;
+	}
+	return returnVal;
+}
+
+int TWPartitionManager::Restore_Safestrap(void) {
+	string bootslot;
+	struct stat st;
+	int returnVal = 0;
+	string result;
+
+	// Check for special .zip which updates SS (creates a file as /tmp/.dont-restore-ss)
+	if (stat("/tmp/.dont-restore-ss", &st) != 0) {
+		DataManager::GetValue("tw_bootslot", bootslot);
+
+		// RESTORE Safestrap files if this is stock
+		if (bootslot == "stock") {
+			PartitionManager.Mount_By_Path("/system", true);
+			TWFunc::Exec_Cmd("/sbin/restore-ss.sh", result);
+			PartitionManager.UnMount_By_Path("/system", true);
+			if (result != "") returnVal = 1;
+		}
+	}
+	else {
+		TWFunc::Exec_Cmd("rm /tmp/.dont-restore-ss", result);
+	}
+	return returnVal;
+}
+

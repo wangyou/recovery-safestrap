@@ -226,22 +226,9 @@ int GUIAction::flash_zip(std::string filename, std::string pageName, const int s
 	if (simulate) {
 		simulate_progress_bar();
 	} else {
-		string bootslot = "";
 		struct stat st;
 		string result;
-
-		DataManager::GetValue("tw_bootslot", bootslot);
-
-		// PROTECT Safestrap files if this is stock
-		if (bootslot == "stock") {
-			if (stat("/tmp/.dont-restore-ss", &st) == 0) {
-				TWFunc::Exec_Cmd("rm /tmp/.dont-restore-ss", result);
-			}
-			PartitionManager.Mount_By_Path("/system", true);
-			TWFunc::Exec_Cmd("/sbin/backup-ss.sh", result);
-			PartitionManager.UnMount_By_Path("/system", true);
-			if (result != "") return 1;
-		}
+		if (PartitionManager.Backup_Safestrap()) return 1;
 
 		ret_val = TWinstall_zip(filename.c_str(), wipe_cache);
 
@@ -257,20 +244,7 @@ int GUIAction::flash_zip(std::string filename, std::string pageName, const int s
 			}
 		}
 
-
-		// Check for special .zip which updates SS (creates a file as /tmp/.dont-restore-ss)
-		if (stat("/tmp/.dont-restore-ss", &st) != 0) {
-			// RESTORE Safestrap files if this is stock
-			if (bootslot == "stock") {
-				PartitionManager.Mount_By_Path("/system", true);
-				TWFunc::Exec_Cmd("/sbin/restore-ss.sh", result);
-				PartitionManager.UnMount_By_Path("/system", true);
-				if (result != "") return 1;
-			}
-		}
-		else {
-			TWFunc::Exec_Cmd("rm /tmp/.dont-restore-ss", result);
-		}
+		if (PartitionManager.Restore_Safestrap()) return 1;
 	}
 
 	// Done
@@ -949,28 +923,13 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 					}
 					DataManager::SetValue(TW_BACKUP_NAME, "(Current Date)");
 				} else if (arg == "restore") {
-					string bootslot = "";
-					DataManager::GetValue("tw_bootslot", bootslot);
-
-					// PROTECT Safestrap files if this is stock
-					if (bootslot == "stock") {
-						PartitionManager.Mount_By_Path("/system", true);
-						TWFunc::Exec_Cmd("/sbin/backup-ss.sh", result);
-						PartitionManager.UnMount_By_Path("/system", true);
-						if (result != "") return 1;
-					}
+					if (PartitionManager.Backup_Safestrap()) return 1;
 
 					string Restore_Name;
 					DataManager::GetValue("tw_restore", Restore_Name);
 					ret = PartitionManager.Run_Restore(Restore_Name);
 
-					// RESTORE Safestrap files if this is stock
-					if (bootslot == "stock") {
-						PartitionManager.Mount_By_Path("/system", true);
-						TWFunc::Exec_Cmd("/sbin/restore-ss.sh", result);
-						PartitionManager.UnMount_By_Path("/system", true);
-						if (result != "") return 1;
-					}
+					if (PartitionManager.Restore_Safestrap()) return 1;
 				} else {
 					operation_end(1, simulate);
 					return -1;
@@ -1290,6 +1249,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 				// that we converted to ORS commands during boot in recovery.cpp.
 				// Run those first.
 				int reboot = 0;
+				// HASH: if stock run SS hijack backup here
+				PartitionManager.Backup_Safestrap();
 				if (TWFunc::Path_Exists(SCRIPT_FILE_TMP)) {
 					gui_print("Processing AOSP recovery commands...\n");
 					if (OpenRecoveryScript::run_script_file() == 0) {
@@ -1303,6 +1264,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 						reboot = 1;
 					}
 				}
+				// HASH: if stock run SS hijack restore here
+				PartitionManager.Restore_Safestrap();
 				if (reboot) {
 					usleep(2000000); // Sleep for 2 seconds before rebooting
 					TWFunc::tw_reboot(rb_system);

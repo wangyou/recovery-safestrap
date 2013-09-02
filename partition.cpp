@@ -1006,16 +1006,9 @@ bool TWPartition::Wipe(string New_File_System) {
 		wiped = Wipe_Data_Without_Wiping_Media();
 	} else {
 		string bootslot = "";
-		string result;
 		DataManager::GetValue("tw_bootslot", bootslot);
 
-		// PROTECT Safestrap if arg = "/system" and bootslot = "stock"
-		if ((bootslot == "stock") && (Mount_Point == "/system")) {
-			Mount(true);
-			TWFunc::Exec_Cmd("/sbin/backup-ss.sh", result);
-			UnMount(true);
-			if (result != "") return 1;
-		}
+		if (PartitionManager.Backup_Safestrap()) return 1;
 
 		DataManager::GetValue(TW_RM_RF_VAR, check);
 
@@ -1043,7 +1036,7 @@ bool TWPartition::Wipe(string New_File_System) {
 		// RESTORE Safestrap files if this is stock
 		if ((bootslot == "stock") && (Mount_Point == "/system")) {
 			Mount(true);
-			TWFunc::Exec_Cmd("/sbin/restore-ss.sh", result);
+			PartitionManager.Restore_Safestrap();
 			UnMount(true);
 		}
 	}

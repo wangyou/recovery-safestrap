@@ -17,6 +17,12 @@
 #ifndef _MINUI_H_
 #define _MINUI_H_
 
+#include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void* gr_surface;
 typedef unsigned short gr_pixel;
 
@@ -72,5 +78,9 @@ void res_free_surface(gr_surface surface);
 int ev_wait(int timeout);
 void ev_dispatch(void);
 int ev_get_input(int fd, short revents, struct input_event *ev);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

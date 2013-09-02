@@ -26,7 +26,6 @@
 
 #include "common.h"
 #include "minui/minui.h"
-#include "splashmenu_ui.h"
 
 #ifndef MAX_ROWS
 #define MAX_COLS 96
@@ -220,13 +219,6 @@ static void *input_thread(void *cookie)
             pthread_cond_signal(&key_queue_cond);
         }
         pthread_mutex_unlock(&key_queue_mutex);
-
-        if (ev.value > 0 && device_toggle_display(key_pressed, ev.code)) {
-            pthread_mutex_lock(&gUpdateMutex);
-            show_text = !show_text;
-            update_screen_locked();
-            pthread_mutex_unlock(&gUpdateMutex);
-        }
     }
     return NULL;
 }
@@ -346,72 +338,6 @@ void ui_print_overwrite(const char *fmt, ...)
     pthread_mutex_unlock(&gUpdateMutex);
 }
 
-void ui_start_menu(char** headers, char** items, int initial_selection) {
-    int i;
-    pthread_mutex_lock(&gUpdateMutex);
-    if (text_rows > 0 && text_cols > 0) {
-        for (i = 0; i < text_rows; ++i) {
-            if (headers[i] == NULL) break;
-            strncpy(menu[i], headers[i], text_cols-1); //copy in all headers[i] to menu[i]
-            menu[i][text_cols-1] = '\0';
-        }
-        menu_top = i; // from this value and previous of i are headers - this item and greater will be menu items[i]
-        for (; i < MENU_MAX_ROWS; ++i) {
-            if (items[i-menu_top] == NULL) break;
-            strncpy(menu[i], items[i-menu_top], text_cols-1);
-            menu[i][text_cols-1] = '\0';
-        }
-        menu_items = i - menu_top; //grand count of how many values are actual menu items to exclude header items
-        show_menu = 1; //display the menu
-        menu_sel = initial_selection; // set menu_sel to initial_selection for proper display
-        if (menu_items <= (text_rows - menu_top)) { // this block of if statements sets menu_show_start to display the right section of the menu based on what item was selected - primarily needed when going back up a level in the menus 
-            menu_show_start = 0;
-        } else {
-            menu_show_start = initial_selection - ((text_rows - menu_top) / 2); // this should place the selected item around the middle of the menu selection area
-            if (menu_show_start > (menu_items - (text_rows - menu_top))) {
-                menu_show_start = (menu_items - (text_rows - menu_top)); // makes sure that we are displaying as many menu items as possible in case the selected item is at the bottom of a large list of menu items
-            }
-            if (menu_show_start < 0) {
-                menu_show_start = 0; // prevents menu_show_start from being <0 in case we're close to the top of the menu
-            }
-        }
-        update_screen_locked();
-    }
-    pthread_mutex_unlock(&gUpdateMutex);
-}
-
-int ui_menu_select(int sel) {
-    int old_sel;
-    pthread_mutex_lock(&gUpdateMutex);
-    if (show_menu > 0) {
-        old_sel = menu_sel;
-        menu_sel = sel;
-        if (menu_sel < 0) menu_sel = menu_items + menu_sel;
-        if (menu_sel >= menu_items) menu_sel = menu_sel - menu_items;
-
-        //move the display starting point up the screen as the selection moves up
-        if (menu_show_start > 0 && menu_sel < menu_show_start) menu_show_start = menu_sel;
-
-        //move display starting point down one past the end of the current screen as the selection moves back end of screen
-        if (menu_sel - menu_show_start + menu_top >= text_rows) menu_show_start = menu_sel + menu_top - text_rows + 1;
-
-        sel = menu_sel;
-        if (menu_sel != old_sel) update_screen_locked();
-    }
-    pthread_mutex_unlock(&gUpdateMutex);
-    return sel;
-}
-
-void ui_end_menu() {
-    int i;
-    pthread_mutex_lock(&gUpdateMutex);
-    if (show_menu > 0 && text_rows > 0 && text_cols > 0) {
-        show_menu = 0;
-        update_screen_locked();
-    }
-    pthread_mutex_unlock(&gUpdateMutex);
-}
-
 int ui_text_visible()
 {
     pthread_mutex_lock(&gUpdateMutex);
@@ -426,19 +352,6 @@ void ui_show_text(int visible)
     show_text = visible;
     update_screen_locked();
     pthread_mutex_unlock(&gUpdateMutex);
-}
-
-int ui_wait_key()
-{
-    pthread_mutex_lock(&key_queue_mutex);
-    while (key_queue_len == 0) {
-        pthread_cond_wait(&key_queue_cond, &key_queue_mutex);
-    }
-
-    int key = key_queue[0];
-    memcpy(&key_queue[0], &key_queue[1], sizeof(int) * --key_queue_len);
-    pthread_mutex_unlock(&key_queue_mutex);
-    return key;
 }
 
 int ui_key_pressed(int key, int skipkey)

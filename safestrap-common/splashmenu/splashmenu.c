@@ -24,7 +24,6 @@
 
 #include "common.h"
 #include "minui/minui.h"
-#include "splashmenu_ui.h"
 
 
 enum { 

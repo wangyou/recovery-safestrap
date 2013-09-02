@@ -19,6 +19,10 @@
 
 #include <stdio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Initialize the graphics system.
 void ui_init();
 void ui_final();
@@ -26,8 +30,7 @@ void ui_final();
 void evt_init();
 void evt_exit();
 
-// Use KEY_* codes from <linux/input.h> or KEY_DREAM_* from "minui/minui.h".
-int ui_wait_key();            // waits for a key/button press, returns the code
+// Use KEY_* codes from <linux/input.h> or KEY_DREAM_* from "minui/minui.h code
 int ui_key_pressed(int key, int skipkey);  // returns >0 if the code is currently pressed
 int ui_text_visible();        // returns >0 if text log is currently visible
 void ui_show_text(int visible);
@@ -39,17 +42,6 @@ void ui_clear_key_queue();
 void ui_print(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 // same without args
 void ui_print_str(char *str);
-
-// Display some header text followed by a menu of items, which appears
-// at the top of the screen (in place of any scrolling ui_print()
-// output, if necessary).
-void ui_start_menu(char** headers, char** items, int initial_selection);
-// Set the menu highlight to the given index, and return it (capped to
-// the range [0..numitems).
-int ui_menu_select(int sel);
-// End menu mode, resetting the text overlay so that ui_print()
-// statements will be displayed.
-void ui_end_menu();
 
 // Set the icon (normally the only thing visible besides the progress bar).
 enum {
@@ -88,5 +80,9 @@ void ui_free_bitmaps();
 
 //checkup
 int checkup_report(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // RECOVERY_COMMON_H

@@ -1,10 +1,13 @@
-
 // action_safestrap.cpp - GUIAction extension
 
 int createImagePartition(string slotName, string imageName, int imageSize, string mountName,
 		int loopNum, int progressBase1, int progressBase2, int progressBase3) {
 	char cmd[255];
 	string result;
+	string seconds;
+
+	DataManager::GetValue("tw_screen_timeout_secs", seconds);
+	blankTimer.setTime(0);
 
 	DataManager::SetValue("tw_operation", "Clearing old " + imageName + ".img...");
 	PartitionManager.UnMount_By_Path("/" + mountName, true);
@@ -55,10 +58,14 @@ int createImagePartition(string slotName, string imageName, int imageSize, strin
 //		goto error_out;
 
 	DataManager::SetValue("ui_progress", progressBase3);
+	blankTimer.resetTimerAndUnblank();
+	blankTimer.setTime(atoi(seconds.c_str()));
 
 	return 0;
 
 error_out:
+	blankTimer.resetTimerAndUnblank();
+	blankTimer.setTime(atoi(seconds.c_str()));
 	gui_print("ERROR=%s\n", result.c_str());
 	fprintf(stderr, "createImagePartition::ERROR=%s\n", result.c_str());
 	return 1;

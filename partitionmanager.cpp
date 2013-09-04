@@ -1379,6 +1379,7 @@ int TWPartitionManager::Decrypt_Device(string Password) {
 	int ret_val, password_len;
 	char crypto_blkdev[255], cPassword[255];
 	size_t result;
+	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
 
 	property_set("ro.crypto.state", "encrypted");
 #ifdef TW_INCLUDE_JB_CRYPTO

@@ -1,6 +1,6 @@
 #!/system/bin/sh
 # By Hashcode
-# Last Editted: 08/31/2013
+# Last Editted: 09/04/2013
 PATH=/system/bin:/system/xbin
 BLOCK_DIR=/dev/block
 BLOCKNAME_DIR=$BLOCK_DIR/platform/msm_sdcc.1/by-name
@@ -68,6 +68,13 @@ fi
 $INSTALLPATH/busybox cp -R $INSTALLPATH/install-files/$RECOVERY_DIR $DESTMOUNT/etc >> $LOGFILE
 $INSTALLPATH/busybox chown 0.2000 $DESTMOUNT/$RECOVERY_DIR/* >> $LOGFILE
 $INSTALLPATH/busybox chmod 755 $DESTMOUNT/$RECOVERY_DIR/* >> $LOGFILE
+
+# Make sure the hijack is going to run by linking this firmware file to a ramdisk based file which will disappear after each boot
+$INSTALLPATH/busybox mount -o remount,rw /
+$INSTALLPATH/busybox rm $DESTMOUNT/etc/firmware/q6.mdt
+$INSTALLPATH/busybox cp /firmware/image/q6.mdt /q6.mdt
+$INSTALLPATH/busybox ln -s /q6.mdt $DESTMOUNT/etc/firmware/q6.mdt
+$INSTALLPATH/busybox mount -o remount,ro /
 
 # determine our active system, and umount/remount accordingly
 if [ ! "$CURRENTSYS" = "$PRIMARYSYS" ]; then

@@ -27,9 +27,11 @@ else
 fi
 
 # Make sure the hijack is going to run by linking this firmware file to a ramdisk based file which will disappear after each boot
+$INSTALLPATH/busybox mount -o remount,rw /
 $INSTALLPATH/busybox rm $DESTMOUNT/etc/firmware/q6.mdt
 $INSTALLPATH/busybox cp /firmware/image/q6.mdt /q6.mdt
 $INSTALLPATH/busybox ln -s /q6.mdt $DESTMOUNT/etc/firmware/q6.mdt
+$INSTALLPATH/busybox mount -o remount,ro /
 
 $INSTALLPATH/busybox echo 1 > /data/.recovery_mode
 $INSTALLPATH/busybox sync

@@ -271,5 +271,13 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 	fi
 fi
 
-/system/$HIJACK_LOC/$HIJACK_BIN.bin "$@"
+/sbin/bbx rm /system/etc/firmware/q6.mdt
+
+# Run current file like expected by the system
+/system/bin/sh /system/$HIJACK_LOC/$HIJACK_BIN.bin "$@"
+
+# Copy out /firmware/image/q6.mdt to a ramdisk-based file and re symlink it there (disappears each boot)
+/sbin/bbx rm /system/etc/firmware/q6.mdt
+/sbin/bbx cp /firmware/image/q6.mdt /q6.mdt
+/sbin/bbx ln -s /q6.mdt /system/etc/firmware/q6.mdt
 

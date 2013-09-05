@@ -1,6 +1,6 @@
 #!/system/bin/sh
 # By Hashcode
-# Last Editted: 08/31/2013
+# Last Editted: 09/04/2013
 PATH=/system/bin:/system/xbin
 BLOCK_DIR=/dev/block
 BLOCKNAME_DIR=$BLOCK_DIR/platform/msm_sdcc.1/by-name
@@ -49,6 +49,10 @@ fi
 if [ -d "$DESTMOUNT/$RECOVERY_DIR" ]; then
 	$INSTALLPATH/busybox rm -r $DESTMOUNT/$RECOVERY_DIR >> $LOGFILE
 fi
+
+# Fix up the firmware file used to enter recovery
+$INSTALLPATH/busybox rm $DESTMOUNT/etc/firmware/q6.mdt
+$INSTALLPATH/busybox ln -s /firmware/image/q6.mdt $DESTMOUNT/etc/firmware/q6.mdt
 
 sync
 

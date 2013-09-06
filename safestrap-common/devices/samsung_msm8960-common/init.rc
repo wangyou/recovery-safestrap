@@ -8,7 +8,7 @@ on init
     export LD_LIBRARY_PATH .:/sbin
     export ANDROID_ROOT /system
     export ANDROID_DATA /data
-    export EXTERNAL_STORAGE /external_sd
+    export EXTERNAL_STORAGE /sdcard
 
     exec /sbin/taskset -p -c 0,1 1
 
@@ -16,21 +16,18 @@ on init
 
     mkdir /boot
     mkdir /recovery
-    mkdir /sdcard-ext
     mkdir /sdcard
     mkdir /internal_sd
     mkdir /external_sd
     mkdir /sd-ext
     mkdir /datadata
     mkdir /emmc
-    mkdir /systemorig
     mkdir /system
     mkdir /data
     mkdir /cache
     mkdir /datamedia
     mkdir /systemorig
     mount /tmp /tmp tmpfs
-    chmod /tmp 0777
 
     chown root shell /tmp
     chmod 0775 /tmp
@@ -38,12 +35,12 @@ on init
     write /sys/class/android_usb/android0/enable 0
     write /sys/class/android_usb/android0/idVendor 04E8
     write /sys/class/android_usb/android0/idProduct 685E
-    write /sys/class/android_usb/android0/f_acm/instances 1
-    write /sys/class/android_usb/android0/functions mass_storage,adb
+    write /sys/class/android_usb/android0/functions adb
     write /sys/class/android_usb/android0/iManufacturer ${ro.product.manufacturer}
     write /sys/class/android_usb/android0/iProduct ${ro.product.model}
     write /sys/class/android_usb/android0/iSerial ${ro.serialno}
 
+    write /sys/class/backlight/panel/brightness 250
 
 on boot
     exec /sbin/fixboot-twrp.sh
@@ -64,8 +61,8 @@ service adbd /sbin/adbd recovery
 
 # Always start adbd on userdebug and eng builds
 on property:ro.debuggable=1
-    write /sys/class/android_usb/android0/enable 1
-    start adbd
+    #write /sys/class/android_usb/android0/enable 1
+    #start adbd
     setprop service.adb.root 1
 
 # Restart adbd so it can run as root

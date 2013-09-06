@@ -405,7 +405,6 @@
 				<actions>
 					<action function="readslotnames"></action>
 					<action function="set">tw_clear_destination=main2</action>
-					<action function="readbootslot">tw_bootslot</action>
 					<action function="page">clear_vars</action>
 				</actions>
 			</object>

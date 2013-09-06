@@ -63,6 +63,9 @@ public:
 	static string GetSettingsStoragePath(void);
 	static string& CGetSettingsStoragePath();
 
+	// Safestrap
+	static void LoadBootslotVar(void);
+
 protected:
 	typedef pair<string, int> TStrIntPair;
 	typedef pair<string, unsigned long long> TStrULLPair;

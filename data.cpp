@@ -40,6 +40,7 @@
 #include "data.hpp"
 #include "partitions.hpp"
 #include "twrp-functions.hpp"
+#include "safestrap-functions.h"
 #ifndef TW_NO_SCREEN_TIMEOUT
 #include "gui/blanktimer.hpp"
 #endif
@@ -569,6 +570,32 @@ void DataManager::SetBackupFolder()
 	}
 }
 
+void DataManager::LoadBootslotVar(void) {
+	char array[512];
+	long lSize;
+	size_t result_len;
+	char str[255] = "stock";
+
+	// Read in the file, if possible
+	FILE* in = fopen("/ss/safestrap/active_slot", "rb");
+	if (!in) return;
+
+	// obtain file size:
+	fseek(in, 0, SEEK_END);
+	lSize = ftell(in);
+	if (lSize > 0) {
+		fseek(in, 0, SEEK_SET);
+		// adjust for EOF
+		result_len = fread(array, 1, lSize, in);
+		if ((long)result_len == lSize) {
+			array[lSize-1] = '\0';
+			strcpy(str, array);
+		}
+	}
+	fclose(in);
+	SetValue("tw_bootslot", str);
+}
+
 void DataManager::SetDefaultValues()
 {
 	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
@@ -584,12 +611,12 @@ void DataManager::SetDefaultValues()
 	mConstValues.insert(make_pair(TW_VERSION_VAR, TW_VERSION_STR));
 	mValues.insert(make_pair("tw_storage_path", make_pair("/", 1)));
 
-// Safestrap
-    mConstValues.insert(make_pair(SS_VERSION_VAR, SS_VERSION_STR));
-    fprintf(stderr, "TW_SS_DEFAULT_VIRT_SYSTEM_SIZE == %s\n", DEFAULT_VIRT_SYSTEM_SIZE);
-    fprintf(stderr, "TW_SS_DEFAULT_VIRT_CACHE_SIZE == %s\n", DEFAULT_VIRT_CACHE_SIZE);
-    mConstValues.insert(make_pair(TW_SS_DEFAULT_VIRT_SYSTEM_SIZE, DEFAULT_VIRT_SYSTEM_SIZE));
-    mConstValues.insert(make_pair(TW_SS_DEFAULT_VIRT_CACHE_SIZE, DEFAULT_VIRT_CACHE_SIZE));
+	// Safestrap
+	mConstValues.insert(make_pair(SS_VERSION_VAR, SS_VERSION_STR));
+	fprintf(stderr, "TW_SS_DEFAULT_VIRT_SYSTEM_SIZE == %s\n", DEFAULT_VIRT_SYSTEM_SIZE);
+	fprintf(stderr, "TW_SS_DEFAULT_VIRT_CACHE_SIZE == %s\n", DEFAULT_VIRT_CACHE_SIZE);
+	mConstValues.insert(make_pair(TW_SS_DEFAULT_VIRT_SYSTEM_SIZE, DEFAULT_VIRT_SYSTEM_SIZE));
+	mConstValues.insert(make_pair(TW_SS_DEFAULT_VIRT_CACHE_SIZE, DEFAULT_VIRT_CACHE_SIZE));
 
 #ifdef TW_FORCE_CPUINFO_FOR_DEVICE_ID
 	printf("TW_FORCE_CPUINFO_FOR_DEVICE_ID := true\n");
@@ -965,6 +992,8 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair("tw_rom-slot2_name", make_pair("XXXXXXXXXX", 0)));
 	mValues.insert(make_pair("tw_rom-slot3_name", make_pair("XXXXXXXXXX", 0)));
 	mValues.insert(make_pair("tw_rom-slot4_name", make_pair("XXXXXXXXXX", 0)));
+	LoadBootslotVar();
+
 
 #ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
 	mValues.insert(make_pair("tw_include_encrypted_backup", make_pair("1", 0)));

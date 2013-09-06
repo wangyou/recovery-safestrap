@@ -157,35 +157,6 @@ int GUIAction::doSafestrapAction(Action action, int isThreaded /* = 0 */) {
 		TWFunc::Exec_Cmd("cp -R /tmp/recovery /cache", result);
 		TWFunc::Exec_Cmd("rm -rf /tmp/recovery", result);
 
-		DataManager::SetValue("tw_bootslot", arg);
-		return 0;
-	}
-
-	if (function == "readbootslot") {
-		char array[512];
-		long lSize;
-		size_t result_len;
-		string str = "stock";
-
-		// Read in the file, if possible
-		FILE* in = fopen("/ss/safestrap/active_slot", "rb");
-		if (!in) return 0;
-
-		// obtain file size:
-		fseek(in, 0, SEEK_END);
-		lSize = ftell(in);
-		if (lSize > 0) {
-			fseek(in, 0, SEEK_SET);
-			// adjust for EOF
-			result_len = fread(array, 1, lSize, in);
-			if ((long)result_len == lSize) {
-				array[lSize-1] = '\0';
-				str = array;
-			}
-		}
-		fclose(in);
-//		gui_print("bootslot set: %s\n", str.c_str());
-		DataManager::SetValue(arg, str);
 		return 0;
 	}
 
@@ -363,9 +334,6 @@ int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */
 			TWFunc::Exec_Cmd("rm -rf /cache/recovery", result);
 			TWFunc::Exec_Cmd("cp -R /tmp/recovery /cache", result);
 			TWFunc::Exec_Cmd("rm -rf /tmp/recovery", result);
-
-			DataManager::SetValue("ui_progress", 100);
-			DataManager::SetValue("tw_bootslot", arg);
 
 			// Done
 			DataManager::SetValue("ui_progress", 0);

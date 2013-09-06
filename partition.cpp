@@ -226,7 +226,6 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Storage_Name = "Internal Storage";
 			Has_Data_Media = true;
 			Is_Storage = true;
-// FIXME-HASH: change to variable
 			Storage_Path = datamedia_mount + "/media";
 			Is_Settings_Storage = true;
 			Symlink_Path = Storage_Path;
@@ -237,7 +236,6 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				Make_Dir("/sdcard", Display_Error);
 				Symlink_Mount_Point = "/sdcard";
 			}
-// FIXME-HASH: change to variable
 			if (Mount(false) && TWFunc::Path_Exists(datamedia_mount + "/media/0")) {
 				Storage_Path = datamedia_mount + "/media/0";
 				Symlink_Path = Storage_Path;
@@ -317,11 +315,6 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Display_Name = "Boot";
 			Backup_Display_Name = Display_Name;
 			DataManager::SetValue("tw_boot_is_mountable", 1);
-			Can_Be_Backed_Up = true;
-		} else if (Mount_Point == datamedia_mount) {
-			Display_Name = "DataMedia";
-			Is_SubPartition = true;
-			SubPartition_Of = "/data";
 			Can_Be_Backed_Up = true;
 		}
 #ifdef TW_EXTERNAL_STORAGE_PATH
@@ -1697,6 +1690,7 @@ bool TWPartition::Restore_Flash_Image(string restore_folder) {
 
 bool TWPartition::Update_Size(bool Display_Error) {
 	bool ret = false, Was_Already_Mounted = false;
+	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
 
 	if (!Can_Be_Mounted && !Is_Encrypted)
 		return false;
@@ -1720,10 +1714,15 @@ bool TWPartition::Update_Size(bool Display_Error) {
 	if (Has_Data_Media) {
 		if (Mount(Display_Error)) {
 			unsigned long long data_media_used, actual_data;
+			string bootslot = "";
+
+			DataManager::GetValue("tw_bootslot", bootslot);
 			Used = TWFunc::Get_Folder_Size("/data", Display_Error);
-// FIXME-HASH: change to a setting
-			data_media_used = TWFunc::Get_Folder_Size("/data/media", Display_Error);
-			actual_data = Used - data_media_used;
+			data_media_used = TWFunc::Get_Folder_Size(datamedia_mount + "/media", Display_Error);
+			if (bootslot == "stock")
+				actual_data = Used - data_media_used;
+			else
+				actual_data = Used;
 			Backup_Size = actual_data;
 			int bak = (int)(Backup_Size / 1048576LLU);
 			int total = (int)(Size / 1048576LLU);
@@ -1771,14 +1770,16 @@ void TWPartition::Find_Actual_Block_Device(void) {
 
 void TWPartition::Recreate_Media_Folder(void) {
 	string Command;
+	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
+	char path[255];
 
-// FIXME-HASH: change to setting
 	if (!Mount(true)) {
 		LOGERR("Unable to recreate /data/media folder.\n");
-	} else if (!TWFunc::Path_Exists("/data/media")) {
+	} else if (!TWFunc::Path_Exists(datamedia_mount + "/media")) {
 		PartitionManager.Mount_By_Path(Symlink_Mount_Point, true);
 		LOGINFO("Recreating /data/media folder.\n");
-		mkdir("/data/media", S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH); 
+		sprintf(path, "%s/media", datamedia_mount.c_str());
+		mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 		PartitionManager.UnMount_By_Path(Symlink_Mount_Point, true);
 	}
 }

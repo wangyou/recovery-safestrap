@@ -1226,6 +1226,7 @@ void TWPartitionManager::Update_System_Details(void) {
 	int data_size = 0;
 	int datamedia_size = 0;
 
+	DataManager::LoadBootslotVar();
 	gui_print("Updating partition details...\n");
 	for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
 		if ((*iter)->Can_Be_Mounted) {

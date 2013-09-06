@@ -8,7 +8,7 @@ on init
     export LD_LIBRARY_PATH .:/sbin
     export ANDROID_ROOT /system
     export ANDROID_DATA /data
-    export EXTERNAL_STORAGE /sdcard
+    export EXTERNAL_STORAGE /sdcard-ext
 
     exec /sbin/taskset -p -c 0,1 1
 

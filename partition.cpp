@@ -316,6 +316,14 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Backup_Display_Name = Display_Name;
 			DataManager::SetValue("tw_boot_is_mountable", 1);
 			Can_Be_Backed_Up = true;
+		} else if (Mount_Point == "/datamedia") {
+			Storage_Name = "Internal Storage";
+			Storage_Path = datamedia_mount + "/media";
+			Symlink_Path = Storage_Path;
+			if (Mount(false) && TWFunc::Path_Exists(datamedia_mount + "/media/0")) {
+				Storage_Path = datamedia_mount + "/media/0";
+				Symlink_Path = Storage_Path;
+			}
 		}
 #ifdef TW_EXTERNAL_STORAGE_PATH
 		if (Mount_Point == EXPAND(TW_EXTERNAL_STORAGE_PATH)) {

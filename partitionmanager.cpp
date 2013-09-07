@@ -471,9 +471,10 @@ int TWPartitionManager::Check_Backup_Name(bool Display_Error) {
 	char backup_loc[255], tw_image_dir[255];
 	int copy_size;
 	int index, cur_char;
-	string Backup_Name, Backup_Loc;
+	string Backup_Name, Backup_Loc, bootslot;
 
 	DataManager::GetValue(TW_BACKUP_NAME, Backup_Name);
+	DataManager::GetValue("tw_bootslot", bootslot);
 	copy_size = Backup_Name.size();
 	// Check size
 	if (copy_size > MAX_BACKUP_NAME_LEN) {
@@ -505,8 +506,7 @@ int TWPartitionManager::Check_Backup_Name(bool Display_Error) {
 	// Check to make sure that a backup with this name doesn't already exist
 	DataManager::GetValue(TW_BACKUPS_FOLDER_VAR, Backup_Loc);
 	strcpy(backup_loc, Backup_Loc.c_str());
-// FIXME-HASH: add rom-slot to the name
-	sprintf(tw_image_dir,"%s/%s", backup_loc, Backup_Name.c_str());
+	sprintf(tw_image_dir,"%s/%s-%s", backup_loc, bootslot.c_str(), Backup_Name.c_str());
 	if (TWFunc::Path_Exists(tw_image_dir)) {
 		if (Display_Error)
 			LOGERR("A backup with this name already exists.\n");
@@ -658,12 +658,14 @@ int TWPartitionManager::Run_Backup(void) {
 	struct tm *t;
 	time_t start, stop, seconds, total_start, total_stop;
 	size_t start_pos = 0, end_pos = 0;
+	string bootslot;
 	seconds = time(0);
     t = localtime(&seconds);
 
 	time(&total_start);
 
 	Update_System_Details();
+	DataManager::GetValue("tw_bootslot", bootslot);
 
 	if (!Mount_Current_Storage(true))
 		return false;
@@ -682,7 +684,7 @@ int TWPartitionManager::Run_Backup(void) {
 		Backup_Name = timestamp;
 	}
 	LOGINFO("Backup Name is: '%s'\n", Backup_Name.c_str());
-	Full_Backup_Path = Backup_Folder + "/" + Backup_Name + "/";
+	Full_Backup_Path = Backup_Folder + "/" + bootslot + "-" + Backup_Name + "/";
 	LOGINFO("Full_Backup_Path is: '%s'\n", Full_Backup_Path.c_str());
 
 	LOGINFO("Calculating backup details...\n");
@@ -1190,14 +1192,13 @@ int TWPartitionManager::Wipe_Media_From_Data(void) {
 
 	if (dat != NULL) {
 		if (!dat->Has_Data_Media) {
-			LOGERR("This device does not have /datamedia/media\n");
+			LOGERR("This device does not have /data/media\n");
 			return false;
 		}
 		if (!dat->Mount(true))
 			return false;
 
-		gui_print("Wiping internal storage -- /datamedia/media...\n");
-// FIXME-HASH: change to name setting
+		gui_print("Wiping internal storage -- /data/media...\n");
 		TWFunc::removeDir(datamedia_mount + "/media", false);
 		if (mkdir((datamedia_mount + "/media").c_str(), S_IRWXU | S_IRWXG | S_IWGRP | S_IXGRP) != 0)
 			return -1;
@@ -1224,7 +1225,6 @@ void TWPartitionManager::Update_System_Details(void) {
 	std::vector<TWPartition*>::iterator iter;
 	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
 	int data_size = 0;
-	int datamedia_size = 0;
 
 	DataManager::LoadBootslotVar();
 	gui_print("Updating partition details...\n");
@@ -1236,8 +1236,6 @@ void TWPartitionManager::Update_System_Details(void) {
 				DataManager::SetValue(TW_BACKUP_SYSTEM_SIZE, backup_display_size);
 			} else if ((*iter)->Mount_Point == "/data" || (*iter)->Mount_Point == "/datadata") {
 				data_size += (int)((*iter)->Backup_Size / 1048576LLU);
-			} else if ((*iter)->Mount_Point == datamedia_mount) {
-				datamedia_size += (int)((*iter)->Backup_Size / 1048576LLU);
 			} else if ((*iter)->Mount_Point == "/cache") {
 				int backup_display_size = (int)((*iter)->Backup_Size / 1048576LLU);
 				DataManager::SetValue(TW_BACKUP_CACHE_SIZE, backup_display_size);
@@ -1307,8 +1305,6 @@ void TWPartitionManager::Update_System_Details(void) {
 					DataManager::SetValue(TW_HAS_RECOVERY_PARTITION, 1);
 			} else if ((*iter)->Mount_Point == "/data") {
 				data_size += (int)((*iter)->Backup_Size / 1048576LLU);
-			} else if ((*iter)->Mount_Point == datamedia_mount) {
-				datamedia_size += (int)((*iter)->Backup_Size / 1048576LLU);
 			}
 #ifdef SP1_NAME
 			if ((*iter)->Backup_Name == EXPAND(SP1_NAME)) {
@@ -1790,11 +1786,27 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 		}
 	} else if (ListType == "storage") {
 		char free_space[255];
+#ifdef RECOVERY_SDCARD_ON_DATA
+		string bootslot;
+		DataManager::GetValue("tw_bootslot", bootslot);
+#endif
 		string Current_Storage = DataManager::GetCurrentStoragePath();
 		for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
 			if ((*iter)->Is_Storage && !(*iter)->Hidden) {
 				struct PartitionList part;
+#ifdef RECOVERY_SDCARD_ON_DATA
+				if (((*iter)->Mount_Point == "/data") && (bootslot != "stock")) {
+					// Use datamedia free instead
+					string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
+					TWPartition* datamed = Find_Partition_By_Path(datamedia_mount);
+					sprintf(free_space, "%llu", datamed->Free / 1024 / 1024);
+				}
+				else {
+					sprintf(free_space, "%llu", (*iter)->Free / 1024 / 1024);
+				}
+#else
 				sprintf(free_space, "%llu", (*iter)->Free / 1024 / 1024);
+#endif
 				part.Display_Name = (*iter)->Storage_Name + " (";
 				part.Display_Name += free_space;
 				part.Display_Name += "MB)";

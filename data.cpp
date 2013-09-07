@@ -461,6 +461,9 @@ int DataManager::SetValue(const string varName, string value, int persist /* = 0
 	if (varName == "tw_storage_path") {
 		SetBackupFolder();
 	}
+	if (varName == TW_ZIP_LOCATION_VAR) {
+		LOGINFO("TW_ZIP_LOCATION_VAR == %s\n", value.c_str());
+	}
 	gui_notifyVarChange(varName.c_str(), value.c_str());
 	return 0;
 }
@@ -550,10 +553,14 @@ void DataManager::SetBackupFolder()
 		SetValue("tw_storage_free_size", free_space);
 		string zip_path, zip_root, storage_path;
 		GetValue(TW_ZIP_LOCATION_VAR, zip_path);
+#ifndef TW_INTERNAL_STORAGE_PATH
+		LOGINFO("DataManager::SetBackupFolder no TW_INTERNAL_STORAGE_PATH\n", storage_path.c_str());
 		if (partition->Has_Data_Media)
 			storage_path = partition->Symlink_Mount_Point;
 		else
+#endif
 			storage_path = partition->Storage_Path;
+		LOGINFO("DataManager::SetBackupFolder storage_path=%s\n", storage_path.c_str());
 		if (zip_path.size() < storage_path.size()) {
 			SetValue(TW_ZIP_LOCATION_VAR, storage_path);
 		} else {

@@ -158,7 +158,7 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 			CURRENT_SYS_DIR=$SYS2_MNT
 		fi
 
-		if [ -d "$CURRENT_SYS_DIR/etc/rootfs" ] || [ -d "$CURRENT_SYS_DIR/etc/kexec" ]; then
+		if [ "$ALT_SYSTEM_MODE" = "1" ] || [ -d "$CURRENT_SYS_DIR/etc/rootfs" ] || [ -d "$CURRENT_SYS_DIR/etc/kexec" ]; then
 
 			/sbin/bbx unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
 			/sbin/bbx chmod 750 /sbin/*
@@ -201,13 +201,14 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 				exit
 			fi
 
-			# check for rootfs files
-			if [ -d "$CURRENT_SYS_DIR/etc/rootfs" ]; then
+			# check for alt-system or rootfs files
+			if [ "$ALT_SYSTEM_MODE" = "1" ] || [ -d "$CURRENT_SYS_DIR/etc/rootfs" ]; then
 				# BEGIN CLEANUP TODO: this should really be a device independant cleanup file
 
 				# adjust stock init.rc file to include /sbin/fixboot.sh
-				/sbin/bbx cat /init.rc | /sbin/bbx sed "s/on fs/on fs\nexec \/sbin\/fixboot.sh/" > /init.rc.new0
-				/sbin/bbx cat /init.rc.new0 | /sbin/bbx sed "s/service sdcard \/system\/bin\/sdcard \/data\/media/service sdcard \/system\/bin\/sdcard \/datamedia\/media/" > /init.rc.new3
+				/sbin/bbx cat /init.rc | /sbin/bbx sed "s/on init/on init\nexec \/sbin\/fixboot.sh/" > /init.rc.new0
+				/sbin/bbx cat /init.rc.new0 | /sbin/bbx sed "s/service sdcard \/system\/bin\/sdcard \/data\/media/service sdcard \/system\/bin\/sdcard \/datamedia\/media/" > /init.rc.new2
+				/sbin/bbx cat /init.rc.new2 | /sbin/bbx sed "s/loglevel 3/loglevel 8/" > /init.rc.new3
 				/sbin/bbx mv /init.rc /init.rc.old
 				/sbin/bbx mv /init.rc.new3 /init.rc
 				/sbin/bbx rm /init.rc.new*
@@ -225,7 +226,7 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 				/sbin/bbx cp -R $CURRENT_SYS_DIR/etc/rootfs/* /
 
 				# reset permissions
-				/sbin/bbx chmod -R 750 /sbin/*
+				/sbin/bbx chmod -R 755 /sbin/*
 				/sbin/bbx chmod 755 /init
 				/sbin/bbx chmod 755 /charger
 				/sbin/bbx chmod 644 /default.prop

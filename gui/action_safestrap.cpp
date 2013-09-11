@@ -7,7 +7,9 @@ int createImagePartition(string slotName, string imageName, int imageSize, strin
 	string seconds;
 
 	DataManager::GetValue("tw_screen_timeout_secs", seconds);
+#ifndef TW_NO_SCREEN_TIMEOUT
 	blankTimer.setTime(0);
+#endif
 
 	DataManager::SetValue("tw_operation", "Clearing old " + imageName + ".img...");
 	PartitionManager.UnMount_By_Path("/" + mountName, true);
@@ -58,14 +60,18 @@ int createImagePartition(string slotName, string imageName, int imageSize, strin
 //		goto error_out;
 
 	DataManager::SetValue("ui_progress", progressBase3);
+#ifndef TW_NO_SCREEN_TIMEOUT
 	blankTimer.resetTimerAndUnblank();
 	blankTimer.setTime(atoi(seconds.c_str()));
+#endif
 
 	return 0;
 
 error_out:
+#ifndef TW_NO_SCREEN_TIMEOUT
 	blankTimer.resetTimerAndUnblank();
 	blankTimer.setTime(atoi(seconds.c_str()));
+#endif
 	gui_print("ERROR=%s\n", result.c_str());
 	fprintf(stderr, "createImagePartition::ERROR=%s\n", result.c_str());
 	return 1;

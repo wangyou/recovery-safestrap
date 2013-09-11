@@ -203,7 +203,9 @@ static int get_framebuffer(GGLSurface *fb)
     fb++;
 
     /* check if we can use double buffering */
+#ifndef RECOVERY_GRAPHICS_DONT_DOUBLE_BUFFER
     if (vi.yres * fi.line_length * 2 > fi.smem_len)
+#endif
         return fd;
 
     double_buffering = 1;

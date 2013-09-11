@@ -34,6 +34,10 @@ ifeq ($(RECOVERY_GRAPHICS_USE_LINELENGTH), true)
 LOCAL_CFLAGS += -DRECOVERY_GRAPHICS_USE_LINELENGTH
 endif
 
+ifeq ($(RECOVERY_GRAPHICS_DONT_DOUBLE_BUFFER), true)
+LOCAL_CFLAGS += -DRECOVERY_GRAPHICS_DONT_DOUBLE_BUFFER
+endif
+
 #Remove the # from the line below to enable event logging
 #TWRP_EVENT_LOGGING := true
 ifeq ($(TWRP_EVENT_LOGGING), true)

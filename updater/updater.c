@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
         return 4;
     }
 
-    char* script = malloc(script_entry->uncompLen+1);
+    char* script = malloc(script_entry->uncompLen+1001); // add 1000 extra chars for translation
     if (!mzReadZipEntry(&za, script_entry, script, script_entry->uncompLen)) {
         fprintf(stderr, "failed to read script from package\n");
         return 5;
@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
     RegisterInstallFunctions();
 //    RegisterDeviceExtensions();
     FinishRegistration();
-    ProcessSafestrapTranslations(script, script_entry->uncompLen);
+    ProcessSafestrapTranslations(script, script_entry->uncompLen+1000); // add 1000 extra chars for translation
 
     // Parse the script.
 

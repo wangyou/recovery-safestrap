@@ -3,15 +3,16 @@
 # Last Editted: 08/28/2013
 PATH=/system/bin:/system/xbin
 BLOCK_DIR=/dev/block
-BLOCKNAME_DIR=$BLOCK_DIR/platform/msm_sdcc.1/by-name
+BLOCK_SYSTEM=mmcblk0p16
+BLOCK_BOOT=mmcblk0p20
 SYS_BLOCK_FSTYPE=ext4
 
 INSTALLPATH=$1
 
-CURRENTSYS=`$INSTALLPATH/busybox readlink $BLOCKNAME_DIR/system`
-PRIMARYSYS=`$INSTALLPATH/busybox readlink $BLOCKNAME_DIR/systemorig`
+CURRENTSYS=`$INSTALLPATH/busybox readlink $BLOCK_DIR/$BLOCK_SYSTEM`
+PRIMARYSYS=`$INSTALLPATH/busybox readlink $BLOCK_DIR/$BLOCK_SYSTEM-orig`
 if [ "$PRIMARYSYS" = "" ]; then
-	PRIMARYSYS=`$INSTALLPATH/busybox readlink $BLOCKNAME_DIR/system`
+	PRIMARYSYS=`$INSTALLPATH/busybox readlink $BLOCK_DIR/$BLOCK_SYSTEM`
 fi
 
 if [ ! "$CURRENTSYS" = "$PRIMARYSYS" ]; then

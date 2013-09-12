@@ -3,7 +3,9 @@
 # Last Editted: 09/04/2013
 PATH=/system/bin:/system/xbin
 BLOCK_DIR=/dev/block
-BLOCKNAME_DIR=$BLOCK_DIR/platform/msm_sdcc.1/by-name
+BLOCK_SYSTEM=mmcblk0p16
+BLOCK_BOOT=mmcblk0p20
+
 SYS_BLOCK_FSTYPE=ext4
 HIJACK_BIN=etc/init.qcom.modem_links.sh
 
@@ -13,10 +15,10 @@ LOGFILE=$INSTALLPATH/action-install.log
 
 chmod 755 $INSTALLPATH/busybox
 
-CURRENTSYS=`$INSTALLPATH/busybox readlink $BLOCKNAME_DIR/system`
-PRIMARYSYS=`$INSTALLPATH/busybox readlink $BLOCKNAME_DIR/systemorig`
+CURRENTSYS=`$INSTALLPATH/busybox readlink $BLOCK_DIR/$BLOCK_SYSTEM`
+PRIMARYSYS=`$INSTALLPATH/busybox readlink $BLOCK_DIR/$BLOCK_SYSTEM-orig`
 if [ "$PRIMARYSYS" = "" ]; then
-	PRIMARYSYS=`$INSTALLPATH/busybox readlink $BLOCKNAME_DIR/system`
+	PRIMARYSYS=`$INSTALLPATH/busybox readlink $BLOCK_DIR/$BLOCK_SYSTEM`
 fi
 
 $INSTALLPATH/busybox echo '' > $LOGFILE

@@ -1,17 +1,20 @@
 #!/system/etc/safestrap/bbx sh
 # By: Hashcode
-# Last Editted: 08/31/2013
+# Last Editted: 09/11/2013
 # Added Stock Hijack
 PATH=/system/xbin:/system/bin:/sbin
 BLOCK_DIR=/dev/block
-BLOCKNAME_DIR=$BLOCK_DIR/platform/msm_sdcc.1/by-name
+BLOCK_SYSTEM=mmcblk0p36
+BLOCK_USERDATA=mmcblk0p38
+BLOCK_CACHE=mmcblk0p35
+BLOCK_BOOT=mmcblk0p31
 
 # SS3 Setup
 SYS2_MNT=/s2
 IMG_TYPE=ext4
 USER_MNT=/datamedia
 SS_MNT=/ss
-SS_PART=userdata
+SS_PART=$BLOCK_USERDATA
 SS_TYPE=ext4
 
 RECOVERY_DIR=/system/etc/safestrap
@@ -49,6 +52,7 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 		/sbin/bbx mknod -m600 /dev/block/loop-system b 7 99
 		/sbin/bbx mknod -m600 /dev/block/loop-userdata b 7 98
 		/sbin/bbx mknod -m600 /dev/block/loop-cache b 7 97
+		/sbin/bbx mknod -m600 /dev/block/loop-boot b 7 96
 
 		# create safestrap mount point
 		/sbin/bbx mkdir $SS_MNT
@@ -62,7 +66,7 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 		/sbin/bbx chmod 777 $USER_MNT
 
 		# mount safestrap partition
-		/sbin/bbx mount -t $SS_TYPE $BLOCKNAME_DIR/$SS_PART $USER_MNT
+		/sbin/bbx mount -t $SS_TYPE $BLOCK_DIR/$SS_PART $USER_MNT
 		/sbin/bbx mount $USER_MNT/media $SS_MNT
 
 		if [ ! -d "$SS_DIR" ]; then
@@ -126,14 +130,6 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 			/sbin/bbx chmod 750 /sbin/*
 			/sbin/bbx sync
 
-			# setup translate table
-			/sbin/bbx echo `/sbin/bbx ls -l $BLOCKNAME_DIR/ | /sbin/bbx grep system | /sbin/bbx tail -c 22`=$BLOCKNAME_DIR/system > $SS_DIR/translate
-			/sbin/bbx echo `/sbin/bbx ls -l $BLOCKNAME_DIR/ | /sbin/bbx grep userdata | /sbin/bbx tail -c 22`=$BLOCKNAME_DIR/userdata >> $SS_DIR/translate
-			/sbin/bbx echo `/sbin/bbx ls -l $BLOCKNAME_DIR/ | /sbin/bbx grep cache | /sbin/bbx tail -c 22`=$BLOCKNAME_DIR/cache >> $SS_DIR/translate
-			# meager attempt at stopping writes to the boot device
-			/sbin/bbx echo `/sbin/bbx ls -l $BLOCKNAME_DIR/ | /sbin/bbx grep boot | /sbin/bbx tail -c 22`=/dev/null >> $SS_DIR/translate
-			/sbin/bbx echo $BLOCKNAME_DIR/boot=/dev/null >> $SS_DIR/translate
-
 			# unmount partitions
 			/sbin/bbx umount -l /system
 			/sbin/bbx umount $SS_MNT
@@ -158,7 +154,7 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 			CURRENT_SYS_DIR=$SYS2_MNT
 		fi
 
-		if [ -d "$CURRENT_SYS_DIR/etc/rootfs" ] || [ -d "$CURRENT_SYS_DIR/etc/kexec" ]; then
+		if [ "$ALT_SYSTEM_MODE" = "1" ] || [ -d "$CURRENT_SYS_DIR/etc/rootfs" ] || [ -d "$CURRENT_SYS_DIR/etc/kexec" ]; then
 
 			/sbin/bbx unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
 			/sbin/bbx chmod 750 /sbin/*
@@ -201,13 +197,14 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 				exit
 			fi
 
-			# check for rootfs files
-			if [ -d "$CURRENT_SYS_DIR/etc/rootfs" ]; then
+			# check for alt-system or rootfs files
+			if [ "$ALT_SYSTEM_MODE" = "1" ] || [ -d "$CURRENT_SYS_DIR/etc/rootfs" ]; then
 				# BEGIN CLEANUP TODO: this should really be a device independant cleanup file
 
 				# adjust stock init.rc file to include /sbin/fixboot.sh
 				/sbin/bbx cat /init.rc | /sbin/bbx sed "s/on fs/on fs\nexec \/sbin\/fixboot.sh/" > /init.rc.new0
-				/sbin/bbx cat /init.rc.new0 | /sbin/bbx sed "s/service sdcard \/system\/bin\/sdcard \/data\/media/service sdcard \/system\/bin\/sdcard \/datamedia\/media/" > /init.rc.new3
+				/sbin/bbx cat /init.rc.new0 | /sbin/bbx sed "s/service sdcard \/system\/bin\/sdcard \/data\/media/service sdcard \/system\/bin\/sdcard \/datamedia\/media/" > /init.rc.new2
+				/sbin/bbx cat /init.rc.new2 | /sbin/bbx sed "s/loglevel 3/loglevel 8/" > /init.rc.new3
 				/sbin/bbx mv /init.rc /init.rc.old
 				/sbin/bbx mv /init.rc.new3 /init.rc
 				/sbin/bbx rm /init.rc.new*
@@ -225,7 +222,7 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 				/sbin/bbx cp -R $CURRENT_SYS_DIR/etc/rootfs/* /
 
 				# reset permissions
-				/sbin/bbx chmod -R 750 /sbin/*
+				/sbin/bbx chmod -R 755 /sbin/*
 				/sbin/bbx chmod 755 /init
 				/sbin/bbx chmod 755 /charger
 				/sbin/bbx chmod 644 /default.prop

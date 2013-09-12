@@ -91,8 +91,8 @@ int main(int argc, char **argv) {
 
   ui_show_text(1);
 
-  int keyp = wait_key(KEY_MENU, KEY_SEARCH);
-  status = ((keyp == KEY_MENU) ? BUTTON_PRESSED : BUTTON_TIMEOUT);
+  int keyp = wait_key(SPLASH_RECOVERY_KEY, SPLASH_CONTINUE_KEY);
+  status = ((keyp == SPLASH_RECOVERY_KEY) ? BUTTON_PRESSED : BUTTON_TIMEOUT);
 
   if (status == BUTTON_PRESSED) {
       result = 0;

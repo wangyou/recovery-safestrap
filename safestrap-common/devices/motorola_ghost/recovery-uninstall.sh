@@ -8,9 +8,9 @@ BLOCK_SYSTEM=mmcblk0p38
 BLOCK_USERDATA=mmcblk0p40
 BLOCK_CACHE=mmcblk0p36
 BLOCK_BOOT=mmcblk0p33
+HIJACK_BIN=bin/logwrapper
 
 SYS_BLOCK_FSTYPE=ext4
-HIJACK_BIN=etc/init.qcom.modem_links.sh
 
 INSTALLPATH=$1
 RECOVERY_DIR=etc/safestrap

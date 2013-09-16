@@ -1,8 +1,8 @@
 #!/sbin/sh
 # By: Hashcode
-# Last Edit: 08/31/2013
-HIJACK_BIN=init.qcom.modem_links.sh
-HIJACK_LOC=etc
+# Last Edit: 09/13/2013
+HIJACK_BIN=logwrapper
+HIJACK_LOC=bin
 
 if [ -d "/tmp/safestrap" ] && [ -f "/tmp/$HIJACK_BIN" ]; then
 	# clear out old safestrap

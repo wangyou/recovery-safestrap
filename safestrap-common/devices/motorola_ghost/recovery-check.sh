@@ -10,7 +10,6 @@ BLOCK_CACHE=mmcblk0p36
 BLOCK_BOOT=mmcblk0p33
 
 SYS_BLOCK_FSTYPE=ext4
-HIJACK_BIN=bin/logwrapper
 
 INSTALLPATH=$1
 RECOVERY_DIR=etc/safestrap

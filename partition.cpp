@@ -223,8 +223,9 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Can_Encrypt_Backup = true;
 			Use_Userdata_Encryption = true;
 #ifdef RECOVERY_SDCARD_ON_DATA
-			Storage_Name = "Internal Storage";
 			Has_Data_Media = true;
+#if 0
+			Storage_Name = "Internal Storage";
 			Is_Storage = true;
 			Storage_Path = datamedia_mount + "/media";
 			Is_Settings_Storage = true;
@@ -242,6 +243,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				DataManager::SetValue(TW_INTERNAL_PATH, datamedia_mount + "/media/0");
 				UnMount(true);
 			}
+#endif
 #endif
 #ifdef TW_INCLUDE_CRYPTO
 			Can_Be_Encrypted = true;
@@ -316,14 +318,27 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Backup_Display_Name = Display_Name;
 			DataManager::SetValue("tw_boot_is_mountable", 1);
 			Can_Be_Backed_Up = true;
+#ifdef RECOVERY_SDCARD_ON_DATA
 		} else if (Mount_Point == "/datamedia") {
+			Is_Storage = true;
 			Storage_Name = "Internal Storage";
 			Storage_Path = datamedia_mount + "/media";
 			Symlink_Path = Storage_Path;
+			if (strcmp(EXPAND(TW_EXTERNAL_STORAGE_PATH), "/sdcard") == 0) {
+				Make_Dir("/emmc", Display_Error);
+				Symlink_Mount_Point = "/emmc";
+			} else {
+				Make_Dir("/sdcard", Display_Error);
+				Symlink_Mount_Point = "/sdcard";
+			}
 			if (Mount(false) && TWFunc::Path_Exists(datamedia_mount + "/media/0")) {
 				Storage_Path = datamedia_mount + "/media/0";
 				Symlink_Path = Storage_Path;
+				DataManager::SetValue(TW_INTERNAL_PATH, datamedia_mount + "/media/0");
+				UnMount(true);
+				Mount_Storage_Retry();
 			}
+#endif
 		}
 #ifdef TW_EXTERNAL_STORAGE_PATH
 		if (Mount_Point == EXPAND(TW_EXTERNAL_STORAGE_PATH)) {

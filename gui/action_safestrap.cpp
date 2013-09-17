@@ -44,7 +44,7 @@ int createImagePartition(string slotName, string imageName, int imageSize, strin
 		if (blockSize > 0) {
 			if (blockSize > blockSizeMax) blockSize = blockSizeMax;
 
-			sprintf(cmd, "/sbin/bbx dd if=/dev/zero of=/ss/safestrap/%s/%s.img bs=1M seek=%d count=%d conv=notrunc", slotName.c_str(), imageName.c_str(), currentSize, blockSize);
+			sprintf(cmd, "/sbin/lfs dd if=/dev/zero of=/ss/safestrap/%s/%s.img bs=1M seek=%d count=%d conv=notrunc", slotName.c_str(), imageName.c_str(), currentSize, blockSize);
 			fprintf(stderr, "createImagePartition::%s\n", cmd);
 			usleep(100000);
 			TWFunc::Exec_Cmd(cmd, result);

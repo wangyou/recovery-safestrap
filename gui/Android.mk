@@ -110,6 +110,7 @@ $(TWRP_RES_GEN):
 	cp -p $(SS_COMMON)/flags/* $(OUT)/install-files/etc/safestrap/flags/
 	cp -p $(SS_COMMON)/bbx $(OUT)/install-files/etc/safestrap/bbx
 	cp -p $(SS_COMMON)/busybox $(OUT)/APP/busybox
+	cp -p $(SS_COMMON)/lfs $(TARGET_RECOVERY_ROOT_OUT)/sbin/lfs
 	cp -p $(SS_COMMON)/devices/res/$(DEVICE_RESOLUTION)/* $(OUT)/install-files/etc/safestrap/res/
 	# Call out to external/safestrap
 	$(SS_COMMON)/../../../external/safestrap/build-safestrap.sh

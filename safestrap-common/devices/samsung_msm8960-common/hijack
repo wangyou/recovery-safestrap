@@ -46,7 +46,7 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 
 	if [ "$CHARGER_MODE" != "1" ] || [ "$POWERUP_REASON" != "00000100" ]; then
 		# set backlight
-		/sbin/bbx echo 200 > /sys/class/backlight/lcd-backlight/brightness
+		/sbin/bbx echo 200 > /sys/class/leds/lcd-backlight/brightness
 
 		# create SS loopdevs
 		/sbin/bbx mknod -m600 /dev/block/loop-system b 7 99
@@ -121,10 +121,11 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 			/sbin/bbx mkdir /tmp
 			# move bins out of the way so they don't block
 			/sbin/bbx mv /sbin/adbd /sbin/adbd.old
+			/sbin/bbx mv /sbin/taskset /sbin/taskset.old
 			/sbin/bbx mv /init /init.old
 
 			# extract recovery ramdisk
-			/sbin/bbx cd /
+			cd /
 			/sbin/bbx gzip -dc $RECOVERY_DIR/ramdisk-recovery.img | /sbin/bbx cpio -iu
 			/sbin/bbx unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
 			/sbin/bbx chmod 750 /sbin/*
@@ -155,7 +156,9 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 		fi
 
 		if [ "$ALT_SYSTEM_MODE" = "1" ] || [ -d "$CURRENT_SYS_DIR/etc/rootfs" ] || [ -d "$CURRENT_SYS_DIR/etc/kexec" ]; then
-
+			if [ -f "/sbin/taskset" ]; then
+				/sbin/bbx mv /sbin/taskset /sbin/taskset.old
+			fi
 			/sbin/bbx unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
 			/sbin/bbx chmod 750 /sbin/*
 
@@ -185,7 +188,7 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 
 				/sbin/hijack.killall
 
-				/sbin/bbx cd /
+				cd /
 				/sbin/bbx chmod 755 /kexec
 				/sbin/bbx chown 0.2000 /kexec
 				/sbin/bbx insmod /uart.ko

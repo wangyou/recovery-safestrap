@@ -5,6 +5,9 @@ int createImagePartition(string slotName, string imageName, int imageSize, strin
 	char cmd[255];
 	string result;
 	string seconds;
+	int currentSize = 0;
+	int blockSizeMax = 100; // 100mb
+	int blockSize = 1;
 
 	DataManager::GetValue("tw_screen_timeout_secs", seconds);
 #ifndef TW_NO_SCREEN_TIMEOUT
@@ -26,19 +29,38 @@ int createImagePartition(string slotName, string imageName, int imageSize, strin
 	DataManager::SetValue("tw_operation", "Creating " + imageName + ".img...");
 	gui_print("Creating %s.img...\n", imageName.c_str());
 
-	sprintf(cmd, "dd if=/dev/zero of=/ss/safestrap/%s/%s.img bs=1M count=%d", slotName.c_str(), imageName.c_str(), imageSize);
+	sprintf(cmd, "sync; echo 3 > /proc/sys/vm/drop_caches");
 	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
 	TWFunc::Exec_Cmd(cmd, result);
 	if (result != "")
 		goto error_out;
 
-	sprintf(cmd, "/sbin/fsync /ss/safestrap/%s/%s.img", slotName.c_str(), imageName.c_str());
-	fprintf(stderr, "createImagePartition::%s\n", cmd);
-	usleep(100000);
-	TWFunc::Exec_Cmd(cmd, result);
-	if (result != "")
-		goto error_out;
+	// loop here doing 100mb at a time (or the remainder)
+	// currentSize == mb written so far
+	// blockSize == mb to write (or 100mb max)
+	while ((blockSize > 0) && (currentSize < imageSize)) {
+		blockSize = imageSize - currentSize;
+		if (blockSize > 0) {
+			if (blockSize > blockSizeMax) blockSize = blockSizeMax;
+
+			sprintf(cmd, "/sbin/bbx dd if=/dev/zero of=/ss/safestrap/%s/%s.img bs=1M seek=%d count=%d conv=notrunc", slotName.c_str(), imageName.c_str(), currentSize, blockSize);
+			fprintf(stderr, "createImagePartition::%s\n", cmd);
+			usleep(100000);
+			TWFunc::Exec_Cmd(cmd, result);
+			if (result != "")
+				goto error_out;
+
+			sprintf(cmd, "sync; echo 3 > /proc/sys/vm/drop_caches");
+			fprintf(stderr, "createImagePartition::%s\n", cmd);
+			usleep(100000);
+			TWFunc::Exec_Cmd(cmd, result);
+			if (result != "")
+				goto error_out;
+
+			currentSize += blockSize;
+		}
+	}
 
 	DataManager::SetValue("ui_progress", progressBase2);
 

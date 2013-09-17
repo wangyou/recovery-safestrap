@@ -108,7 +108,13 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 			fi
 		fi
 
+		# turn on hard button backlight
+		/sbin/bbx echo 200 > /sys/class/leds/button-backlight/brightness
+
 		if [ "$ALT_SYSTEM_MODE" = "2" ] || [ $($RECOVERY_DIR/safestrapmenu $ALT_SYSTEM_MODE > /dev/null 2>&1;echo $?) -eq 0 ]; then
+			# turn off hard button backlight
+			/sbin/bbx echo 0 > /sys/class/leds/button-backlight/brightness
+
 			# filesystem cleanup
 			/sbin/bbx rm /d
 			/sbin/bbx rm /etc
@@ -142,6 +148,9 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 			/sbin/taskset -c 0 /sbin/2nd-init > /dev/kmsg
 			exit
 		fi
+
+		# turn off hard button backlight
+		/sbin/bbx echo 0 > /sys/class/leds/button-backlight/brightness
 
 		# either way we mount virtual "system" or real "system" and check for:
 		# 1. /system/etc/rootfs (2nd-init boot)
@@ -203,13 +212,21 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 			# check for alt-system or rootfs files
 			if [ "$ALT_SYSTEM_MODE" = "1" ] || [ -d "$CURRENT_SYS_DIR/etc/rootfs" ]; then
 				# BEGIN CLEANUP TODO: this should really be a device independant cleanup file
+				if [ -d "$RECOVERY_DIR/rootfs" ]; then
+					if [ -f "$RECOVERY_DIR/rootfs/sbin/adbd" ]; then
+						/sbin/bbx mv /sbin/adbd /sbin/adbd.old
+					fi
+					if [ -f "$RECOVERY_DIR/rootfs/init" ]; then
+						/sbin/bbx mv /init /init.old
+					fi
+					/sbin/bbx cp -R $RECOVERY_DIR/rootfs/* /
+				fi
 
 				# adjust stock init.rc file to include /sbin/fixboot.sh
-				/sbin/bbx cat /init.rc | /sbin/bbx sed "s/on init/on init\nexec \/sbin\/fixboot.sh/" > /init.rc.new0
+				/sbin/bbx cat /init.rc | /sbin/bbx sed "s/on fs/on fs\nexec \/sbin\/fixboot.sh/" > /init.rc.new0
 				/sbin/bbx cat /init.rc.new0 | /sbin/bbx sed "s/service sdcard \/system\/bin\/sdcard \/data\/media/service sdcard \/system\/bin\/sdcard \/datamedia\/media/" > /init.rc.new2
-				/sbin/bbx cat /init.rc.new2 | /sbin/bbx sed "s/loglevel 3/loglevel 8/" > /init.rc.new3
 				/sbin/bbx mv /init.rc /init.rc.old
-				/sbin/bbx mv /init.rc.new3 /init.rc
+				/sbin/bbx mv /init.rc.new2 /init.rc
 				/sbin/bbx rm /init.rc.new*
 
 				# adjust init.<hardware>.rc for where to mount /sdcard

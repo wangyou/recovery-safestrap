@@ -1,10 +1,12 @@
 #!/system/bin/sh
 # By Hashcode
-# Last Editted: 09/11/2013
+# Last Editted: 09/19/2013
 PATH=/system/bin:/system/xbin
 BLOCK_DIR=/dev/block
+
 BLOCK_SYSTEM=mmcblk0p16
 BLOCK_BOOT=mmcblk0p20
+
 SYS_BLOCK_FSTYPE=ext4
 HIJACK_BIN=etc/init.qcom.modem_links.sh
 

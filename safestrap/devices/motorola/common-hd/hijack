@@ -4,6 +4,7 @@
 # Added Stock Hijack
 PATH=/system/xbin:/system/bin:/sbin
 BLOCK_DIR=/dev/block
+
 BLOCK_SYSTEM=mmcblk0p36
 BLOCK_USERDATA=mmcblk0p38
 BLOCK_CACHE=mmcblk0p35

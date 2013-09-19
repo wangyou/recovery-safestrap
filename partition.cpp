@@ -320,7 +320,9 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Can_Be_Backed_Up = true;
 #ifdef RECOVERY_SDCARD_ON_DATA
 		} else if (Mount_Point == "/datamedia") {
+			Display_Name = "DataMedia";
 			Is_Storage = true;
+			Can_Be_Wiped = false;
 			Storage_Name = "Internal Storage";
 			Storage_Path = datamedia_mount + "/media";
 			Symlink_Path = Storage_Path;

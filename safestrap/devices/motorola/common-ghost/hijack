@@ -10,6 +10,7 @@ BLOCK_SYSTEM=mmcblk0p38
 BLOCK_USERDATA=mmcblk0p40
 BLOCK_CACHE=mmcblk0p36
 BLOCK_BOOT=mmcblk0p33
+
 HIJACK_BIN=logwrapper
 HIJACK_LOC=bin
 
@@ -127,7 +128,7 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 			/sbin/bbx mv /init /init.old
 
 			# extract recovery ramdisk
-			/sbin/bbx cd /
+			cd /
 			/sbin/bbx gzip -dc $RECOVERY_DIR/ramdisk-recovery.img | /sbin/bbx cpio -iu
 			/sbin/bbx unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
 			/sbin/bbx chmod 750 /sbin/*
@@ -158,7 +159,9 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 		fi
 
 		if [ "$ALT_SYSTEM_MODE" = "1" ] || [ -d "$CURRENT_SYS_DIR/etc/rootfs" ] || [ -d "$CURRENT_SYS_DIR/etc/kexec" ]; then
-
+			if [ -f "/sbin/taskset" ]; then
+				/sbin/bbx mv /sbin/taskset /sbin/taskset.old
+			fi
 			/sbin/bbx unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
 			/sbin/bbx chmod 750 /sbin/*
 
@@ -188,7 +191,7 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 
 				/sbin/hijack.killall
 
-				/sbin/bbx cd /
+				cd /
 				/sbin/bbx chmod 755 /kexec
 				/sbin/bbx chown 0.2000 /kexec
 				/sbin/bbx insmod /uart.ko

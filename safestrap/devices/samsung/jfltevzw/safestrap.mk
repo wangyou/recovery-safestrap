@@ -22,7 +22,6 @@ TW_CRYPTO_FS_OPTIONS := "nosuid,nodev,noatime,noauto_da_alloc,discard,journal_as
 TW_CRYPTO_FS_FLAGS := "0x00000406"
 TW_CRYPTO_KEY_LOC := "footer"
 
-TW_INCLUDE_SPLASHMENU := true
 SPLASH_RECOVERY_KEY := KEY_MENU
 SPLASH_CONTINUE_KEY := KEY_BACK
 
@@ -30,22 +29,9 @@ TW_DEFAULT_EXTERNAL_STORAGE := true
 TARGET_USERIMAGES_USE_EXT4 := true
 TW_BRIGHTNESS_PATH := /sys/class/lcd/panel/backlight
 
-# Logging
-#TWRP_EVENT_LOGGING := true
-
 # Virtual partition size default (in mb)
 BOARD_DEFAULT_VIRT_SYSTEM_SIZE := 2800
 BOARD_DEFAULT_VIRT_CACHE_SIZE := 300
 
-BOARD_USE_NO_DEVFS_SETUP := true
-BOARD_SUPPRESS_EMMC_WIPE := true
 HAVE_SELINUX := true
-
-# HASH use custom updaters for S4
-#SAFESTRAP_NO_CUSTOM_UPDATER := true
-
-# Clear kernel compile
-TARGET_KERNEL_SOURCE := 
-TARGET_KERNEL_CONFIG := 
-TARGET_PREBUILT_KERNEL := external/safestrap/kernel
 

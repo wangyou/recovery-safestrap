@@ -1,10 +1,14 @@
 #!/system/etc/safestrap/bbx sh
 # By: Hashcode
-# Last Editted: 08/29/2013
+# Last Editted: 09/19/2013
 # Added Stock Hijack
 PATH=/system/xbin:/system/bin:/sbin
 BLOCK_DIR=/dev/block
-BLOCKNAME_DIR=$BLOCK_DIR
+
+BLOCK_SYSTEM=mmcblk1p20
+BLOCK_USERDATA=mmcblk1p24
+BLOCK_CACHE=mmcblk1p21
+BLOCK_BOOT=mmcblk1p14
 
 # SS3 Setup
 SYS2_MNT=/s2
@@ -25,22 +29,6 @@ HIJACK_LOC=bin
 SS_CHECK_FILE=.safestrapped
 CURRENT_SYS_DIR=/system
 
-# Function for search/replace partition names with symlink generics
-fixReference()
-{
-	FIXBLK=$(/sbin/bbx cat /proc/partitions | /sbin/bbx grep ${2} | /sbin/bbx cut -c26-35 | /sbin/bbx sed s/\t*//)
-	if [ "$FIXBLK" != "" ]; then
-		/sbin/bbx sed s/$FIXBLK/${3}/ < ${1} > ${1}.bak
-		RESULT=`echo $?`
-		if [ $RESULT -eq 0 ]; then
-			if [ -f ${1}.bak ]; then
-				/sbin/bbx mv ${1}.bak ${1}
-			fi
-		else
-			/sbin/rm ${1}.bak
-		fi
-	fi
-}
 
 if [ ! -f "/$SS_CHECK_FILE" ]; then
 if [ "$2" = "pds" ]; then
@@ -62,6 +50,7 @@ if [ "$2" = "pds" ]; then
 		/sbin/bbx mknod -m600 /dev/block/loop-system b 7 99
 		/sbin/bbx mknod -m600 /dev/block/loop-userdata b 7 98
 		/sbin/bbx mknod -m600 /dev/block/loop-cache b 7 97
+		/sbin/bbx mknod -m600 /dev/block/loop-boot b 7 96
 
 		# create safestrap mount point
 		/sbin/bbx mkdir $SS_MNT
@@ -72,7 +61,7 @@ if [ "$2" = "pds" ]; then
 		/sbin/bbx chmod 777 $SYS2_MNT
 
 		# mount safestrap partition
-		/sbin/bbx mount -t $SS_TYPE $BLOCKNAME_DIR/$SS_PART $SS_MNT
+		/sbin/bbx mount -t $SS_TYPE $BLOCK_DIR/$SS_PART $SS_MNT
 
 		if [ ! -d "$SS_DIR" ]; then
 			/sbin/bbx mkdir -p $SS_DIR
@@ -107,7 +96,7 @@ if [ "$2" = "pds" ]; then
 			/sbin/bbx umount /data
 			/sbin/bbx losetup -d $BLOCK_DIR/loop-userdata
 		else
-			/sbin/bbx mount -t $IMG_TYPE $BLOCKNAME_DIR/userdata /data
+			/sbin/bbx mount -t $IMG_TYPE $BLOCK_DIR/$BLOCK_USERDATA /data
 			if [ -f /data/.recovery_mode ]; then
 				/sbin/bbx rm /data/.recovery_mode
 				ALT_SYSTEM_MODE="2"
@@ -131,30 +120,20 @@ if [ "$2" = "pds" ]; then
 			/sbin/bbx mv /init /init.old
 
 			# extract recovery ramdisk
-			/sbin/bbx cd /
+			cd /
 			/sbin/bbx gzip -dc $RECOVERY_DIR/ramdisk-recovery.img | /sbin/bbx cpio -iu
 			/sbin/bbx unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
 			/sbin/bbx chmod 750 /sbin/*
 			/sbin/bbx sync
 
-			# setup translate table
-			/sbin/bbx echo `/sbin/bbx ls -l $BLOCKNAME_DIR/ | /sbin/bbx grep "system ->" | /sbin/bbx tail -c 22`=$BLOCKNAME_DIR/system > $SS_DIR/translate
-			/sbin/bbx echo `/sbin/bbx ls -l $BLOCKNAME_DIR/ | /sbin/bbx grep "userdata ->" | /sbin/bbx tail -c 22`=$BLOCKNAME_DIR/userdata >> $SS_DIR/translate
-			/sbin/bbx echo `/sbin/bbx ls -l $BLOCKNAME_DIR/ | /sbin/bbx grep "cache ->" | /sbin/bbx tail -c 22`=$BLOCKNAME_DIR/cache >> $SS_DIR/translate
-			/sbin/bbx echo `/sbin/bbx ls -l $BLOCKNAME_DIR/ | /sbin/bbx grep pds | /sbin/bbx tail -c 22`=$BLOCKNAME_DIR/pds >> $SS_DIR/translate
-			# meager attempt at stopping writes to the boot device
-			/sbin/bbx echo `/sbin/bbx ls -l $BLOCKNAME_DIR/ | /sbin/bbx grep "boot ->" | /sbin/bbx tail -c 22`=/dev/null >> $SS_DIR/translate
-			/sbin/bbx echo $BLOCKNAME_DIR/boot=/dev/null >> $SS_DIR/translate
-
 			# unmount partitions
-			/sbin/bbx umount /system
+			/sbin/bbx umount -l /system
 			/sbin/bbx umount $SS_MNT
 
 			/sbin/hijack.killall
-
-			/sbin/taskset -p -c 0 1
+			/sbin/taskset -p -c 0 1 > /dev/kmsg
 			/sbin/bbx sync
-			/sbin/taskset -c 0 /sbin/2nd-init
+			/sbin/taskset -c 0 /sbin/2nd-init > /dev/kmsg
 			exit
 		fi
 
@@ -170,8 +149,10 @@ if [ "$2" = "pds" ]; then
 			CURRENT_SYS_DIR=$SYS2_MNT
 		fi
 
-		if [ -d "$CURRENT_SYS_DIR/etc/rootfs" ] || [ -d "$CURRENT_SYS_DIR/etc/kexec" ]; then
-
+		if [ "$ALT_SYSTEM_MODE" = "1" ] || [ -d "$CURRENT_SYS_DIR/etc/rootfs" ] || [ -d "$CURRENT_SYS_DIR/etc/kexec" ]; then
+			if [ -f "/sbin/taskset" ]; then
+				/sbin/bbx mv /sbin/taskset /sbin/taskset.old
+			fi
 			/sbin/bbx unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
 			/sbin/bbx chmod 750 /sbin/*
 
@@ -196,10 +177,11 @@ if [ "$2" = "pds" ]; then
 
 				# unmount SS
 				/sbin/bbx umount $SS_MNT
+				/sbin/bbx umount -l /system
 
 				/sbin/hijack.killall
 
-				/sbin/bbx cd /
+				cd /
 				/sbin/bbx chmod 755 /kexec
 				/sbin/bbx chown 0.2000 /kexec
 				/sbin/bbx insmod /uart.ko
@@ -211,11 +193,20 @@ if [ "$2" = "pds" ]; then
 				exit
 			fi
 
-			# check for rootfs files
-			if [ -d "$CURRENT_SYS_DIR/etc/rootfs" ]; then
+			# check for alt-system or rootfs files
+			if [ "$ALT_SYSTEM_MODE" = "1" ] || [ -d "$CURRENT_SYS_DIR/etc/rootfs" ]; then
 				# BEGIN CLEANUP TODO: this should really be a device independant cleanup file
+				if [ -d "$RECOVERY_DIR/rootfs" ]; then
+					if [ -f "$RECOVERY_DIR/rootfs/sbin/adbd" ]; then
+						/sbin/bbx mv /sbin/adbd /sbin/adbd.old
+					fi
+					if [ -f "$RECOVERY_DIR/rootfs/init" ]; then
+						/sbin/bbx mv /init /init.old
+					fi
+					/sbin/bbx cp -R $RECOVERY_DIR/rootfs/* /
+				fi
 
-				# adjust init.rc file to include /sbin/fixboot.sh
+				# adjust stock init.rc file to include /sbin/fixboot.sh
 				/sbin/bbx cat /init.rc | /sbin/bbx sed "s/on fs/on fs\nexec \/sbin\/fixboot.sh/" > /init.rc.new
 				/sbin/bbx mv /init.rc /init.rc.old
 				/sbin/bbx mv /init.rc.new /init.rc
@@ -228,19 +219,8 @@ if [ "$2" = "pds" ]; then
 				fi
 				/sbin/bbx cp -R $CURRENT_SYS_DIR/etc/rootfs/* /
 
-				# fix "old" style mounts
-				for f in /init.*.rc
-				do
-					fixReference "$f" system system
-					fixReference "$f" userdata userdata
-					fixReference "$f" cache cache
-					fixReference "$f" pds pds
-				done
-
-				# END CLEANUP
-
 				# reset permissions
-				/sbin/bbx chmod -R 750 /sbin/*
+				/sbin/bbx chmod -R 755 /sbin/*
 				/sbin/bbx chmod 755 /init
 				/sbin/bbx chmod 755 /charger
 				/sbin/bbx chmod 644 /default.prop
@@ -265,6 +245,7 @@ if [ "$2" = "pds" ]; then
 				# mount point / symlink cleanup
 				/sbin/bbx rm /sdcard
 				/sbin/bbx rm /sdcard-ext
+				/sbin/bbx rm -rf /mnt
 
 				/sbin/taskset -p -c 0 1
 				/sbin/bbx sync

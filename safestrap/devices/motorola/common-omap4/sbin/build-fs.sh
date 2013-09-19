@@ -1,21 +1,24 @@
 #!/sbin/bbx sh
 # By: Hashcode
-# Last Editted: 10/27/2012
+# Last Editted: 09/19/2013
 
 # system/userdata/cache
-IMAGE_NAME=${1}
+IMAGE_NAME=`echo '${1}' | tr '[a-z]' '[A-Z]'`
 LOOP_DEV=${2}
 ROMSLOT_NAME=${3}
-
 BLOCK_DIR=/dev/block
-BLOCKNAME_DIR=$BLOCK_DIR
+
+BLOCK_SYSTEM=mmcblk1p20
+BLOCK_USERDATA=mmcblk1p24
+BLOCK_CACHE=mmcblk1p21
+BLOCK_BOOT=mmcblk1p14
+
+eval CURRENT_BLOCK=\$BLOCK_${IMAGE_NAME}
+
 SS_MNT=/ss
 SS_DIR=$SS_MNT/safestrap
 
-rm $BLOCKNAME_DIR/$IMAGE_NAME
-ln -s $BLOCK_DIR/loop$LOOP_DEV $BLOCKNAME_DIR/$IMAGE_NAME
-mke2fs $BLOCKNAME_DIR/$IMAGE_NAME
-/sbin/fsync $SS_DIR/$ROMSLOT_NAME/$IMAGE_NAME.img
-tune2fs -j $BLOCKNAME_DIR/$IMAGE_NAME
-/sbin/fsync $SS_DIR/$ROMSLOT_NAME/$IMAGE_NAME.img
+rm $BLOCK_DIR/$CURRENT_BLOCK
+ln -s $BLOCK_DIR/loop$LOOP_DEV $BLOCK_DIR/$CURRENT_BLOCK
+mke2fs -T ext3 $BLOCK_DIR/loop$LOOP_DEV
 

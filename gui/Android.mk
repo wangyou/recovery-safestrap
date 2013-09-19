@@ -86,9 +86,13 @@ LOCAL_MODULE_TAGS := eng
 LOCAL_MODULE_CLASS := RECOVERY_EXECUTABLES
 LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/res
 
+ifdef BUILD_SAFESTRAP
+TWRP_RES_LOC := $(commands_recovery_local_path)/safestrap/devices/common/res
+else
 TWRP_RES_LOC := $(commands_recovery_local_path)/gui/devices
+endif
 TWRP_RES_GEN := $(intermediates)/twrp
-SS_COMMON := $(TWRP_RES_LOC)/../../safestrap-common
+SS_COMMON := $(commands_recovery_local_path)/safestrap
 
 $(TWRP_RES_GEN):
 	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res/
@@ -106,14 +110,14 @@ $(TWRP_RES_GEN):
 	mkdir -p $(OUT)/install-files/etc/safestrap/flags
 	mkdir -p $(OUT)/install-files/etc/safestrap/res
 	mkdir -p $(OUT)/APP
-	cp -p $(SS_COMMON)/2nd-init-files/* $(OUT)/2nd-init-files
+	cp -p $(TWRP_RES_LOC)/../2nd-init-files/* $(OUT)/2nd-init-files
 	cp -p $(SS_COMMON)/flags/* $(OUT)/install-files/etc/safestrap/flags/
 	cp -p $(SS_COMMON)/bbx $(OUT)/install-files/etc/safestrap/bbx
 	cp -p $(SS_COMMON)/busybox $(OUT)/APP/busybox
 	cp -p $(SS_COMMON)/lfs $(TARGET_RECOVERY_ROOT_OUT)/sbin/lfs
-	cp -p $(SS_COMMON)/devices/res/$(DEVICE_RESOLUTION)/* $(OUT)/install-files/etc/safestrap/res/
-	# Call out to external/safestrap
-	$(SS_COMMON)/../../../external/safestrap/build-safestrap.sh
+	cp -p $(SS_COMMON)/devices/common/splashscreen-res/$(DEVICE_RESOLUTION)/* $(OUT)/install-files/etc/safestrap/res/
+	# Call out to device-specific script
+	$(SS_COMMON)/devices/$(PRODUCT_BRAND)/$(TARGET_DEVICE)/build-safestrap.sh
 
 LOCAL_GENERATED_SOURCES := $(TWRP_RES_GEN)
 LOCAL_SRC_FILES := twrp $(TWRP_RES_GEN)

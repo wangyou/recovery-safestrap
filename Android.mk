@@ -14,8 +14,11 @@
 
 LOCAL_PATH := $(call my-dir)
 
-# Device Group includes for Safestrap
-include $(LOCAL_PATH)/../../external/safestrap/safestrap.mk
+BUILD_SAFESTRAP := true
+ifeq ($(BUILD_SAFESTRAP), true)
+  COMMON_GLOBAL_CFLAGS += -DBUILD_SAFESTRAP
+  include $(LOCAL_PATH)/safestrap/devices/common/safestrap.mk
+endif
 
 TARGET_RECOVERY_GUI := true
 
@@ -369,7 +372,7 @@ include $(commands_recovery_local_path)/injecttwrp/Android.mk \
 
 # splashmenu
 ifeq ($(TW_INCLUDE_SPLASHMENU), true)
-    include $(commands_recovery_local_path)/safestrap-common/splashmenu/Android.mk
+    include $(commands_recovery_local_path)/safestrap/splashmenu/Android.mk
 endif
 
 ifeq ($(TW_INCLUDE_CRYPTO_SAMSUNG), true)

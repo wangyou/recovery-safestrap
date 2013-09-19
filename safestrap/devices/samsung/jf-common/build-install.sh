@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+sh $ANDROID_BUILD_TOP/bootable/recovery/safestrap/devices/common/build-install.sh
 cd $OUT/recovery/root
 # erase custom .rc files
 touch ./MSM8960_lpm.rc
@@ -15,6 +16,4 @@ touch ./property_contexts
 touch ./seapp_contexts
 touch ./sepolicy
 touch ./sepolicy_version
-# we're using a real taskset binary
-rm -rf sbin/taskset
 

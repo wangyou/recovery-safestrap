@@ -4,7 +4,7 @@ mkdir -p $OUT/APP
 mkdir -p $OUT/2nd-init-files
 mkdir -p $OUT/install-files/etc/safestrap/res/
 mkdir -p $OUT/install-files/etc/safestrap/rootfs/
-cd $OUT/../../../../bootable/recovery/safestrap/devices/samsung
+cd $ANDROID_BUILD_TOP/bootable/recovery/safestrap/devices/samsung
 cp -fr jf-common/APP/* $OUT/APP/
 cp -fr jf-common/2nd-init-files/* $OUT/2nd-init-files/
 cp -fr jf-common/res/* $OUT/install-files/etc/safestrap/res/

@@ -26,7 +26,11 @@
 #include <map>
 
 extern "C" {
+#ifdef HAVE_SELINUX
 #include "../minzip/Zip.h"
+#else
+#include "../minzipold/Zip.h"
+#endif
 }
 
 using namespace rapidxml;
@@ -377,6 +381,7 @@ protected:
 	bool hasFill;
 	COLOR mFillColor;
 	COLOR mHighlightColor;
+	Placement TextPlacement;
 };
 
 class GUICheckbox: public RenderObject, public ActionObject, public Conditional

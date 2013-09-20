@@ -64,6 +64,9 @@ endif
 ifneq ($(TW_NO_SCREEN_TIMEOUT),)
 	LOCAL_CFLAGS += -DTW_NO_SCREEN_TIMEOUT
 endif
+ifeq ($(HAVE_SELINUX), true)
+LOCAL_CFLAGS += -DHAVE_SELINUX
+endif
 
 # Safestrap virtual size defaults
 ifndef BOARD_DEFAULT_VIRT_SYSTEM_SIZE

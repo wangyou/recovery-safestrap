@@ -224,7 +224,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Use_Userdata_Encryption = true;
 #ifdef RECOVERY_SDCARD_ON_DATA
 			Has_Data_Media = true;
-#if 0
+#ifndef BUILD_SAFESTRAP
 			Storage_Name = "Internal Storage";
 			Is_Storage = true;
 			Storage_Path = datamedia_mount + "/media";
@@ -318,6 +318,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Backup_Display_Name = Display_Name;
 			DataManager::SetValue("tw_boot_is_mountable", 1);
 			Can_Be_Backed_Up = true;
+#ifdef BUILD_SAFESTRAP
 #ifdef RECOVERY_SDCARD_ON_DATA
 		} else if (Mount_Point == "/datamedia") {
 			Display_Name = "DataMedia";
@@ -340,6 +341,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				UnMount(true);
 				Mount_Storage_Retry();
 			}
+#endif
 #endif
 		}
 #ifdef TW_EXTERNAL_STORAGE_PATH

@@ -1172,7 +1172,8 @@ int TWPartitionManager::Wipe_Android_Secure(void) {
 }
 
 int TWPartitionManager::Format_Data(void) {
-	TWPartition* dat = Find_Partition_By_Path("/data");
+	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
+	TWPartition* dat = Find_Partition_By_Path(datamedia_mount);
 
 	if (dat != NULL) {
 		if (!dat->UnMount(true))
@@ -1890,6 +1891,7 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 				part.selected = 0;
 				Partition_List->push_back(part);
 			}
+#ifndef BUILD_SAFESTRAP
 			if ((*iter)->Has_Data_Media) {
 				struct PartitionList datamedia;
 				datamedia.Display_Name = (*iter)->Storage_Name;
@@ -1897,6 +1899,7 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 				datamedia.selected = 0;
 				Partition_List->push_back(datamedia);
 			}
+#endif
 		}
 	} else {
 		LOGERR("Unknown list type '%s' requested for TWPartitionManager::Get_Partition_List\n", ListType.c_str());

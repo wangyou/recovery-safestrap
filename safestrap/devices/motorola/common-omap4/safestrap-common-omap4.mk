@@ -15,3 +15,5 @@ TW_CUSTOM_BATTERY_CAPACITY_FIELD := charge_counter
 TW_IGNORE_ZIP_ROOT_STORAGE_CHECK := true
 HAVE_SELINUX := true
 
+TW_BRIGHTNESS_PATH := /sys/class/backlight/430_540_960_amoled_bl/brightness
+

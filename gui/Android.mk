@@ -117,7 +117,7 @@ $(TWRP_RES_GEN):
 	cp -p $(SS_COMMON)/lfs $(TARGET_RECOVERY_ROOT_OUT)/sbin/lfs
 	cp -p $(SS_COMMON)/devices/common/splashscreen-res/$(DEVICE_RESOLUTION)/* $(OUT)/install-files/etc/safestrap/res/
 	# Call out to device-specific script
-	$(SS_COMMON)/devices/$(PRODUCT_BRAND)/$(TARGET_DEVICE)/build-safestrap.sh
+	$(SS_COMMON)/devices/$(SS_PRODUCT_MANUFACTURER)/$(TARGET_DEVICE)/build-safestrap.sh
 
 LOCAL_GENERATED_SOURCES := $(TWRP_RES_GEN)
 LOCAL_SRC_FILES := twrp $(TWRP_RES_GEN)

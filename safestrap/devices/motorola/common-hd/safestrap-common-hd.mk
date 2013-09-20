@@ -20,3 +20,4 @@ BOARD_DEFAULT_VIRT_CACHE_SIZE := 300
 
 HAVE_SELINUX := true
 
+TW_BRIGHTNESS_PATH := /sys/class/backlight/lcd-backlight/brightness

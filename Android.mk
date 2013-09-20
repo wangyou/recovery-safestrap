@@ -17,7 +17,7 @@ LOCAL_PATH := $(call my-dir)
 BUILD_SAFESTRAP := true
 ifeq ($(BUILD_SAFESTRAP), true)
   COMMON_GLOBAL_CFLAGS += -DBUILD_SAFESTRAP
-  include $(LOCAL_PATH)/safestrap/devices/common/safestrap.mk
+  include $(LOCAL_PATH)/safestrap/devices/$(PRODUCT_BRAND)/$(TARGET_DEVICE)/safestrap.mk
 endif
 
 TARGET_RECOVERY_GUI := true

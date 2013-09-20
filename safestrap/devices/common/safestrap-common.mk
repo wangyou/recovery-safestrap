@@ -9,9 +9,8 @@ BOARD_SUPPRESS_EMMC_WIPE := true
 #TWRP_EVENT_LOGGING := true
 
 # Clear kernel compile
+# unless this is marked as a KEXEC
 TARGET_KERNEL_SOURCE := 
 TARGET_KERNEL_CONFIG := 
 TARGET_PREBUILT_KERNEL := $(SS_DEVICES_COMMON_PATH)/kernel
-
-include $(SS_DEVICES_COMMON_PATH)/../$(PRODUCT_BRAND)/$(TARGET_DEVICE)/safestrap.mk
 

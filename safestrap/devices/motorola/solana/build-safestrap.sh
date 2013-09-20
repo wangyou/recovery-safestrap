@@ -3,8 +3,8 @@ mkdir -p $OUT/recovery/root/sbin
 mkdir -p $OUT/APP
 mkdir -p $OUT/2nd-init-files
 mkdir -p $OUT/install-files/bin/
+mkdir -p $OUT/install-files/etc/safestrap/kexec/
 mkdir -p $OUT/install-files/etc/safestrap/res/
-mkdir -p $OUT/install-files/etc/safestrap/rootfs/
 cd $ANDROID_BUILD_TOP/bootable/recovery/safestrap/devices/motorola
 cp -fr common-omap4/APP-1p21/* $OUT/APP/
 cp -fr solana/2nd-init-files/* $OUT/2nd-init-files/

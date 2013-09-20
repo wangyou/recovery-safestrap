@@ -178,6 +178,8 @@ if [ "$2" = "userdata" ]; then
 
 			# check for kexec files
 			if [ -d "$CURRENT_SYS_DIR/etc/kexec" ]; then
+				/sbin/bbx cp $CURRENT_SYS_DIR/etc/kernel /
+				/sbin/bbx cp $CURRENT_SYS_DIR/etc/ramdisk-recovery.img /
 				/sbin/bbx cp $CURRENT_SYS_DIR/etc/kexec/* /
 
 				# if virtual system is mounted unmount it

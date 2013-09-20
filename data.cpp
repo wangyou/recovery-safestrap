@@ -564,16 +564,12 @@ void DataManager::SetBackupFolder()
 		if (zip_path.size() < storage_path.size()) {
 			SetValue(TW_ZIP_LOCATION_VAR, storage_path);
 		} else {
-#ifndef TW_IGNORE_ZIP_ROOT_STORAGE_CHECK
 			zip_root= zip_path;
 			zip_root.resize(storage_path.size());
 			if (zip_root != storage_path) {
 				LOGINFO("DataManager::SetBackupFolder zip path was %s changing to %s, %s\n", zip_path.c_str(), storage_path.c_str(), zip_root.c_str());
-#endif
 				SetValue(TW_ZIP_LOCATION_VAR, storage_path);
-#ifndef TW_IGNORE_ZIP_ROOT_STORAGE_CHECK
 			}
-#endif
 		}
 	} else {
 		if (PartitionManager.Fstab_Processed() != 0)

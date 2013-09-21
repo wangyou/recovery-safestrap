@@ -65,4 +65,4 @@ if [ ! -f "$BLOCK_DIR/$BLOCK_SYSTEM-orig" ]; then
 	fi
 fi
 
-/sbin/taskset -p -c 0,1 1
+/sbin/taskset -p -c 0-3 1

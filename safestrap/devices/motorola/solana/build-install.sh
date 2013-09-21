@@ -21,6 +21,7 @@ cp $OUT/kernel $OUT/install-files/etc/safestrap/kernel
 cp $ANDROID_BUILD_TOP/bootable/recovery/safestrap/devices/motorola/targa/twrp.fstab ./etc/twrp.fstab
 cp $ANDROID_BUILD_TOP/device/motorola/solana/kexec/* $OUT/install-files/etc/safestrap/kexec/
 cp $ANDROID_BUILD_TOP/device/motorola/omap4-common/kexec/kexec $OUT/install-files/etc/safestrap/kexec/
+cp $ANDROID_BUILD_TOP/bootable/recovery/safestrap/devices/motorola/solana/safestrapmenu $OUT/install-files/etc/safestrap/
 
 sh $ANDROID_BUILD_TOP/bootable/recovery/safestrap/devices/common/build-install-finish.sh
 

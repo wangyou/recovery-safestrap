@@ -715,7 +715,12 @@ int TWPartitionManager::Run_Backup(void) {
 					}
 				}
 			} else {
+// Log this differently.  Freaks the users out as we most likely don't have a boot partition (for now)
+#ifdef BUILD_SAFESTRAP
+				LOGINFO("Skipping '%s' partition for backup calculations.\n", backup_path.c_str());
+#else
 				LOGERR("Unable to locate '%s' partition for backup calculations.\n", backup_path.c_str());
+#endif
 			}
 			start_pos = end_pos + 1;
 			end_pos = Backup_List.find(";", start_pos);

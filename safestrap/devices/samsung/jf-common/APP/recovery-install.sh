@@ -1,11 +1,10 @@
 #!/system/bin/sh
 # By Hashcode
-# Last Editted: 09/19/2013
+# Last Editted: 09/21/2013
 PATH=/system/bin:/system/xbin
 BLOCK_DIR=/dev/block
 
 BLOCK_SYSTEM=mmcblk0p16
-BLOCK_BOOT=mmcblk0p20
 
 SYS_BLOCK_FSTYPE=ext4
 HIJACK_BIN=etc/init.qcom.modem_links.sh
@@ -17,16 +16,7 @@ LOGFILE=$INSTALLPATH/action-install.log
 chmod 755 $INSTALLPATH/busybox
 
 CURRENTSYS=`$INSTALLPATH/busybox readlink $BLOCK_DIR/$BLOCK_SYSTEM`
-PRIMARYSYS=`$INSTALLPATH/busybox readlink $BLOCK_DIR/$BLOCK_SYSTEM-orig`
-if [ "$PRIMARYSYS" = "" ]; then
-	PRIMARYSYS=`$INSTALLPATH/busybox readlink $BLOCK_DIR/$BLOCK_SYSTEM`
-fi
-
-$INSTALLPATH/busybox echo '' > $LOGFILE
-$INSTALLPATH/busybox echo "CURRENTSYS=$CURRENTSYS" >> $LOGFILE
-$INSTALLPATH/busybox echo "PRIMARYSYS=$PRIMARYSYS" >> $LOGFILE
-
-echo "install path=$INSTALLPATH/install-files" >> $LOGFILE
+echo "CURRENTSYS = $CURRENTSYS" >> $LOGFILE
 if [ -d $INSTALLPATH/install-files ]; then
 	rm -r $INSTALLPATH/install-files >> $LOGFILE
 fi
@@ -38,19 +28,19 @@ if [ ! -d $INSTALLPATH/install-files ]; then
 fi
 
 # determine our active system, and mount/remount accordingly
-if [ ! "$CURRENTSYS" = "$PRIMARYSYS" ]; then
+if [ "$CURRENTSYS" = "$BLOCK_DIR/loop-system" ]; then
 	# alt-system, needs to mount original /system
 	DESTMOUNT=$INSTALLPATH/system
 	if [ ! -d "$DESTMOUNT" ]; then
 		$INSTALLPATH/busybox mkdir $DESTMOUNT
-		$INSTALLPATH/busybox chmod 755 $DESTMOUNT
 	fi
-	$INSTALLPATH/busybox mount -t $SYS_BLOCK_FSTYPE $PRIMARYSYS $DESTMOUNT >> $LOGFILE
+	$INSTALLPATH/busybox mount -t $SYS_BLOCK_FSTYPE $BLOCK_DIR/$BLOCK_SYSTEM-orig $DESTMOUNT >> $LOGFILE
 else
 	DESTMOUNT=/system
 	sync
 	$INSTALLPATH/busybox mount -o remount,rw $DESTMOUNT >> $LOGFILE
 fi
+echo "DESTMOUNT = $DESTMOUNT" >> $LOGFILE
 
 # check for a $HIJACK_BIN.bin file and its not there, make a copy
 if [ ! -f "$DESTMOUNT/$HIJACK_BIN.bin" ]; then
@@ -80,7 +70,7 @@ $INSTALLPATH/busybox ln -s /q6.mdt $DESTMOUNT/etc/firmware/q6.mdt
 $INSTALLPATH/busybox mount -o remount,ro /
 
 # determine our active system, and umount/remount accordingly
-if [ ! "$CURRENTSYS" = "$PRIMARYSYS" ]; then
+if [ "$CURRENTSYS" = "$BLOCK_DIR/loop-system" ]; then
 	# if we're in 2nd-system then re-enable safe boot
 	$INSTALLPATH/busybox touch $DESTMOUNT/$RECOVERY_DIR/flags/alt_system_mode >> $LOGFILE
 

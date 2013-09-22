@@ -1,9 +1,10 @@
 #!/system/etc/safestrap/bbx sh
 # By: Hashcode
-# Last Editted: 09/11/2013
+# Last Editted: 09/19/2013
 # Added Stock Hijack
 PATH=/system/xbin:/system/bin:/sbin
 BLOCK_DIR=/dev/block
+
 BLOCK_SYSTEM=mmcblk0p16
 BLOCK_USERDATA=mmcblk0p27
 BLOCK_CACHE=mmcblk0p18
@@ -29,6 +30,25 @@ HIJACK_LOC=etc
 SS_CHECK_FILE=.safestrapped
 CURRENT_SYS_DIR=/system
 
+# unmount /sys/fs/selinux + clear out files
+fixSELinux() {
+	echo "umount /sys/fs/selinux" > /dev/kmsg
+	for i in $(/sbin/bbx seq 1 10); do
+		TMP=$(/sbin/bbx mount | /sbin/bbx grep /sys/fs/selinux)
+		if /sbin/bbx [[ -z "$TMP" ]] ; then
+			break
+		fi
+		/sbin/bbx umount -l /sys/fs/selinux
+		/sbin/bbx sleep 1
+	done
+
+	# make sure to erase SElinux files
+	/sbin/bbx rm /file_contexts
+	/sbin/bbx rm /property_contexts
+	/sbin/bbx rm /seapp_contexts
+	/sbin/bbx rm /sepolicy
+	/sbin/bbx rm /sepolicy_version
+}
 
 if [ ! -f "/$SS_CHECK_FILE" ]; then
 	# remount root as rw
@@ -129,6 +149,9 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 			/sbin/bbx mv /sbin/adbd /sbin/adbd.old
 			/sbin/bbx mv /sbin/taskset /sbin/taskset.old
 			/sbin/bbx mv /init /init.old
+
+			fixSELinux
+			/sbin/bbx rm /*
 
 			# extract recovery ramdisk
 			cd /

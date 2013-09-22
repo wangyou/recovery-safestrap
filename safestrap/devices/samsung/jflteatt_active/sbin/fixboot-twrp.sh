@@ -1,7 +1,8 @@
 #!/sbin/bbx sh
 # By: Hashcode
-# Last Editted: 09/17/2013
+# Last Editted: 09/19/2013
 BLOCK_DIR=/dev/block
+
 BLOCK_SYSTEM=mmcblk0p16
 BLOCK_USERDATA=mmcblk0p27
 BLOCK_CACHE=mmcblk0p18
@@ -60,7 +61,8 @@ if [ ! -f "$BLOCK_DIR/$BLOCK_SYSTEM-orig" ]; then
 		/sbin/bbx ln -s $BLOCK_DIR/$BLOCK_SYSTEM-orig $BLOCK_DIR/$BLOCK_SYSTEM
 		/sbin/bbx ln -s $BLOCK_DIR/$BLOCK_USERDATA-orig $BLOCK_DIR/$BLOCK_USERDATA
 		/sbin/bbx ln -s $BLOCK_DIR/$BLOCK_CACHE-orig $BLOCK_DIR/$BLOCK_CACHE
-		/sbin/bbx ln -s $BLOCK_DIR/$BLOCK_BOOT-orig $BLOCK_DIR/$BLOCK_BOOT
+#		/sbin/bbx ln -s $BLOCK_DIR/$BLOCK_BOOT-orig $BLOCK_DIR/$BLOCK_BOOT
+		/sbin/bbx ln -s /dev/null $BLOCK_DIR/$BLOCK_BOOT
 	fi
 fi
 

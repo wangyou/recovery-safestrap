@@ -35,7 +35,8 @@ LOCAL_STATIC_LIBRARIES := \
 	libz \
 	libstdc++ \
 	libc \
-	libcutils
+	libcutils \
+	liblog
 
 LOCAL_FORCE_STATIC_EXECUTABLE := true
 LOCAL_MODULE_CLASS := RECOVERY_EXECUTABLES

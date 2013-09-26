@@ -13,9 +13,6 @@ LOCAL_C_INCLUDES +=\
     external/libpng\
     external/zlib \
     system/core/include
-LOCAL_STATIC_LIBRARY := libpng libpixelflinger_static
-LOCAL_MODULE_TAGS := eng
-LOCAL_MODULE := libminui_ss
 
 
 ifeq ($(RECOVERY_TOUCHSCREEN_SWAP_XY), true)
@@ -69,5 +66,8 @@ endif
 ifneq ($(BOARD_USE_CUSTOM_RECOVERY_FONT),)
   LOCAL_CFLAGS += -DBOARD_USE_CUSTOM_RECOVERY_FONT=$(BOARD_USE_CUSTOM_RECOVERY_FONT)
 endif
+LOCAL_STATIC_LIBRARIES += liblog libpng libpixelflinger_static
+LOCAL_MODULE_TAGS := eng
+LOCAL_MODULE := libminui_ss
 
 include $(BUILD_STATIC_LIBRARY)

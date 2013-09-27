@@ -49,6 +49,9 @@ static const struct { gr_surface* surface; const char *name; } BITMAPS[] = {
     { &gBackgroundIcon[BACKGROUND_DEFAULT], "background-nonsafe" },
     { &gBackgroundIcon[BACKGROUND_ALT], "background-safe" },
     { &gBackgroundIcon[BACKGROUND_BLANK], "background-blank" },
+#ifdef SPLASH_USE_REBOOT
+    { &gBackgroundIcon[BACKGROUND_REBOOT], "background-reboot" },
+#endif
     { NULL,                             NULL },
 };
 

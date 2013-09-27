@@ -25,6 +25,12 @@
 #include "common.h"
 #include "minui/minui.h"
 
+#ifdef SPLASH_USE_REBOOT
+#include <sys/reboot.h>
+#ifdef ANDROID_RB_POWEROFF
+	#include "cutils/android_reboot.h"
+#endif
+#endif
 
 enum { 
   BUTTON_ERROR,
@@ -85,6 +91,29 @@ int main(int argc, char **argv) {
 
   if (argc == 2 && 0 == strcmp(argv[1], "1")) {
       ui_set_background(BACKGROUND_ALT);
+#ifdef SPLASH_USE_REBOOT
+  } else if (argc == 3 && 0 == strcmp(argv[1], "reboot")) {
+      ui_set_background(BACKGROUND_REBOOT);
+      sleep(2);
+      ui_finish();
+      LOGI("reboot-command: %s\n", argv[2]);
+      if (0 == strcmp(argv[2], "poweroff")) {
+#ifdef ANDROID_RB_POWEROFF
+        android_reboot(ANDROID_RB_POWEROFF, 0, 0);
+#endif
+        result = reboot(RB_POWER_OFF);
+      } else if (0 == strcmp(argv[2], "recovery")) {
+        result = __reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_RESTART2, (void*) "recovery");
+      } else if (0 == strcmp(argv[2], "bootloader")) {
+        result = __reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_RESTART2, (void*) "bootloader");
+      } else if (0 == strcmp(argv[2], "download")) {
+	result = __reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_RESTART2, (void*) "download");
+      } else {
+        result = reboot(RB_AUTOBOOT);
+      }
+      LOGI("result: %d\n", result);
+      exit(result);
+#endif
   } else {
       ui_set_background(BACKGROUND_DEFAULT);
   }

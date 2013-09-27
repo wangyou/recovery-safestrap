@@ -49,6 +49,9 @@ enum {
   BACKGROUND_DEFAULT,
   BACKGROUND_ALT,
   BACKGROUND_BLANK,
+#ifdef SPLASH_USE_REBOOT
+  BACKGROUND_REBOOT,
+#endif
   NUM_BACKGROUND_ICONS
 };
 void ui_set_background(int icon);

@@ -1,12 +1,11 @@
 #!/sbin/bbx sh
 # By: Hashcode
-# Last Editted: 09/11/2013
+# Last Editted: 09/26/2013
 
 # system/userdata/cache
 IMAGE_NAME=`echo '${1}' | tr '[a-z]' '[A-Z]'`
 LOOP_DEV=${2}
 ROMSLOT_NAME=${3}
-
 BLOCK_DIR=/dev/block
 
 BLOCK_SYSTEM=mmcblk0p38

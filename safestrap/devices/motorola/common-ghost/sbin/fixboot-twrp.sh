@@ -14,6 +14,12 @@ IMG_TYPE=f2fs
 SS_MNT=/ss
 SS_DIR=$SS_MNT/safestrap
 
+# cleanly unmount /system
+/sbin/bbx umount /system
+/sbin/bbx mount -t ext4 /dev/block/$BLOCK_SYSTEM
+/sbin/bbx sync
+/sbin/bbx umount /system
+
 # check for SS loopdevs
 if [ ! -f "$BLOCK_DIR/loop-system" ]; then
 	# create SS loopdevs

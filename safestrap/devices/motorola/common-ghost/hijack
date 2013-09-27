@@ -1,6 +1,6 @@
 #!/system/etc/safestrap/bbx sh
 # By: Hashcode
-# Last Editted: 09/13/2013
+# Last Editted: 09/26/2013
 # Added Stock Hijack
 PATH=/system/xbin:/system/bin:/sbin
 BLOCK_DIR=/dev/block
@@ -11,28 +11,47 @@ BLOCK_USERDATA=mmcblk0p40
 BLOCK_CACHE=mmcblk0p36
 BLOCK_BOOT=mmcblk0p33
 
-HIJACK_BIN=logwrapper
-HIJACK_LOC=bin
-
 # SS3 Setup
 SYS2_MNT=/s2
 IMG_TYPE=ext4
 USER_MNT=/datamedia
 SS_MNT=/ss
 SS_PART=$BLOCK_USERDATA
-SS_TYPE=ext4
+SS_TYPE=f2fs
 
 RECOVERY_DIR=/system/etc/safestrap
-SS_DIR=$SS_MNT/safestrap
+SS_DIR=/data/media/safestrap
 ALT_SYSTEM_MODE="0"
 BOOTMODE=$(getprop ro.bootmode)
 DEVICE=$(getprop ro.product.device)
-CHARGER_MODE=$(cat /sys/class/power_supply/ac/online)
+CHARGER_MODE=$(cat /sys/class/power_supply/pm8921-dc/online)
 CHECK_BOOTMODE="bp-tools"
-
+HIJACK_BIN=logwrapper
+HIJACK_LOC=bin
 SS_CHECK_FILE=.safestrapped
+SS_RECOVERY_FILE=.recovery_mode
 CURRENT_SYS_DIR=/system
+CURRENT_USER_DIR=/data
 
+# unmount /sys/fs/selinux + clear out files
+fixSELinux() {
+	echo "umount /sys/fs/selinux" > /dev/kmsg
+	for i in $(/sbin/bbx seq 1 10); do
+		TMP=$(/sbin/bbx mount | /sbin/bbx grep /sys/fs/selinux)
+		if /sbin/bbx [[ -z "$TMP" ]] ; then
+			break
+		fi
+		/sbin/bbx umount -l /sys/fs/selinux
+		/sbin/bbx sleep 1
+	done
+
+	# make sure to erase SElinux files
+	/sbin/bbx rm /file_contexts
+	/sbin/bbx rm /property_contexts
+	/sbin/bbx rm /seapp_contexts
+	/sbin/bbx rm /sepolicy
+	/sbin/bbx rm /sepolicy_version
+}
 
 if [ ! -f "/$SS_CHECK_FILE" ]; then
 	# remount root as rw
@@ -46,9 +65,9 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 	$RECOVERY_DIR/bbx chmod 755 /sbin/bbx
 	$RECOVERY_DIR/bbx chown 0.2000 /sbin/bbx
 
-	POWERUP_REASON=$(/sbin/bbx cat /proc/bootinfo | /sbin/bbx grep POWERUPREASON | /sbin/bbx cut -c 19-)
+	POWERUP_REASON=$(/sbin/bbx cat /proc/bootinfo | /sbin/bbx grep POWERUPREASON | /sbin/bbx cut -c 24-24)
 
-	if [ "$CHARGER_MODE" != "1" ] || [ "$POWERUP_REASON" != "00000100" ]; then
+	if [ "$POWERUP_REASON" != "1" ]; then
 		# set backlight
 		/sbin/bbx echo 200 > /sys/class/backlight/lcd-backlight/brightness
 
@@ -69,9 +88,9 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 		/sbin/bbx chown 0.2000 $USER_MNT
 		/sbin/bbx chmod 777 $USER_MNT
 
-		# mount safestrap partition
-		/sbin/bbx mount -t $SS_TYPE $BLOCK_DIR/$SS_PART $USER_MNT
-		/sbin/bbx mount $USER_MNT/media $SS_MNT
+		# HASH: don't remount /data, it's up at this point
+#		/sbin/bbx mount -t $SS_TYPE $BLOCK_DIR/$SS_PART $USER_MNT
+#		/sbin/bbx mount /data/media $SS_MNT
 
 		if [ ! -d "$SS_DIR" ]; then
 			/sbin/bbx mkdir -p $SS_DIR
@@ -83,7 +102,7 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 
 		# check the boot mode from the recovery file
 		if [ -f $SS_DIR/recovery_mode ]; then
-			CHECK_BOOTMODE=$(/sbin/bbx cat SAFESTRAP_DIR/recovery_mode)
+			CHECK_BOOTMODE=$(/sbin/bbx cat $SS_DIR/recovery_mode)
 		fi
 		# boot modes= ap-bp-bypass, bp-tools
 		if [ "$BOOTMODE" = "$CHECK_BOOTMODE" ]; then
@@ -98,21 +117,46 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 		if [ "$ALT_SYSTEM_MODE" = "1" ]; then
 			# setup loopback
 			/sbin/bbx losetup $BLOCK_DIR/loop-userdata $SS_DIR/$SLOT_LOC/userdata.img
-			/sbin/bbx mount -t $IMG_TYPE $BLOCK_DIR/loop-userdata /data
-			if [ -f /data/.recovery_mode ]; then
-				/sbin/bbx rm /data/.recovery_mode
+			/sbin/bbx mount -t $SS_TYPE $BLOCK_DIR/loop-userdata $USER_MNT
+			CURRENT_USER_DIR=$USER_MNT
+		fi
+
+		if [ -f $CURRENT_USER_DIR/$SS_RECOVERY_FILE ]; then
+			echo "Clean up /data/$SS_RECOVERY_FILE" > /dev/kmsg
+			/sbin/bbx rm $CURRENT_USER_DIR/$SS_RECOVERY_FILE
+
+			# increment recovery entry counter
+			/sbin/bbx echo "x" >> $SS_DIR/$SS_RECOVERY_FILE-counter
+			if [ $(/sbin/bbx cat $SS_DIR/$SS_RECOVERY_FILE-counter) = "x" ]; then
 				ALT_SYSTEM_MODE="2"
-			fi
-			/sbin/bbx umount /data
-			/sbin/bbx losetup -d $BLOCK_DIR/loop-userdata
-		else
-			if [ -f $USER_MNT/.recovery_mode ]; then
-				/sbin/bbx rm $USER_MNT/.recovery_mode
-				ALT_SYSTEM_MODE="2"
+			else
+				/sbin/bbx rm $SS_DIR/$SS_RECOVERY_FILE-counter
 			fi
 		fi
 
+		if [ "$CURRENT_USER_DIR" = "$USER_MNT" ]; then
+			/sbin/bbx umount $USER_MNT
+			/sbin/bbx losetup -d $BLOCK_DIR/loop-userdata
+		fi
+
 		if [ "$ALT_SYSTEM_MODE" = "2" ] || [ $($RECOVERY_DIR/safestrapmenu $ALT_SYSTEM_MODE > /dev/null 2>&1;echo $?) -eq 0 ]; then
+			# for the moment we need to auto clean all /cache/recovery/ files so that OTAs w/o a recovery don't loop
+			# (and it's already mounted at this point)
+			/sbin/bbx rm -rf /cache/recovery/*
+
+			# determine if write_protect=1 is in cmdline and if so we need to reboot recovery
+			if [ $(/sbin/bbx cat /proc/cmdline | /sbin/bbx grep "androidboot.write_protect=1" > /dev/null 2>&1;echo $?) -eq 0 ]; then
+				/sbin/bbx touch /data/$SS_RECOVERY_FILE
+				/sbin/bbx umount /data
+				/sbin/bbx umount /cache
+				$RECOVERY_DIR/safestrapmenu reboot recovery
+				/sbin/hijack.killall
+				/sbin/bbx sleep 4
+			fi
+
+			# entering recovery: clear counter
+			/sbin/bbx rm $SS_DIR/$SS_RECOVERY_FILE-counter
+
 			# filesystem cleanup
 			/sbin/bbx rm /d
 			/sbin/bbx rm /etc
@@ -125,7 +169,11 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 			/sbin/bbx mkdir /tmp
 			# move bins out of the way so they don't block
 			/sbin/bbx mv /sbin/adbd /sbin/adbd.old
+			/sbin/bbx mv /sbin/taskset /sbin/taskset.old
 			/sbin/bbx mv /init /init.old
+
+			fixSELinux
+			/sbin/bbx rm /*
 
 			# extract recovery ramdisk
 			cd /
@@ -136,8 +184,8 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 
 			# unmount partitions
 			/sbin/bbx umount -l /system
-			/sbin/bbx umount $SS_MNT
-			/sbin/bbx umount $USER_MNT
+#			/sbin/bbx umount $SS_MNT
+#			/sbin/bbx umount $USER_MNT
 
 			/sbin/hijack.killall
 			/sbin/taskset -p -c 0 1 > /dev/kmsg
@@ -185,8 +233,8 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 				fi
 
 				# unmount SS
-				/sbin/bbx umount $SS_MNT
-				/sbin/bbx umount $USER_MNT
+#				/sbin/bbx umount $SS_MNT
+#				/sbin/bbx umount $USER_MNT
 				/sbin/bbx umount -l /system
 
 				/sbin/hijack.killall
@@ -206,18 +254,26 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 			# check for alt-system or rootfs files
 			if [ "$ALT_SYSTEM_MODE" = "1" ] || [ -d "$CURRENT_SYS_DIR/etc/rootfs" ]; then
 				# BEGIN CLEANUP TODO: this should really be a device independant cleanup file
+				if [ -d "$RECOVERY_DIR/rootfs" ]; then
+					if [ -f "$RECOVERY_DIR/rootfs/sbin/adbd" ]; then
+						/sbin/bbx mv /sbin/adbd /sbin/adbd.old
+					fi
+					if [ -f "$RECOVERY_DIR/rootfs/init" ]; then
+						/sbin/bbx mv /init /init.old
+					fi
+					/sbin/bbx cp -R $RECOVERY_DIR/rootfs/* /
+				fi
 
-				# adjust stock init.rc file to include /sbin/fixboot.sh
-				/sbin/bbx cat /init.rc | /sbin/bbx sed "s/on fs/on fs\nexec \/sbin\/fixboot.sh/" > /init.rc.new0
-				/sbin/bbx cat /init.rc.new0 | /sbin/bbx sed "s/service sdcard \/system\/bin\/sdcard \/data\/media/service sdcard \/system\/bin\/sdcard \/datamedia\/media/" > /init.rc.new2
-				/sbin/bbx cat /init.rc.new2 | /sbin/bbx sed "s/loglevel 3/loglevel 8/" > /init.rc.new3
-				/sbin/bbx mv /init.rc /init.rc.old
-				/sbin/bbx mv /init.rc.new3 /init.rc
-				/sbin/bbx rm /init.rc.new*
+				if [ -d "/sys/fs/selinux" ]; then
+					fixSELinux
+				fi
 
-				# adjust init.<hardware>.rc for where to mount /sdcard
-				/sbin/bbx cat /init.qcom.rc | /sbin/bbx sed "s/service sdcard \/system\/bin\/sdcard \/data\/media/service sdcard \/system\/bin\/sdcard \/datamedia\/media/" > /init.qcom.rc.new0
-				/sbin/bbx mv /init.qcom.rc.new0 /init.qcom.rc
+				# adjust stock init.target.rc file to include /sbin/fixboot.sh
+				/sbin/bbx cat /init.target.rc | /sbin/bbx sed "s/on fs/on fs\nexec \/sbin\/fixboot.sh/" > /init.target.rc.new0
+				/sbin/bbx cat /init.target.rc.new0 | /sbin/bbx sed "s/\/data\/media/\/datamedia\/media/" > /init.target.rc.new1
+				/sbin/bbx mv /init.target.rc /init.target.rc.old
+				/sbin/bbx mv /init.target.rc.new1 /init.target.rc
+				/sbin/bbx rm /init.target.rc.new*
 
 				if [ -f "$CURRENT_SYS_DIR/etc/rootfs/sbin/adbd" ]; then
 					/sbin/bbx mv /sbin/adbd /sbin/adbd.old
@@ -243,8 +299,8 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 				fi
 
 				# unmount SS
-				/sbin/bbx umount $SS_MNT
-				/sbin/bbx umount $USER_MNT
+#				/sbin/bbx umount $SS_MNT
+#				/sbin/bbx umount $USER_MNT
 
 				# unmount old /system
 				/sbin/bbx umount -l /system
@@ -269,8 +325,8 @@ if [ ! -f "/$SS_CHECK_FILE" ]; then
 		fi
 
 		# unmount safestrap partition
-		/sbin/bbx umount $SS_MNT
-		/sbin/bbx umount $USER_MNT
+#		/sbin/bbx umount $SS_MNT
+#		/sbin/bbx umount $USER_MNT
 	fi
 fi
 

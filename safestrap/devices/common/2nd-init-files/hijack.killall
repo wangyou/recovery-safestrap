@@ -63,6 +63,19 @@ for i in $(bbx seq 1 10); do
 	bbx sleep 1
 done
 
+# unmount all f2fs partitions
+for i in $(bbx seq 1 10); do
+	TMP=$(bbx mount | bbx grep f2fs | bbx awk '{print $3}')
+	if bbx [[ -z "$TMP" ]] ; then
+		break;
+	fi
+	for j in $(bbx mount | bbx grep f2fs | bbx awk '{print $3}'); do
+		echo "umount -l $j" > /dev/kmsg
+		bbx umount -l "$j"
+	done
+	bbx sleep 1
+done
+
 # kill any existing adbd processes
 bbx kill $(bbx ps | bbx grep adbd)
 #bbx echo "msc_adb" > /dev/usb_device_mode

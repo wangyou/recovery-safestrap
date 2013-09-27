@@ -1,6 +1,6 @@
 #!/sbin/bbx sh
 # By: Hashcode
-# Last Editted: 09/11/2013
+# Last Editted: 09/26/2013
 BLOCK_DIR=/dev/block
 
 BLOCK_SYSTEM=mmcblk0p38
@@ -10,7 +10,7 @@ BLOCK_BOOT=mmcblk0p33
 
 SS_PART=$BLOCK_USERDATA-orig
 USER_MNT=/datamedia
-IMG_TYPE=ext4
+IMG_TYPE=f2fs
 SS_MNT=/ss
 SS_DIR=$SS_MNT/safestrap
 
@@ -61,7 +61,8 @@ if [ ! -f "$BLOCK_DIR/$BLOCK_SYSTEM-orig" ]; then
 		/sbin/bbx ln -s $BLOCK_DIR/$BLOCK_SYSTEM-orig $BLOCK_DIR/$BLOCK_SYSTEM
 		/sbin/bbx ln -s $BLOCK_DIR/$BLOCK_USERDATA-orig $BLOCK_DIR/$BLOCK_USERDATA
 		/sbin/bbx ln -s $BLOCK_DIR/$BLOCK_CACHE-orig $BLOCK_DIR/$BLOCK_CACHE
-		/sbin/bbx ln -s $BLOCK_DIR/$BLOCK_BOOT-orig $BLOCK_DIR/$BLOCK_BOOT
+#		/sbin/bbx ln -s $BLOCK_DIR/$BLOCK_BOOT-orig $BLOCK_DIR/$BLOCK_BOOT
+		/sbin/bbx ln -s /dev/null $BLOCK_DIR/$BLOCK_BOOT
 	fi
 fi
 

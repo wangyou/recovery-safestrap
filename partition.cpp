@@ -108,7 +108,9 @@ TWPartition::TWPartition(void) {
 #ifdef TW_INCLUDE_CRYPTO_SAMSUNG
 	EcryptFS_Password = "";
 #endif
+#ifdef BUILD_SAFESTRAP
 	Hidden = false;
+#endif
 }
 
 TWPartition::~TWPartition(void) {
@@ -121,7 +123,9 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 	char* ptr;
 	string Flags;
 	strncpy(full_line, Line.c_str(), line_len);
+#ifdef BUILD_SAFESTRAP
 	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
+#endif
 	bool skip = false;
 
 	for (index = 0; index < line_len; index++) {
@@ -1027,10 +1031,12 @@ bool TWPartition::Wipe(string New_File_System) {
 	if (Has_Data_Media) {
 		wiped = Wipe_Data_Without_Wiping_Media();
 	} else {
+#ifdef BUILD_SAFESTRAP
 		string bootslot = "";
 		DataManager::GetValue("tw_bootslot", bootslot);
 
 		if (PartitionManager.Backup_Safestrap()) return 1;
+#endif
 
 		DataManager::GetValue(TW_RM_RF_VAR, check);
 
@@ -1054,13 +1060,14 @@ bool TWPartition::Wipe(string New_File_System) {
 			return false;
 		}
 		update_crypt = wiped;
-
+#ifdef BUILD_SAFESTRAP
 		// RESTORE Safestrap files if this is stock
 		if ((bootslot == "stock") && (Mount_Point == "/system")) {
 			Mount(true);
 			PartitionManager.Restore_Safestrap();
 			UnMount(true);
 		}
+#endif
 	}
 
 	if (wiped) {
@@ -1722,7 +1729,9 @@ bool TWPartition::Restore_Flash_Image(string restore_folder) {
 
 bool TWPartition::Update_Size(bool Display_Error) {
 	bool ret = false, Was_Already_Mounted = false;
+#ifdef BUILD_SAFESTRAP
 	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
+#endif
 
 	if (!Can_Be_Mounted && !Is_Encrypted)
 		return false;
@@ -1746,15 +1755,18 @@ bool TWPartition::Update_Size(bool Display_Error) {
 	if (Has_Data_Media) {
 		if (Mount(Display_Error)) {
 			unsigned long long data_media_used, actual_data;
-			string bootslot = "";
-
-			DataManager::GetValue("tw_bootslot", bootslot);
 			Used = TWFunc::Get_Folder_Size("/data", Display_Error);
+#ifdef BUILD_SAFESTRAP
+			string bootslot = "";
+			DataManager::GetValue("tw_bootslot", bootslot);
 			data_media_used = TWFunc::Get_Folder_Size(datamedia_mount + "/media", Display_Error);
-			if (bootslot == "stock")
-				actual_data = Used - data_media_used;
-			else
+			if (bootslot != "stock")
 				actual_data = Used;
+			else
+#else
+			data_media_used = TWFunc::Get_Folder_Size("/data/media", Display_Error);
+#endif
+			actual_data = Used - data_media_used;
 			Backup_Size = actual_data;
 			int bak = (int)(Backup_Size / 1048576LLU);
 			int total = (int)(Size / 1048576LLU);
@@ -1802,16 +1814,26 @@ void TWPartition::Find_Actual_Block_Device(void) {
 
 void TWPartition::Recreate_Media_Folder(void) {
 	string Command;
+#ifdef BUILD_SAFESTRAP
 	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
 	char path[255];
+#endif
 
 	if (!Mount(true)) {
 		LOGERR("Unable to recreate /data/media folder.\n");
+#ifdef BUILD_SAFESTRAP
 	} else if (!TWFunc::Path_Exists(datamedia_mount + "/media")) {
+#else
+	} else if (!TWFunc::Path_Exists("/data/media")) {
+#endif
 		PartitionManager.Mount_By_Path(Symlink_Mount_Point, true);
 		LOGINFO("Recreating /data/media folder.\n");
+#ifdef BUILD_SAFESTRAP
 		sprintf(path, "%s/media", datamedia_mount.c_str());
 		mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+#else
+		mkdir("/data/media", S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH); 
+#endif
 		PartitionManager.UnMount_By_Path(Symlink_Mount_Point, true);
 	}
 }

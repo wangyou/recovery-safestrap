@@ -40,7 +40,9 @@
 #include "data.hpp"
 #include "partitions.hpp"
 #include "twrp-functions.hpp"
+#ifdef BUILD_SAFESTRAP
 #include "safestrap-functions.h"
+#endif
 #ifndef TW_NO_SCREEN_TIMEOUT
 #include "gui/blanktimer.hpp"
 #endif
@@ -461,9 +463,11 @@ int DataManager::SetValue(const string varName, string value, int persist /* = 0
 	if (varName == "tw_storage_path") {
 		SetBackupFolder();
 	}
+#ifdef BUILD_SAFESTRAP
 	if (varName == TW_ZIP_LOCATION_VAR) {
 		LOGINFO("TW_ZIP_LOCATION_VAR == %s\n", value.c_str());
 	}
+#endif
 	gui_notifyVarChange(varName.c_str(), value.c_str());
 	return 0;
 }
@@ -553,14 +557,22 @@ void DataManager::SetBackupFolder()
 		SetValue("tw_storage_free_size", free_space);
 		string zip_path, zip_root, storage_path;
 		GetValue(TW_ZIP_LOCATION_VAR, zip_path);
+#ifdef BUILD_SAFESTRAP
 #ifndef TW_INTERNAL_STORAGE_PATH
 		LOGINFO("DataManager::SetBackupFolder no TW_INTERNAL_STORAGE_PATH\n", storage_path.c_str());
 		if (partition->Has_Data_Media)
 			storage_path = partition->Symlink_Mount_Point;
 		else
 #endif
+#else
+		if (partition->Has_Data_Media)
+			storage_path = partition->Symlink_Mount_Point;
+		else
+#endif
 			storage_path = partition->Storage_Path;
+#ifdef BUILD_SAFESTRAP
 		LOGINFO("DataManager::SetBackupFolder storage_path=%s\n", storage_path.c_str());
+#endif
 		if (zip_path.size() < storage_path.size()) {
 			SetValue(TW_ZIP_LOCATION_VAR, storage_path);
 		} else {
@@ -576,6 +588,7 @@ void DataManager::SetBackupFolder()
 	}
 }
 
+#ifdef BUILD_SAFESTRAP
 void DataManager::LoadBootslotVar(void) {
 	char array[512];
 	long lSize;
@@ -601,10 +614,13 @@ void DataManager::LoadBootslotVar(void) {
 	fclose(in);
 	SetValue("tw_bootslot", str);
 }
+#endif
 
 void DataManager::SetDefaultValues()
 {
+#ifdef BUILD_SAFESTRAP
 	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
+#endif
 	string str, path;
 
 	get_device_id();
@@ -617,13 +633,14 @@ void DataManager::SetDefaultValues()
 	mConstValues.insert(make_pair(TW_VERSION_VAR, TW_VERSION_STR));
 	mValues.insert(make_pair("tw_storage_path", make_pair("/", 1)));
 
+#ifdef BUILD_SAFESTRAP
 	// Safestrap
 	mConstValues.insert(make_pair(SS_VERSION_VAR, SS_VERSION_STR));
 	fprintf(stderr, "TW_SS_DEFAULT_VIRT_SYSTEM_SIZE == %s\n", DEFAULT_VIRT_SYSTEM_SIZE);
 	fprintf(stderr, "TW_SS_DEFAULT_VIRT_CACHE_SIZE == %s\n", DEFAULT_VIRT_CACHE_SIZE);
 	mConstValues.insert(make_pair(TW_SS_DEFAULT_VIRT_SYSTEM_SIZE, DEFAULT_VIRT_SYSTEM_SIZE));
 	mConstValues.insert(make_pair(TW_SS_DEFAULT_VIRT_CACHE_SIZE, DEFAULT_VIRT_CACHE_SIZE));
-
+#endif
 #ifdef TW_FORCE_CPUINFO_FOR_DEVICE_ID
 	printf("TW_FORCE_CPUINFO_FOR_DEVICE_ID := true\n");
 #endif
@@ -682,11 +699,19 @@ void DataManager::SetDefaultValues()
 #else
 	#ifdef RECOVERY_SDCARD_ON_DATA
 		#ifdef TW_EXTERNAL_STORAGE_PATH
+#ifdef BUILD_SAFESTRAP
 			LOGI("Has %s/media + external storage in '%s'\n", datamedia_mount, EXPAND(TW_EXTERNAL_STORAGE_PATH));
-			// Device has /datamedia/media + external storage
+#else
+			LOGINFO("Has /data/media + external storage in '%s'\n", EXPAND(TW_EXTERNAL_STORAGE_PATH));
+#endif
+			// Device has /data/media + external storage
 			mConstValues.insert(make_pair(TW_HAS_DUAL_STORAGE, "1"));
 		#else
+#ifdef BUILD_SAFESTRAP
 			LOGI("Single storage only -- %s/media.\n", datamedia_mount);
+#else
+			LOGINFO("Single storage only -- data/media.\n");
+#endif
 			// Device just has external storage
 			mConstValues.insert(make_pair(TW_HAS_DUAL_STORAGE, "0"));
 			mConstValues.insert(make_pair(TW_HAS_EXTERNAL, "0"));
@@ -697,14 +722,23 @@ void DataManager::SetDefaultValues()
 		mConstValues.insert(make_pair(TW_HAS_DUAL_STORAGE, "0"));
 	#endif
 	#ifdef RECOVERY_SDCARD_ON_DATA
+#ifdef BUILD_SAFESTRAP
 		LOGI("Device has %s/media defined.\n", datamedia_mount);
-		// Device has /datamedia/media
+#else
+		LOGINFO("Device has /data/media defined.\n");
+#endif
+		// Device has /data/media
 		mConstValues.insert(make_pair(TW_USE_EXTERNAL_STORAGE, "0"));
 		mConstValues.insert(make_pair(TW_HAS_INTERNAL, "1"));
-// FIXME-HASH: datamedia handling [FIXED]
+#ifdef BUILD_SAFESTRAP
 		mValues.insert(make_pair(TW_INTERNAL_PATH, make_pair(datamedia_mount + "/media", 0)));
 		mConstValues.insert(make_pair(TW_INTERNAL_MOUNT, datamedia_mount));
 		mConstValues.insert(make_pair(TW_INTERNAL_LABEL, "datamedia"));
+#else
+		mValues.insert(make_pair(TW_INTERNAL_PATH, make_pair("/data/media", 0)));
+		mConstValues.insert(make_pair(TW_INTERNAL_MOUNT, "/data"));
+		mConstValues.insert(make_pair(TW_INTERNAL_LABEL, "data"));
+#endif
 		#ifdef TW_EXTERNAL_STORAGE_PATH
 			if (strcmp(EXPAND(TW_EXTERNAL_STORAGE_PATH), "/sdcard") == 0) {
 				mValues.insert(make_pair(TW_ZIP_INTERNAL_VAR, make_pair("/emmc", 1)));
@@ -753,9 +787,13 @@ void DataManager::SetDefaultValues()
 #endif
 
 #ifdef RECOVERY_SDCARD_ON_DATA
-// FIXME-HASH: datamedia handling [FIXED]
+#ifdef BUILD_SAFESTRAP
 	if (PartitionManager.Mount_By_Path(datamedia_mount, false) && TWFunc::Path_Exists(datamedia_mount + "/media/0"))
 		SetValue(TW_INTERNAL_PATH, datamedia_mount + "/media/0");
+#else
+	if (PartitionManager.Mount_By_Path("/data", false) && TWFunc::Path_Exists("/data/media/0"))
+		SetValue(TW_INTERNAL_PATH, "/data/media/0");
+#endif
 #endif
 	str = GetCurrentStoragePath();
 #ifdef RECOVERY_SDCARD_ON_DATA
@@ -919,7 +957,9 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair(TW_BACKUP_SP2_SIZE, make_pair("0", 0)));
 	mValues.insert(make_pair(TW_BACKUP_SP3_SIZE, make_pair("0", 0)));
 	mValues.insert(make_pair(TW_STORAGE_FREE_SIZE, make_pair("0", 0)));
+#ifdef BUILD_SAFESTRAP
 	mValues.insert(make_pair(TW_SS_STORAGE_FREE_SIZE, make_pair("0", 0)));
+#endif
 
 	mValues.insert(make_pair(TW_REBOOT_AFTER_FLASH_VAR, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_SIGNED_ZIP_VERIFY_VAR, make_pair("0", 1)));
@@ -992,15 +1032,13 @@ void DataManager::SetDefaultValues()
 	}
 #endif
 	mValues.insert(make_pair(TW_MILITARY_TIME, make_pair("0", 1)));
-
-	/* SAFESTRAP */
+#ifdef BUILD_SAFESTRAP
 	mValues.insert(make_pair("tw_rom-slot1_name", make_pair("XXXXXXXXXX", 0)));
 	mValues.insert(make_pair("tw_rom-slot2_name", make_pair("XXXXXXXXXX", 0)));
 	mValues.insert(make_pair("tw_rom-slot3_name", make_pair("XXXXXXXXXX", 0)));
 	mValues.insert(make_pair("tw_rom-slot4_name", make_pair("XXXXXXXXXX", 0)));
 	LoadBootslotVar();
-
-
+#endif
 #ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
 	mValues.insert(make_pair("tw_include_encrypted_backup", make_pair("1", 0)));
 #else
@@ -1061,6 +1099,7 @@ int DataManager::GetMagicValue(const string varName, string& value)
 #endif
 			FILE * cap = fopen(capacity_file.c_str(),"rt");
 #else
+#ifdef BUILD_SAFESTRAP
 			string capacity_file = "/sys/class/power_supply/battery/";
 #ifdef TW_CUSTOM_BATTERY_CAPACITY_FIELD
 			capacity_file += "/";
@@ -1069,6 +1108,9 @@ int DataManager::GetMagicValue(const string varName, string& value)
 			capacity_file += "/capacity";
 #endif
 			FILE * cap = fopen(capacity_file.c_str(),"rt");
+#else
+			FILE * cap = fopen("/sys/class/power_supply/battery/capacity","rt");
+#endif
 #endif
 			if (cap){
 				fgets(cap_s, 4, cap);

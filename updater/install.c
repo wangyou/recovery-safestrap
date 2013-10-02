@@ -198,24 +198,35 @@ done:
 //    if fs_size < 0, then reserve that many bytes at the end of the partition
 Value* FormatFn(const char* name, State* state, int argc, Expr* argv[]) {
     char* result = NULL;
+#ifdef BUILD_SAFESTRAP
     if ((argc < 4) || (argc > 5)) {
         return ErrorAbort(state, "%s() expects 4 or 5 args, got %d", name, argc);
     }
+#else
+    if (argc != 5) {
+        return ErrorAbort(state, "%s() expects 5 args, got %d", name, argc);
+    }
+#endif
     char* fs_type;
     char* partition_type;
     char* location;
     char* fs_size;
     char* mount_point;
+
+#ifdef BUILD_SAFESTRAP
     if (argc = 4) {
         if (ReadArgs(state, argv, 4, &fs_type, &partition_type, &location, &fs_size) < 0) {
             return NULL;
         }
     }
     else {
-        if (ReadArgs(state, argv, 5, &fs_type, &partition_type, &location, &fs_size, &mount_point) < 0) {
-            return NULL;
-        }
+#endif
+    if (ReadArgs(state, argv, 5, &fs_type, &partition_type, &location, &fs_size, &mount_point) < 0) {
+        return NULL;
     }
+#ifdef BUILD_SAFESTRAP
+    }
+#endif
 
     if (strlen(fs_type) == 0) {
         ErrorAbort(state, "fs_type argument to %s() can't be empty", name);

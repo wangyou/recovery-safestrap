@@ -60,8 +60,9 @@ int gui_start();
 #include "rapidxml.hpp"
 #include "objects.hpp"
 
+#ifdef BUILD_SAFESTRAP
 #include "action_safestrap.cpp"
-
+#endif
 #ifndef TW_NO_SCREEN_TIMEOUT
 extern blanktimer blankTimer;
 #endif
@@ -173,7 +174,6 @@ void GUIAction::simulate_progress_bar(void)
 
 int GUIAction::flash_zip(std::string filename, std::string pageName, const int simulate, int* wipe_cache)
 {
-	char cmd[512];
 	int ret_val = 0;
 
 	DataManager::SetValue("ui_progress", 0);
@@ -226,9 +226,9 @@ int GUIAction::flash_zip(std::string filename, std::string pageName, const int s
 	if (simulate) {
 		simulate_progress_bar();
 	} else {
-		string result;
+#ifdef BUILD_SAFESTRAP
 		if (PartitionManager.Backup_Safestrap()) return 1;
-
+#endif
 		ret_val = TWinstall_zip(filename.c_str(), wipe_cache);
 
 		// Now, check if we need to ensure TWRP remains installed...
@@ -243,8 +243,9 @@ int GUIAction::flash_zip(std::string filename, std::string pageName, const int s
 				gui_print("Unable to configure TWRP with this kernel.\n");
 			}
 		}
-
+#ifdef BUILD_SAFESTRAP
 		if (PartitionManager.Restore_Safestrap()) return 1;
+#endif
 	}
 
 	// Done
@@ -517,7 +518,6 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		if (!simulate)
 		{
 			string dst;
-			string result;
 			PartitionManager.Mount_Current_Storage(true);
 			dst = DataManager::GetCurrentStoragePath() + "/recovery.log";
 			TWFunc::copy_file("/tmp/recovery.log", dst.c_str(), 0755);
@@ -535,7 +535,9 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		{
 			string varName = arg.substr(0, arg.find('+'));
 			string string_to_add = arg.substr(arg.find('+') + 1, string::npos);
+#ifdef BUILD_SAFESTRAP
 			DataManager::GetValue(string_to_add, string_to_add);
+#endif
 			int amount_to_add = atoi(string_to_add.c_str());
 			int value;
 
@@ -547,7 +549,9 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		{
 			string varName = arg.substr(0, arg.find('-'));
 			string string_to_subtract = arg.substr(arg.find('-') + 1, string::npos);
+#ifdef BUILD_SAFESTRAP
 			DataManager::GetValue(string_to_subtract, string_to_subtract);
+#endif
 			int amount_to_subtract = atoi(string_to_subtract.c_str());
 			int value;
 
@@ -733,10 +737,11 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		return 0;
 	}
 
+#ifdef BUILD_SAFESTRAP
 	/* Non-Threaded Safestrap Functions */
 	if (doSafestrapAction(action, isThreaded) == 0)
 		return 0;
-
+#endif
 	if (isThreaded)
 	{
 		if (function == "fileexists")
@@ -796,12 +801,10 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		}
 		if (function == "wipe")
 		{
-			char cmd[512];
-			int ret_val = false;
 			operation_start("Format");
 			DataManager::SetValue("tw_partition", arg);
 
-			string result = "";
+			int ret_val = false;
 
 			if (simulate) {
 				simulate_progress_bar();
@@ -884,9 +887,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 							end_pos = Wipe_List.find(";", start_pos);
 						}
 					}
-				} else {
+				} else
 					ret_val = PartitionManager.Wipe_By_Path(arg);
-				}
 
 				if (arg == DataManager::GetSettingsStoragePath()) {
 					// If we wiped the settings storage path, recreate the TWRP folder and dump the settings
@@ -924,9 +926,6 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		{
 			operation_start("Nandroid");
 			int ret = 0;
-			char cmd[512];
-			int ret_val = 0;
-			string result = "";
 
 			if (simulate) {
 				DataManager::SetValue("tw_partition", "Simulation");
@@ -944,13 +943,15 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 					}
 					DataManager::SetValue(TW_BACKUP_NAME, "(Auto Generate)");
 				} else if (arg == "restore") {
+#ifdef BUILD_SAFESTRAP
 					if (PartitionManager.Backup_Safestrap()) return 1;
-
+#endif
 					string Restore_Name;
 					DataManager::GetValue("tw_restore", Restore_Name);
 					ret = PartitionManager.Run_Restore(Restore_Name);
-
+#ifdef BUILD_SAFESTRAP
 					if (PartitionManager.Restore_Safestrap()) return 1;
+#endif
 				} else {
 					operation_end(1, simulate);
 					return -1;
@@ -1267,8 +1268,9 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 				// that we converted to ORS commands during boot in recovery.cpp.
 				// Run those first.
 				int reboot = 0;
-				// HASH: if stock run SS hijack backup here
+#ifdef BUILD_SAFESTRAP
 				PartitionManager.Backup_Safestrap();
+#endif
 				if (TWFunc::Path_Exists(SCRIPT_FILE_TMP)) {
 					gui_print("Processing AOSP recovery commands...\n");
 					if (OpenRecoveryScript::run_script_file() == 0) {
@@ -1282,8 +1284,9 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 						reboot = 1;
 					}
 				}
-				// HASH: if stock run SS hijack restore here
+#ifdef BUILD_SAFESTRAP
 				PartitionManager.Restore_Safestrap();
+#endif
 				if (reboot) {
 					usleep(2000000); // Sleep for 2 seconds before rebooting
 					TWFunc::tw_reboot(rb_system);
@@ -1344,10 +1347,11 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			operation_end(op_status, simulate);
 			return 0;
 		}
+#ifdef BUILD_SAFESTRAP
 		/* Threaded Safestrap Functions */
 		if (doSafestrapThreadedAction(action, isThreaded) == 0)
 			return 0;
-
+#endif
 	}
 	else
 	{

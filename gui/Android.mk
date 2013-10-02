@@ -91,11 +91,11 @@ LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/res
 
 ifdef BUILD_SAFESTRAP
 TWRP_RES_LOC := $(commands_recovery_local_path)/safestrap/devices/common/res
+SS_COMMON := $(commands_recovery_local_path)/safestrap
 else
 TWRP_RES_LOC := $(commands_recovery_local_path)/gui/devices
 endif
 TWRP_RES_GEN := $(intermediates)/twrp
-SS_COMMON := $(commands_recovery_local_path)/safestrap
 
 $(TWRP_RES_GEN):
 	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res/
@@ -105,6 +105,9 @@ $(TWRP_RES_GEN):
 	ln -sf /sbin/busybox $(TARGET_RECOVERY_ROOT_OUT)/sbin/sh
 	ln -sf /sbin/pigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gzip
 	ln -sf /sbin/unpigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gunzip
+
+ifdef BUILD_SAFESTRAP
+$(SS_RES_GEN):
 	# Safestrap Setup
 	rm -rf $(OUT)/2nd-init-files
 	rm -rf $(OUT)/APP
@@ -113,7 +116,12 @@ $(TWRP_RES_GEN):
 	mkdir -p $(OUT)/install-files/etc/safestrap/flags
 	mkdir -p $(OUT)/install-files/etc/safestrap/res
 	mkdir -p $(OUT)/APP
-	cp -p $(TWRP_RES_LOC)/../2nd-init-files/* $(OUT)/2nd-init-files
+	cp -p $(SS_COMMON)/devices/common/2nd-init-files/* $(OUT)/2nd-init-files
+	cp -p $(SS_COMMON)/devices/common/2nd-init-files/fixboot.sh $(OUT)/recovery/root/sbin/
+	cp -p $(SS_COMMON)/devices/common/2nd-init-files/ss_function.sh $(OUT)/recovery/root/sbin/
+	cp -p $(SS_COMMON)/devices/common/2nd-init-files/ss_function.sh $(OUT)/APP/
+	cp -p $(SS_COMMON)/devices/common/APP/* $(OUT)/APP/
+	cp -p $(SS_COMMON)/devices/common/sbin/* $(OUT)/recovery/root/sbin/
 	cp -p $(SS_COMMON)/flags/* $(OUT)/install-files/etc/safestrap/flags/
 	cp -p $(SS_COMMON)/bbx $(OUT)/install-files/etc/safestrap/bbx
 	cp -p $(SS_COMMON)/busybox $(OUT)/APP/busybox
@@ -121,7 +129,13 @@ $(TWRP_RES_GEN):
 	cp -p $(SS_COMMON)/devices/common/splashscreen-res/$(DEVICE_RESOLUTION)/* $(OUT)/install-files/etc/safestrap/res/
 	# Call out to device-specific script
 	$(SS_COMMON)/devices/$(SS_PRODUCT_MANUFACTURER)/$(TARGET_DEVICE)/build-safestrap.sh
+endif
 
+ifdef BUILD_SAFESTRAP
+LOCAL_GENERATED_SOURCES := $(TWRP_RES_GEN) $(SS_RES_GEN)
+LOCAL_SRC_FILES := twrp $(TWRP_RES_GEN) $(SS_RES_GEN)
+else
 LOCAL_GENERATED_SOURCES := $(TWRP_RES_GEN)
 LOCAL_SRC_FILES := twrp $(TWRP_RES_GEN)
+endif
 include $(BUILD_PREBUILT)

@@ -73,12 +73,13 @@ public:
 	string Actual_Block_Device;                                               // Actual block device (one of primary, alternate, or decrypted)
 	string MTD_Name;                                                          // Name of the partition for MTD devices
 
+#ifdef BUILD_SAFESTRAP
 	string Display_Name;                                                      // Display name for the GUI
 	string Primary_Block_Device;                                              // Block device (e.g. /dev/block/mmcblk1p1)
 	unsigned long long Size;                                                  // Overall size of the partition
 	unsigned long long Used;                                                  // Overall used space
 	unsigned long long Free;                                                  // Overall free space
-
+#endif
 private:
 	bool Process_Fstab_Line(string Line, bool Display_Error);                 // Processes a fstab line
 	void Find_Actual_Block_Device();                                          // Determines the correct block device and stores it in Actual_Block_Device
@@ -127,15 +128,26 @@ private:
 	string Symlink_Mount_Point;                                               // /sdcard could be the symlink mount point for /data/media
 	string Mount_Point;                                                       // Mount point for this partition (e.g. /system or /data)
 	string Backup_Path;                                                       // Path for backup
+#ifndef BUILD_SAFESTRAP
+	string Primary_Block_Device;                                              // Block device (e.g. /dev/block/mmcblk1p1)
+#endif
 	string Alternate_Block_Device;                                            // Alternate block device (e.g. /dev/block/mmcblk1)
 	string Decrypted_Block_Device;                                            // Decrypted block device available after decryption
 	bool Removable;                                                           // Indicates if this partition is removable -- affects how often we check overall size, if present, etc.
 	bool Is_Present;                                                          // Indicates if the partition is currently present as a block device
 	int Length;                                                               // Used by make_ext4fs to leave free space at the end of the partition block for things like a crypto footer
+#ifndef BUILD_SAFESTRAP
+	unsigned long long Size;                                                  // Overall size of the partition
+	unsigned long long Used;                                                  // Overall used space
+	unsigned long long Free;                                                  // Overall free space
+#endif
 	unsigned long long Backup_Size;                                           // Backup size -- may be different than used space especially when /data/media is present
 	bool Can_Be_Encrypted;                                                    // This partition might be encrypted, affects error handling, can only be true if crypto support is compiled in
 	bool Is_Encrypted;                                                        // This partition is thought to be encrypted -- it wouldn't mount for some reason, only avialble with crypto support
 	bool Is_Decrypted;                                                        // This partition has successfully been decrypted
+#ifndef BUILD_SAFESTRAP
+	string Display_Name;                                                      // Display name for the GUI
+#endif
 	string Backup_Name;                                                       // Backup name -- used for backup filenames
 	string Backup_Display_Name;                                               // Name displayed in the partition list for backup selection
 	string Storage_Name;                                                      // Name displayed in the partition list for storage selection
@@ -155,7 +167,9 @@ private:
 #ifdef TW_INCLUDE_CRYPTO_SAMSUNG
 	string EcryptFS_Password;                                                 // Have to store the encryption password to remount
 #endif
+#ifdef BUILD_SAFESTRAP
 	bool Hidden;                                                              // Dont show in lists
+#endif
 
 friend class TWPartitionManager;
 friend class DataManager;
@@ -169,8 +183,12 @@ public:
 	~TWPartitionManager() {}
 
 public:
+#ifdef BUILD_SAFESTRAP
 	int Process_Fstab(string Fstab_Filename, bool Display_Error, bool Reset_Partition_List);
                                                                                   // Parses the fstab and populates the partitions
+#else
+	int Process_Fstab(string Fstab_Filename, bool Display_Error);             // Parses the fstab and populates the partitions
+#endif
 	int Write_Fstab();                                                        // Creates /etc/fstab file that's used by the command line for mount commands
 	void Output_Partition_Logging();                                          // Outputs partition information to the log
 	int Mount_By_Path(string Path, bool Display_Error);                       // Mounts partition based on path (e.g. /system)
@@ -214,10 +232,10 @@ public:
 	void Get_Partition_List(string ListType, std::vector<PartitionList> *Partition_List);
 	int Fstab_Processed();                                                    // Indicates if the fstab has been processed or not
 	void Output_Storage_Fstab();                                              // Creates a /cache/recovery/storage.fstab file with a list of all potential storage locations for app use
-
-	// SAFESTRAP
+#ifdef BUILD_SAFESTRAP
 	int Backup_Safestrap(void);
 	int Restore_Safestrap(void);
+#endif
 
 private:
 	bool Make_MD5(bool generate_md5, string Backup_Folder, string Backup_Filename); // Generates an MD5 after a backup is made

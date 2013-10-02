@@ -284,7 +284,9 @@ protected:
 	void operation_start(const string operation_name);
 	void operation_end(const int operation_status, const int simulate);
 	static void* command_thread(void *cookie);
+#ifdef BUILD_SAFESTRAP
 #include "objects_action_safestrap.hpp"
+#endif
 };
 
 class GUIConsole : public RenderObject, public ActionObject

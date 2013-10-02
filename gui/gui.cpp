@@ -585,7 +585,7 @@ extern "C" int gui_init(void)
 	gr_init();
 
 // HASH: Disable curtain for Safestrap (sorry Dees_Troy!)
-#if 0
+#ifndef BUILD_SAFESTRAP
 	if (res_create_surface("/res/images/curtain.jpg", &gCurtain))
 	{
 		printf

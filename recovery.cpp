@@ -860,8 +860,6 @@ ui_print(const char* format, ...) {
 
 int
 main(int argc, char **argv) {
-    string result;
-
     // Recovery needs to install world-readable files, so clear umask
     // set by init
     umask(0);
@@ -900,7 +898,11 @@ main(int argc, char **argv) {
 	printf("=> Linking mtab\n");
 	symlink("/proc/mounts", "/etc/mtab");
 	printf("=> Processing recovery.fstab\n");
+#ifdef BUILD_SAFESTRAP
 	if (!PartitionManager.Process_Fstab("/etc/recovery.fstab", true, true)) {
+#else
+	if (!PartitionManager.Process_Fstab("/etc/recovery.fstab", 1)) {
+#endif
 		LOGE("Failing out of recovery due to problem with recovery.fstab.\n");
 		//return -1;
 	}

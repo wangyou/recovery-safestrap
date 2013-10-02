@@ -132,6 +132,7 @@ $(TWRP_RES_GEN):
 	cp -p $(SS_COMMON)/devices/common/2nd-init-files/fixboot.sh $(OUT)/recovery/root/sbin/
 	cp -p $(SS_COMMON)/devices/common/2nd-init-files/ss_function.sh $(OUT)/recovery/root/sbin/
 	cp -p $(SS_COMMON)/devices/common/2nd-init-files/ss_function.sh $(OUT)/APP/
+	cp -p $(SS_COMMON)/devices/common/2nd-init-files/ss_function.sh $(OUT)/install-files/etc/safestrap/
 	cp -p $(SS_COMMON)/devices/common/APP/* $(OUT)/APP/
 	cp -p $(SS_COMMON)/devices/common/sbin/* $(OUT)/recovery/root/sbin/
 	cp -p $(SS_COMMON)/flags/* $(OUT)/install-files/etc/safestrap/flags/

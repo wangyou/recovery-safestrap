@@ -16,14 +16,14 @@ readConfig() {
 	SS_PART=$($BBX fgrep "SS_PART=" $SS_CONFIG | $BBX sed 's/SS_PART=//')
 	SS_FSTYPE=$($BBX fgrep "SS_FSTYPE=" $SS_CONFIG | $BBX sed 's/SS_FSTYPE=//')
 	SS_DIR=$($BBX fgrep "SS_DIR=" $SS_CONFIG | $BBX sed 's/SS_DIR=//')
-	DATAMEDIA_MNT=$($BBX fgrep "DATAMEDIA_MNT=" $SS_CONFIG | $BBX sed 's/DATAMEDIA_MNT=//')
 	HIJACK_BIN=$($BBX fgrep "HIJACK_BIN=" $SS_CONFIG | $BBX sed 's/HIJACK_BIN=//')
 	HIJACK_LOC=$($BBX fgrep "HIJACK_LOC=" $SS_CONFIG | $BBX sed 's/HIJACK_LOC=//')
 	BOOTMODE=$(getprop $($BBX fgrep "BOOTMODE_PROP=" $SS_CONFIG | $BBX sed 's/BOOTMODE_PROP=//'))
 	CHECK_BOOTMODE="$($BBX fgrep "CHECK_BOOTMODE=" $SS_CONFIG | $BBX sed 's/CHECK_BOOTMODE=//')"
 	DEVICE=$(getprop $($BBX fgrep "DEVICE_PROP=" $SS_CONFIG | $BBX sed 's/DEVICE_PROP=//'))
-	CHARGER_MODE=$(cat $($BBX fgrep "CHARGER_MODE_SYSFS=" $SS_CONFIG | $BBX sed 's/CHARGER_MODE_SYSFS=//'))
-	POWERUP_REASON=$($($BBX fgrep "CHECK_POWERUP_REASON=" $SS_CONFIG | $BBX sed 's/CHECK_POWERUP_REASON=//'))
+	CHARGER_MODE=$($BBX cat $($BBX fgrep "CHARGER_MODE_SYSFS=" $SS_CONFIG | $BBX sed 's/CHARGER_MODE_SYSFS=//'))
+	POWERUP_REASON_TEMP="$($BBX fgrep "CHECK_POWERUP_REASON=" $SS_CONFIG | $BBX sed 's/CHECK_POWERUP_REASON=//')"
+	POWERUP_REASON=$(eval $POWERUP_REASON_TEMP)
 	POWERUP_REASON_CHARGER=$($BBX fgrep "POWERUP_REASON_CHARGER=" $SS_CONFIG | $BBX sed 's/POWERUP_REASON_CHARGER=//')
 	BACKLIGHT_BRIGHTNESS_PATH=$($BBX fgrep "BACKLIGHT_BRIGHTNESS_PATH=" $SS_CONFIG | $BBX sed 's/BACKLIGHT_BRIGHTNESS_PATH=//')
 	BACKLIGHT_BRIGHTNESS_VALUE=$($BBX fgrep "BACKLIGHT_BRIGHTNESS_VALUE=" $SS_CONFIG | $BBX sed 's/BACKLIGHT_BRIGHTNESS_VALUE=//')
@@ -34,27 +34,27 @@ readConfig() {
 # print ss.config to kmsg
 dumpConfig() {
 	$BBX echo "DUMP ss.config" > /dev/kmsg
-	$BBX echo "BLOCK_SYSTEM=$(BLOCK_SYSTEM)" > /dev/kmsg
-	$BBX echo "SYSTEM_FSTYPE=$(SYSTEM_FSTYPE)" > /dev/kmsg
-	$BBX echo "BLOCK_USERDATA=$(BLOCK_USERDATA)" > /dev/kmsg
-	$BBX echo "USERDATA_FSTYPE=$(USERDATA_FSTYPE)" > /dev/kmsg
-	$BBX echo "BLOCK_CACHE=$(BLOCK_CACHE)" > /dev/kmsg
-	$BBX echo "BLOCK_BOOT=$(BLOCK_BOOT)" > /dev/kmsg
-	$BBX echo "SS_PART=$(SS_PART)" > /dev/kmsg
-	$BBX echo "SS_FSTYPE=$(SS_FSTYPE)" > /dev/kmsg
-	$BBX echo "SS_DIR=$(SS_DIR)" > /dev/kmsg
-	$BBX echo "DATAMEDIA_MNT=$(DATAMEDIA_MNT)" > /dev/kmsg
-	$BBX echo "HIJACK_BIN=$(HIJACK_BIN)" > /dev/kmsg
-	$BBX echo "BOOTMODE=$(BOOTMODE)" > /dev/kmsg
-	$BBX echo "CHECK_BOOTMODE=$(CHECK_BOOTMODE)" > /dev/kmsg
-	$BBX echo "DEVICE=$(DEVICE)" > /dev/kmsg
-	$BBX echo "CHARGER_MODE=$(CHARGER_MODE)" > /dev/kmsg
-	$BBX echo "POWERUP_REASON=$(POWERUP_REASON)" > /dev/kmsg
-	$BBX echo "POWERUP_REASON_CHARGER=$(POWERUP_REASON_CHARGER)" > /dev/kmsg
-	$BBX echo "BACKLIGHT_BRIGHTNESS_PATH=$(BACKLIGHT_BRIGHTNESS_PATH)" > /dev/kmsg
-	$BBX echo "BACKLIGHT_BRIGHTNESS_VALUE=$(BACKLIGHT_BRIGHTNESS_VALUE)" > /dev/kmsg
-	$BBX echo "TASKSET_CPUS=$(TASKSET_CPUS)" > /dev/kmsg
-	$BBX echo "SS_USE_DATAMEDIA=$(SS_USE_DATAMEDIA)" > /dev/kmsg
+	$BBX echo "BLOCK_SYSTEM=$BLOCK_SYSTEM" > /dev/kmsg
+	$BBX echo "SYSTEM_FSTYPE=$SYSTEM_FSTYPE" > /dev/kmsg
+	$BBX echo "BLOCK_USERDATA=$BLOCK_USERDATA" > /dev/kmsg
+	$BBX echo "USERDATA_FSTYPE=$USERDATA_FSTYPE" > /dev/kmsg
+	$BBX echo "BLOCK_CACHE=$BLOCK_CACHE" > /dev/kmsg
+	$BBX echo "BLOCK_BOOT=$BLOCK_BOOT" > /dev/kmsg
+	$BBX echo "SS_PART=$SS_PART" > /dev/kmsg
+	$BBX echo "SS_FSTYPE=$SS_FSTYPE" > /dev/kmsg
+	$BBX echo "SS_DIR=$SS_DIR" > /dev/kmsg
+	$BBX echo "HIJACK_BIN=$HIJACK_BIN" > /dev/kmsg
+	$BBX echo "BOOTMODE=$BOOTMODE" > /dev/kmsg
+	$BBX echo "CHECK_BOOTMODE=$CHECK_BOOTMODE" > /dev/kmsg
+	$BBX echo "DEVICE=$DEVICE" > /dev/kmsg
+	$BBX echo "CHARGER_MODE=$CHARGER_MODE" > /dev/kmsg
+	$BBX echo "POWERUP_REASON_TEMP=$POWERUP_REASON_TEMP" > /dev/kmsg
+	$BBX echo "POWERUP_REASON=$POWERUP_REASON" > /dev/kmsg
+	$BBX echo "POWERUP_REASON_CHARGER=$POWERUP_REASON_CHARGER" > /dev/kmsg
+	$BBX echo "BACKLIGHT_BRIGHTNESS_PATH=$BACKLIGHT_BRIGHTNESS_PATH" > /dev/kmsg
+	$BBX echo "BACKLIGHT_BRIGHTNESS_VALUE=$BACKLIGHT_BRIGHTNESS_VALUE" > /dev/kmsg
+	$BBX echo "TASKSET_CPUS=$TASKSET_CPUS" > /dev/kmsg
+	$BBX echo "SS_USE_DATAMEDIA=$SS_USE_DATAMEDIA" > /dev/kmsg
 }
 
 # unmount /sys/fs/selinux + clear out files

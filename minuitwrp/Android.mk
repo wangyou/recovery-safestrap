@@ -2,6 +2,12 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
+BUILD_SAFESTRAP := true
+ifeq ($(BUILD_SAFESTRAP), true)
+    LOCAL_CFLAGS += -DBUILD_SAFESTRAP
+    LOCAL_CPPFLAGS += -DBUILD_SAFESTRAP
+endif
+
 LOCAL_SRC_FILES := events.c resources.c
 
 ifneq ($(TW_BOARD_CUSTOM_GRAPHICS),)

@@ -1,6 +1,11 @@
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
+ifeq ($(BUILD_SAFESTRAP), true)
+  COMMON_GLOBAL_CFLAGS += -DBUILD_SAFESTRAP
+  COMMON_GLOBAL_CPPFLAGS += -DBUILD_SAFESTRAP
+endif
+
 LOCAL_SRC_FILES := \
     gui.cpp \
     resources.cpp \
@@ -97,6 +102,7 @@ TWRP_RES_LOC := $(commands_recovery_local_path)/gui/devices
 endif
 TWRP_RES_GEN := $(intermediates)/twrp
 
+ifndef BUILD_SAFESTRAP
 $(TWRP_RES_GEN):
 	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res/
 	cp -fr $(TWRP_RES_LOC)/common/res/* $(TARGET_RECOVERY_ROOT_OUT)/res/
@@ -105,9 +111,15 @@ $(TWRP_RES_GEN):
 	ln -sf /sbin/busybox $(TARGET_RECOVERY_ROOT_OUT)/sbin/sh
 	ln -sf /sbin/pigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gzip
 	ln -sf /sbin/unpigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gunzip
-
-ifdef BUILD_SAFESTRAP
-$(SS_RES_GEN):
+else
+$(TWRP_RES_GEN):
+	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res/
+	cp -fr $(TWRP_RES_LOC)/common/res/* $(TARGET_RECOVERY_ROOT_OUT)/res/
+	cp -fr $(TWRP_RES_LOC)/$(DEVICE_RESOLUTION)/res/* $(TARGET_RECOVERY_ROOT_OUT)/res/
+	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/sbin/
+	ln -sf /sbin/busybox $(TARGET_RECOVERY_ROOT_OUT)/sbin/sh
+	ln -sf /sbin/pigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gzip
+	ln -sf /sbin/unpigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gunzip
 	# Safestrap Setup
 	rm -rf $(OUT)/2nd-init-files
 	rm -rf $(OUT)/APP
@@ -131,11 +143,6 @@ $(SS_RES_GEN):
 	$(SS_COMMON)/devices/$(SS_PRODUCT_MANUFACTURER)/$(TARGET_DEVICE)/build-safestrap.sh
 endif
 
-ifdef BUILD_SAFESTRAP
-LOCAL_GENERATED_SOURCES := $(TWRP_RES_GEN) $(SS_RES_GEN)
-LOCAL_SRC_FILES := twrp $(TWRP_RES_GEN) $(SS_RES_GEN)
-else
 LOCAL_GENERATED_SOURCES := $(TWRP_RES_GEN)
 LOCAL_SRC_FILES := twrp $(TWRP_RES_GEN)
-endif
 include $(BUILD_PREBUILT)

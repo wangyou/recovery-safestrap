@@ -2,12 +2,14 @@
 
 LOCAL_PATH := $(call my-dir)
 
+BUILD_SAFESTRAP := true
+
 updater_src_files := \
 	install.c \
 	updater.c
 
 ifeq ($(BUILD_SAFESTRAP), true)
-updater_src_files += \
+  updater_src_files += \
 	../safestrap-functions.c
 endif
 
@@ -15,6 +17,11 @@ endif
 # Build a statically-linked binary to include in OTA packages
 #
 include $(CLEAR_VARS)
+
+ifeq ($(BUILD_SAFESTRAP), true)
+  LOCAL_CFLAGS += -DBUILD_SAFESTRAP
+  LOCAL_CPPFLAGS += -DBUILD_SAFESTRAP
+endif
 
 # Build only in eng, so we don't end up with a copy of this in /system
 # on user builds.  (TODO: find a better way to build device binaries

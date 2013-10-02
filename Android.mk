@@ -40,15 +40,19 @@ LOCAL_SRC_FILES += \
     openrecoveryscript.cpp \
     tarWrite.c
 
+ifeq ($(BUILD_SAFESTRAP), true)
 LOCAL_SRC_FILES += \
     safestrap-functions.c
+endif
 
 ifneq ($(TARGET_RECOVERY_REBOOT_SRC),)
   LOCAL_SRC_FILES += $(TARGET_RECOVERY_REBOOT_SRC)
 endif
 
+ifeq ($(BUILD_SAFESTRAP), true)
 ifeq ($(SAFESTRAP_NO_CUSTOM_UPDATER),true)
   LOCAL_FLAGS += -DSAFESTRAP_NO_CUSTOM_UPDATER
+endif
 endif
 
 LOCAL_MODULE := recovery

@@ -1,57 +1,63 @@
 #!/system/bin/sh
 # By Hashcode
-# Last Editted: 09/21/2013
 PATH=/system/bin:/system/xbin
-BLOCK_DIR=/dev/block
-
-BLOCK_SYSTEM=mmcblk0p16
-
-SYS_BLOCK_FSTYPE=ext4
-HIJACK_BIN=etc/init.qcom.modem_links.sh
 
 INSTALLPATH=$1
 RECOVERY_DIR=etc/safestrap
 LOGFILE=$INSTALLPATH/action-uninstall.log
+BBX=$INSTALLPATH/busybox
+SS_CONFIG=$INSTALLPATH/ss.config
 
-chmod 755 $INSTALLPATH/busybox
+. $INSTALLPATH/ss_function.sh
+readConfig
 
-CURRENTSYS=`$INSTALLPATH/busybox readlink $BLOCK_DIR/$BLOCK_SYSTEM`
+chmod 755 $BBX
+chmod 755 $INSTALLPATH/ss_function.sh
+
+CURRENTSYS=`$BBX readlink $BLOCK_DIR/$BLOCK_SYSTEM`
+# check for older symlink style fixboot
+if [ "$?" -ne 0 ]; then
+	CURRENTSYS=`$BBX readlink $BLOCK_DIR/system`
+fi
 echo "CURRENTSYS = $CURRENTSYS" >> $LOGFILE
 if [ "$CURRENTSYS" = "$BLOCK_DIR/loop-system" ]; then
 	# alt-system, needs to mount original /system
 	DESTMOUNT=$INSTALLPATH/system
 	if [ ! -d "$DESTMOUNT" ]; then
-		$INSTALLPATH/busybox mkdir $DESTMOUNT
+		$BBX mkdir $DESTMOUNT
+		$BBX chmod 755 $DESTMOUNT
 	fi
-	$INSTALLPATH/busybox mount -t $SYS_BLOCK_FSTYPE $BLOCK_DIR/$BLOCK_SYSTEM-orig $DESTMOUNT
+	$BBX mount -t $SYSTEM_FSTYPE $BLOCK_DIR/$BLOCK_SYSTEM-orig $DESTMOUNT
+	if [ "$?" -ne 0 ]; then
+		$BBX mount -t $SYSTEM_FSTYPE $BLOCK_DIR/systemorig $DESTMOUNT
+	fi
 else
 	DESTMOUNT=/system
 	sync
-	$INSTALLPATH/busybox mount -o remount,rw $DESTMOUNT
+	$BBX mount -o remount,rw $DESTMOUNT
 fi
-echo "DESTMOUNT = $DESTMOUNT" >> $LOGFILE
 
-if [ -f "$DESTMOUNT/$HIJACK_BIN.bin" ]; then
-	$INSTALLPATH/busybox mv -f $DESTMOUNT/$HIJACK_BIN.bin $DESTMOUNT/$HIJACK_BIN >> $LOGFILE
-	$INSTALLPATH/busybox chown 0.2000 $DESTMOUNT/$HIJACK_BIN >> $LOGFILE
-	$INSTALLPATH/busybox chmod 755 $DESTMOUNT/$HIJACK_BIN >> $LOGFILE
+if [ -f "$DESTMOUNT/$HIJACK_LOC/$HIJACK_BIN.bin" ]; then
+	$BBX mv -f $DESTMOUNT/$HIJACK_LOC/$HIJACK_BIN.bin $DESTMOUNT/$HIJACK_LOC/$HIJACK_BIN >> $LOGFILE
+	$BBX chown 0.2000 $DESTMOUNT/$HIJACK_LOC/$HIJACK_BIN >> $LOGFILE
+	$BBX chmod 755 $DESTMOUNT/$HIJACK_LOC/$HIJACK_BIN >> $LOGFILE
 fi
 
 if [ -d "$DESTMOUNT/$RECOVERY_DIR" ]; then
-	$INSTALLPATH/busybox rm -r $DESTMOUNT/$RECOVERY_DIR >> $LOGFILE
+	$BBX rm -r $DESTMOUNT/$RECOVERY_DIR >> $LOGFILE
 fi
 
 # Fix up the firmware file used to enter recovery
-$INSTALLPATH/busybox rm $DESTMOUNT/etc/firmware/q6.mdt
-$INSTALLPATH/busybox ln -s /firmware/image/q6.mdt $DESTMOUNT/etc/firmware/q6.mdt
+$BBX rm $DESTMOUNT/etc/firmware/q6.mdt
+$BBX ln -s /firmware/image/q6.mdt $DESTMOUNT/etc/firmware/q6.mdt
 
 sync
 
 # determine our active system, and umount/remount accordingly
 if [ "$CURRENTSYS" = "$BLOCK_DIR/loop-system" ]; then
-	$INSTALLPATH/busybox umount $DESTMOUNT >> $LOGFILE
-	$INSTALLPATH/busybox rmdir $DESTMOUNT
+	$BBX umount $DESTMOUNT >> $LOGFILE
+	$BBX rmdir $DESTMOUNT
 else
-	$INSTALLPATH/busybox mount -o ro,remount $DESTMOUNT >> $LOGFILE
+	$BBX mount -o ro,remount $DESTMOUNT >> $LOGFILE
 fi
 

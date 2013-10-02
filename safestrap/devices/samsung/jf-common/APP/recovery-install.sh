@@ -1,27 +1,30 @@
 #!/system/bin/sh
 # By Hashcode
-# Last Editted: 09/21/2013
 PATH=/system/bin:/system/xbin
-BLOCK_DIR=/dev/block
-
-BLOCK_SYSTEM=mmcblk0p16
-
-SYS_BLOCK_FSTYPE=ext4
-HIJACK_BIN=etc/init.qcom.modem_links.sh
 
 INSTALLPATH=$1
 RECOVERY_DIR=etc/safestrap
 LOGFILE=$INSTALLPATH/action-install.log
+BBX=$INSTALLPATH/busybox
+SS_CONFIG=$INSTALLPATH/ss.config
 
-chmod 755 $INSTALLPATH/busybox
+chmod 755 $BBX
+chmod 755 $INSTALLPATH/ss_function.sh
 
-CURRENTSYS=`$INSTALLPATH/busybox readlink $BLOCK_DIR/$BLOCK_SYSTEM`
+. $INSTALLPATH/ss_function.sh
+readConfig
+
+CURRENTSYS=`$BBX readlink $BLOCK_DIR/$BLOCK_SYSTEM`
+# check for older symlink style fixboot
+if [ "$?" -ne 0 ]; then
+	CURRENTSYS=`$BBX readlink $BLOCK_DIR/system`
+fi
 echo "CURRENTSYS = $CURRENTSYS" >> $LOGFILE
 if [ -d $INSTALLPATH/install-files ]; then
 	rm -r $INSTALLPATH/install-files >> $LOGFILE
 fi
 
-$INSTALLPATH/busybox unzip $INSTALLPATH/install-files.zip  -d $INSTALLPATH >> $LOGFILE
+$BBX unzip $INSTALLPATH/install-files.zip  -d $INSTALLPATH >> $LOGFILE
 if [ ! -d $INSTALLPATH/install-files ]; then
 	echo 'ERR: Zip file didnt extract correctly.  Installation aborted.' >> $LOGFILE
 	exit 1
@@ -32,35 +35,38 @@ if [ "$CURRENTSYS" = "$BLOCK_DIR/loop-system" ]; then
 	# alt-system, needs to mount original /system
 	DESTMOUNT=$INSTALLPATH/system
 	if [ ! -d "$DESTMOUNT" ]; then
-		$INSTALLPATH/busybox mkdir $DESTMOUNT
+		$BBX mkdir $DESTMOUNT
+		$BBX chmod 755 $DESTMOUNT
 	fi
-	$INSTALLPATH/busybox mount -t $SYS_BLOCK_FSTYPE $BLOCK_DIR/$BLOCK_SYSTEM-orig $DESTMOUNT >> $LOGFILE
+	$BBX mount -t $SYSTEM_FSTYPE $BLOCK_DIR/$BLOCK_SYSTEM-orig $DESTMOUNT >> $LOGFILE
+	if [ "$?" -ne 0 ]; then
+		$BBX mount -t $SYSTEM_FSTYPE $BLOCK_DIR/systemorig $DESTMOUNT
+	fi
 else
 	DESTMOUNT=/system
 	sync
-	$INSTALLPATH/busybox mount -o remount,rw $DESTMOUNT >> $LOGFILE
+	$BBX mount -o remount,rw $DESTMOUNT >> $LOGFILE
 fi
-echo "DESTMOUNT = $DESTMOUNT" >> $LOGFILE
 
-# check for a $HIJACK_BIN.bin file and its not there, make a copy
-if [ ! -f "$DESTMOUNT/$HIJACK_BIN.bin" ]; then
-	$INSTALLPATH/busybox cp $DESTMOUNT/$HIJACK_BIN $DESTMOUNT/$HIJACK_BIN.bin >> $LOGFILE
-	$INSTALLPATH/busybox chown 0.0 $DESTMOUNT/$HIJACK_BIN.bin >> $LOGFILE
-	$INSTALLPATH/busybox chmod 755 $DESTMOUNT/$HIJACK_BIN.bin >> $LOGFILE
+# check for a $HIJACK_LOC/$HIJACK_BIN.bin file and its not there, make a copy
+if [ ! -f "$DESTMOUNT/$HIJACK_LOC/$HIJACK_BIN.bin" ]; then
+	$BBX cp $DESTMOUNT/$HIJACK_LOC/$HIJACK_BIN $DESTMOUNT/$HIJACK_LOC/$HIJACK_BIN.bin >> $LOGFILE
+	$BBX chown 0.2000 $DESTMOUNT/$HIJACK_LOC/$HIJACK_BIN.bin >> $LOGFILE
+	$BBX chmod 755 $DESTMOUNT/$HIJACK_LOC/$HIJACK_BIN.bin >> $LOGFILE
 fi
-$INSTALLPATH/busybox rm $DESTMOUNT/$HIJACK_BIN >> $LOGFILE
-$INSTALLPATH/busybox cp -f $INSTALLPATH/install-files/$HIJACK_BIN $DESTMOUNT/$HIJACK_BIN >> $LOGFILE
-$INSTALLPATH/busybox chown 0.0 $DESTMOUNT/$HIJACK_BIN >> $LOGFILE
-$INSTALLPATH/busybox chmod 755 $DESTMOUNT/$HIJACK_BIN >> $LOGFILE
+$BBX rm $DESTMOUNT/$HIJACK_LOC/$HIJACK_BIN >> $LOGFILE
+$BBX cp -f $INSTALLPATH/install-files/$HIJACK_LOC/$HIJACK_BIN $DESTMOUNT/$HIJACK_LOC/$HIJACK_BIN >> $LOGFILE
+$BBX chown 0.2000 $DESTMOUNT/$HIJACK_LOC/$HIJACK_BIN >> $LOGFILE
+$BBX chmod 755 $DESTMOUNT/$HIJACK_LOC/$HIJACK_BIN >> $LOGFILE
 
 # delete any existing /system/etc/safestrap dir
 if [ -d "$DESTMOUNT/$RECOVERY_DIR" ]; then
-	$INSTALLPATH/busybox rm -rf $DESTMOUNT/$RECOVERY_DIR >> $LOGFILE
+	$BBX rm -rf $DESTMOUNT/$RECOVERY_DIR >> $LOGFILE
 fi
 # extract the new dirs to /system
-$INSTALLPATH/busybox cp -R $INSTALLPATH/install-files/$RECOVERY_DIR $DESTMOUNT/etc >> $LOGFILE
-$INSTALLPATH/busybox chown 0.2000 $DESTMOUNT/$RECOVERY_DIR/* >> $LOGFILE
-$INSTALLPATH/busybox chmod 755 $DESTMOUNT/$RECOVERY_DIR/* >> $LOGFILE
+$BBX cp -R $INSTALLPATH/install-files/$RECOVERY_DIR $DESTMOUNT/etc >> $LOGFILE
+$BBX chown 0.2000 $DESTMOUNT/$RECOVERY_DIR/* >> $LOGFILE
+$BBX chmod 755 $DESTMOUNT/$RECOVERY_DIR/* >> $LOGFILE
 
 # Make sure the hijack is going to run by linking this firmware file to a ramdisk based file which will disappear after each boot
 $INSTALLPATH/busybox mount -o remount,rw /
@@ -72,11 +78,11 @@ $INSTALLPATH/busybox mount -o remount,ro /
 # determine our active system, and umount/remount accordingly
 if [ "$CURRENTSYS" = "$BLOCK_DIR/loop-system" ]; then
 	# if we're in 2nd-system then re-enable safe boot
-	$INSTALLPATH/busybox touch $DESTMOUNT/$RECOVERY_DIR/flags/alt_system_mode >> $LOGFILE
+	$BBX touch $DESTMOUNT/$RECOVERY_DIR/flags/alt_system_mode >> $LOGFILE
 
-	$INSTALLPATH/busybox umount $DESTMOUNT >> $LOGFILE
-	$INSTALLPATH/busybox rmdir $DESTMOUNT >> $LOGFILE
+	$BBX umount $DESTMOUNT >> $LOGFILE
+	$BBX rmdir $DESTMOUNT >> $LOGFILE
 else
-	$INSTALLPATH/busybox mount -o ro,remount $DESTMOUNT >> $LOGFILE
+	$BBX mount -o ro,remount $DESTMOUNT >> $LOGFILE
 fi
 

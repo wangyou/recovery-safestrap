@@ -10,8 +10,6 @@ on init
     export ANDROID_DATA /data
     export EXTERNAL_STORAGE /external_sd
 
-    exec /sbin/taskset -p -c 0,1 1
-
     symlink /system/etc /etc
 
     mkdir /boot
@@ -42,7 +40,7 @@ on init
 
 
 on boot
-    exec /sbin/fixboot-twrp.sh
+    exec /sbin/fixboot.sh
 
     ifup lo
     hostname localhost

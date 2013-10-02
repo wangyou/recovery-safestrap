@@ -1,5 +1,7 @@
 #!/sbin/bbx sh
 # By: Hashcode
+BBX=/sbin/bbx
+SS_CONFIG=/ss.config
 
 . /sbin/ss_function.sh
 

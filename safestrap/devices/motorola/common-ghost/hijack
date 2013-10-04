@@ -99,7 +99,7 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 
 			# increment recovery entry counter
 			$BBX echo "x" >> $SS_DIR/$SS_RECOVERY_FILE-counter
-			if [ $($BBX cat $SS_DIR/$SS_RECOVERY_FILE-counter) = "x" ]; then
+			if [ $($BBX cat $SS_DIR/$SS_RECOVERY_FILE-counter) != "xxx" ]; then
 				ALT_SYSTEM_MODE="2"
 			else
 				$BBX rm $SS_DIR/$SS_RECOVERY_FILE-counter
@@ -172,8 +172,13 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 			fi
 
 			/sbin/hijack.killall
+			# kill bootmodem
+			$BBX kill $($BBX ps | $BBX grep bootmodem | $BBX cut -c -5)
 			/sbin/taskset -p -c 0 1 > /dev/kmsg
 			$BBX sync
+			if [ "$DEBUG_MODE" = "1" ]; then
+				logCurrentStatus
+			fi
 			/sbin/taskset -c 0 /sbin/2nd-init > /dev/kmsg
 			exit
 		fi
@@ -224,6 +229,8 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 				$BBX umount -l /system
 
 				/sbin/hijack.killall
+				# kill bootmodem
+				$BBX kill $($BBX ps | $BBX grep bootmodem | $BBX cut -c -5)
 
 				cd /
 				$BBX chmod 755 /kexec
@@ -298,6 +305,8 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 				$BBX umount -l /system
 
 				/sbin/hijack.killall
+				# kill bootmodem
+				$BBX kill $($BBX ps | $BBX grep bootmodem | $BBX cut -c -5)
 
 				# mount point / symlink cleanup
 				$BBX rm /sdcard
@@ -305,6 +314,10 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 
 				/sbin/taskset -p -c 0 1
 				$BBX sync
+				if [ "$DEBUG_MODE" = "1" ]; then
+					logCurrentStatus
+				fi
+
 				/sbin/taskset -c 0 /sbin/2nd-init
 				exit
 			fi

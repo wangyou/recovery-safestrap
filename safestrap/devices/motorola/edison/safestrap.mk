@@ -18,4 +18,3 @@ TW_CUSTOM_BATTERY_CAPACITY_FIELD := charge_counter
 HAVE_SELINUX := true
 
 TW_BRIGHTNESS_PATH := /sys/class/backlight/lm3532_bl/brightness
-

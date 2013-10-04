@@ -79,3 +79,12 @@ fixSELinux() {
 	$BBX rm /sepolicy_version
 }
 
+logCurrentStatus() {
+	$BBX echo "LOG CURRENT STATUS:" > /dev/kmsg
+	$BBX ls -l / > /dev/kmsg
+	$BBX echo "______________________" > /dev/kmsg
+	$BBX mount > /dev/kmsg
+	$BBX echo "______________________" > /dev/kmsg
+	$BBX ps > /dev/kmsg
+	$BBX echo "______________________" > /dev/kmsg
+}

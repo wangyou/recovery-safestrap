@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+mkdir -p $OUT/2nd-init-files/
 mkdir -p $OUT/APP
 mkdir -p $OUT/install-files/bin/
 mkdir -p $OUT/install-files/etc/safestrap/res/
@@ -11,4 +12,6 @@ cp -fr common-ghost/twrp.fstab $OUT/recovery/root/etc/twrp.fstab
 cp -fr common-ghost/ss.config $OUT/install-files/etc/safestrap/ss.config
 cp -fr common-ghost/ss.config $OUT/APP/ss.config
 cp -fr common-ghost/ss.config $OUT/recovery/root/ss.config
+cp -fr common-ghost/fixboot.sh $OUT/2nd-init-files/
+cp -fr common-ghost/changeslot.sh $OUT/recovery/root/sbin/
 cd ../../../gui

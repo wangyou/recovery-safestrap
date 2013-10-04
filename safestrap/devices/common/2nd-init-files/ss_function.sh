@@ -29,6 +29,7 @@ readConfig() {
 	BACKLIGHT_BRIGHTNESS_VALUE=$($BBX fgrep "BACKLIGHT_BRIGHTNESS_VALUE=" $SS_CONFIG | $BBX sed 's/BACKLIGHT_BRIGHTNESS_VALUE=//')
 	TASKSET_CPUS=$($BBX fgrep "TASKSET_CPUS=" $SS_CONFIG | $BBX sed 's/TASKSET_CPUS=//')
 	SS_USE_DATAMEDIA=$($BBX fgrep "SS_USE_DATAMEDIA=" $SS_CONFIG | $BBX sed 's/SS_USE_DATAMEDIA=//')
+	DEBUG_MODE=$($BBX fgrep "DEBUG_MODE=" $SS_CONFIG | $BBX sed 's/DEBUG_MODE=//')
 }
 
 # print ss.config to kmsg
@@ -55,6 +56,7 @@ dumpConfig() {
 	$BBX echo "BACKLIGHT_BRIGHTNESS_VALUE=$BACKLIGHT_BRIGHTNESS_VALUE" > /dev/kmsg
 	$BBX echo "TASKSET_CPUS=$TASKSET_CPUS" > /dev/kmsg
 	$BBX echo "SS_USE_DATAMEDIA=$SS_USE_DATAMEDIA" > /dev/kmsg
+	$BBX echo "DEBUG_MODE=$DEBUG_MODE" > /dev/kmsg
 }
 
 # unmount /sys/fs/selinux + clear out files

@@ -29,7 +29,9 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 	$BBX chown 0.0 $SS_CONFIG
 
 	readConfig
-	dumpConfig
+	if [ "$DEBUG_MODE" = "1" ]; then
+		dumpConfig
+	fi
 
 	if [ "$POWERUP_REASON" != "$POWERUP_REASON_CHARGER" ]; then
 		# set backlight

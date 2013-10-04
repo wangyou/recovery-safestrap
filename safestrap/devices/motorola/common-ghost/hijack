@@ -252,13 +252,6 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 					fixSELinux
 				fi
 
-				# adjust stock init.target.rc file to include /sbin/fixboot.sh
-				$BBX cat /init.target.rc | $BBX sed "s/on fs/on fs\nexec \/sbin\/fixboot.sh/" > /init.target.rc.new0
-				$BBX cat /init.target.rc.new0 | $BBX sed "s/\/data\/media/\/datamedia\/media/" > /init.target.rc.new1
-				$BBX mv /init.target.rc /init.target.rc.old
-				$BBX mv /init.target.rc.new1 /init.target.rc
-				$BBX rm /init.target.rc.new*
-
 				if [ -f "$CURRENT_SYS_DIR/etc/rootfs/sbin/adbd" ]; then
 					$BBX mv /sbin/adbd /sbin/adbd.old
 				fi
@@ -266,6 +259,17 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 					$BBX mv /init /init.old
 				fi
 				$BBX cp -R $CURRENT_SYS_DIR/etc/rootfs/* /
+
+				# adjust stock init.target.rc file to include /sbin/fixboot.sh
+				$BBX cat /init.target.rc | $BBX sed "s/on fs/on fs\n    exec \/sbin\/fixboot.sh/" > /init.target.rc.new0
+				$BBX cat /init.target.rc.new0 | $BBX sed "s/mount none \/data\/media \/mnt\/shell\/emulated bind/start sdcard/" > /init.target.rc.new1
+				$BBX cat /init.target.rc.new1 | $BBX sed "s/service qe \/xbin\/qe/#service qe \/xbin\/qe/" > /init.target.rc.new2
+				$BBX cat /init.target.rc.new2 | $BBX sed "s/exec \/system\/bin\/defuse/#exec \/system\/bin\/defuse.sh\nstart sdcard/" > /init.target.rc.new3
+				$BBX cat /init.target.rc.new3 | $BBX sed "s/exec \/system\/bin\/setfattr/#exec \/system\/bin\/setfattr/" > /init.target.rc.new4
+				$BBX cat /init.target.rc.new4 | $BBX sed "s/service dropboxd/service sdcard \/system\/bin\/sdcard \/datamedia\/media \/mnt\/shell\/emulated 1015 1015\n    class late_start\n    disabled\n\nservice dropboxd/" > /init.target.rc.new5
+				$BBX mv /init.target.rc /init.target.rc.old
+				$BBX mv /init.target.rc.new5 /init.target.rc
+				$BBX rm /init.target.rc.new*
 
 				# reset permissions
 				$BBX chmod -R 755 /sbin/*

@@ -388,9 +388,19 @@ include $(commands_recovery_local_path)/injecttwrp/Android.mk \
     $(commands_recovery_local_path)/minuitwrp/Android.mk \
     $(commands_recovery_local_path)/openaes/Android.mk
 
+# 2nd-init
+ifeq ($(SS_INCLUDE_2NDINIT), true)
+  include $(commands_recovery_local_path)/safestrap/2nd-init/Android.mk
+endif
+
 # splashmenu
-ifeq ($(TW_INCLUDE_SPLASHMENU), true)
+ifeq ($(SS_INCLUDE_SPLASHMENU), true)
     include $(commands_recovery_local_path)/safestrap/splashmenu/Android.mk
+endif
+
+# ueventmon
+ifeq ($(SS_INCLUDE_UEVENTMON), true)
+    include $(commands_recovery_local_path)/safestrap/ueventmon/Android.mk
 endif
 
 ifeq ($(TW_INCLUDE_CRYPTO_SAMSUNG), true)

@@ -8,6 +8,11 @@ SS_CONFIG=/ss.config
 readConfig
 SS_PART=$SS_PART-orig
 
+# Double-check that these partitions are unmounted here
+$BBX umount /system
+$BBX umount /data
+$BBX umount /cache
+
 # check for SS loopdevs
 if [ ! -f "$BLOCK_DIR/loop-system" ]; then
 	# create SS loopdevs

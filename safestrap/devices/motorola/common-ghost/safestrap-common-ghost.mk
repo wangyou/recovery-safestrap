@@ -1,3 +1,5 @@
+SS_DEVICE_PATH := $(call my-dir)
+
 # Platform
 TARGET_BOARD_PLATFORM := msm8960
 
@@ -58,3 +60,13 @@ BOARD_DEFAULT_VIRT_SYSTEM_SIZE := 1024
 BOARD_DEFAULT_VIRT_CACHE_SIZE := 300
 
 #HAVE_SELINUX := true
+
+SS_DELAY_WRAPPER_FILENAME := bootmodem
+SS_DELAY_WRAPPER_PATH := bin
+SS_DELAY_WRAPPER_BINARY := "/system/bin/bootmodem.bin"
+SS_DELAY_WRAPPER_SKIP_FILE := "/.safestrapped"
+
+SS_HIJACK_WRAPPER_FILENAME := hijack-wrapper
+SS_HIJACK_WRAPPER_PATH := bin
+SS_HIJACK_WRAPPER_BINARY := "/system/bin/hijack.sh"
+

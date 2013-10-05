@@ -28,6 +28,9 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 	$BBX chmod 600 $SS_CONFIG
 	$BBX chown 0.0 $SS_CONFIG
 
+	# move qe out of the way
+	$BBX mv /xbin/qe /xbin/qe.bak
+
 	readConfig
 	if [ "$DEBUG_MODE" = "1" ]; then
 		dumpConfig
@@ -128,11 +131,24 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 					$BBX umount $USER2_MNT
 					$BBX losetup -d $BLOCK_DIR/loop-userdata
 				fi
-				$BBX umount /data
-				$BBX umount /cache
-				$RECOVERY_DIR/safestrapmenu reboot recovery
+				if [ -f "/sbin/taskset" ]; then
+					$BBX mv /sbin/taskset /sbin/taskset.old
+				fi
+				$BBX unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
+				$BBX cp $RECOVERY_DIR/safestrapmenu /sbin/
+				$BBX chmod 755 /sbin/safestrapmenu
+
+				# unmount partitions
+				$BBX umount -l /system
+				$BBX umount $SS_MNT
+				if [ "$SS_USE_DATAMEDIA" = "1" ]; then
+					$BBX umount $DATAMEDIA_MNT
+				fi
+
 				/sbin/hijack.killall
+				/sbin/safestrapmenu reboot recovery
 				$BBX sleep 4
+				exit
 			fi
 
 			# entering recovery: clear counter
@@ -172,8 +188,7 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 			fi
 
 			/sbin/hijack.killall
-			# kill bootmodem
-			$BBX kill $($BBX ps | $BBX grep bootmodem | $BBX cut -c -5)
+
 			/sbin/taskset -p -c 0 1 > /dev/kmsg
 			$BBX sync
 			if [ "$DEBUG_MODE" = "1" ]; then
@@ -210,6 +225,14 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 				$BBX chown 0.2000 $CURRENT_SYS_DIR/$HIJACK_LOC/$HIJACK_BIN
 			fi
 
+			# on virtual systems, check for bootmodem.bin, and remove
+			if [ "$ALT_SYSTEM_MODE" = "1" ] && [ -f "$SYS2_MNT/bin/bootmodem.bin" ]; then
+				$BBX rm $CURRENT_SYS_DIR/bin/bootmodem
+				$BBX mv $CURRENT_SYS_DIR/bin/bootmodem.bin $CURRENT_SYS_DIR/bin/bootmodem
+				$BBX chmod 755 $CURRENT_SYS_DIR/bin/bootmodem
+				$BBX chown 0.2000 $CURRENT_SYS_DIR/bin/bootmodem
+			fi
+
 			# check for kexec files
 			if [ -d "$CURRENT_SYS_DIR/etc/kexec" ]; then
 				$BBX cp $CURRENT_SYS_DIR/etc/kexec/* /
@@ -229,8 +252,6 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 				$BBX umount -l /system
 
 				/sbin/hijack.killall
-				# kill bootmodem
-				$BBX kill $($BBX ps | $BBX grep bootmodem | $BBX cut -c -5)
 
 				cd /
 				$BBX chmod 755 /kexec
@@ -272,8 +293,8 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 				# adjust stock init.target.rc file to include /sbin/fixboot.sh
 				$BBX cat /init.target.rc | $BBX sed "s/on fs/on fs\n    exec \/sbin\/fixboot.sh/" > /init.target.rc.new0
 				$BBX cat /init.target.rc.new0 | $BBX sed "s/mount none \/data\/media \/mnt\/shell\/emulated bind/start sdcard/" > /init.target.rc.new1
-				$BBX cat /init.target.rc.new1 | $BBX sed "s/service qe \/xbin\/qe/#service qe \/xbin\/qe/" > /init.target.rc.new2
-				$BBX cat /init.target.rc.new2 | $BBX sed "s/exec \/system\/bin\/defuse/#exec \/system\/bin\/defuse.sh\nstart sdcard/" > /init.target.rc.new3
+#				$BBX cat /init.target.rc.new1 | $BBX sed "s/service qe \/xbin\/qe/#service qe \/xbin\/qe/" > /init.target.rc.new2
+				$BBX cat /init.target.rc.new1 | $BBX sed "s/exec \/system\/bin\/defuse/#exec \/system\/bin\/defuse.sh\nstart sdcard/" > /init.target.rc.new3
 				$BBX cat /init.target.rc.new3 | $BBX sed "s/exec \/system\/bin\/setfattr/#exec \/system\/bin\/setfattr/" > /init.target.rc.new4
 				$BBX cat /init.target.rc.new4 | $BBX sed "s/service dropboxd/service sdcard \/system\/bin\/sdcard \/datamedia\/media \/mnt\/shell\/emulated 1015 1015\n    class late_start\n    disabled\n\nservice dropboxd/" > /init.target.rc.new5
 				$BBX mv /init.target.rc /init.target.rc.old
@@ -305,8 +326,6 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 				$BBX umount -l /system
 
 				/sbin/hijack.killall
-				# kill bootmodem
-				$BBX kill $($BBX ps | $BBX grep bootmodem | $BBX cut -c -5)
 
 				# mount point / symlink cleanup
 				$BBX rm /sdcard
@@ -318,7 +337,7 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 					logCurrentStatus
 				fi
 
-				/sbin/taskset -c 0 /sbin/2nd-init
+				/sbin/taskset -c 0 /sbin/2nd-init > /dev/kmsg
 				exit
 			fi
 		fi
@@ -334,6 +353,35 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 		if [ "$SS_USE_DATAMEDIA" = "1" ]; then
 			$BBX umount $DATAMEDIA_MNT
 		fi
+
+#		if [ "0" = "1" ]; then
+			# HASH: Restart w/ 2nd-init here to get the timing right for bootmodem
+			if [ -f "/sbin/taskset" ]; then
+				$BBX mv /sbin/taskset /sbin/taskset.old
+			fi
+			$BBX unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
+			$BBX chmod 750 /sbin/*
+
+			# unmount old /system
+			$BBX umount -l /system
+
+			/sbin/hijack.killall
+
+			# mount point / symlink cleanup
+			$BBX rm /sdcard
+			$BBX rm -rf /mnt
+
+			/sbin/taskset -p -c 0 1
+			$BBX sync
+			if [ "$DEBUG_MODE" = "1" ]; then
+				logCurrentStatus
+			fi
+
+			/sbin/taskset -c 0 /sbin/2nd-init > /dev/kmsg
+			exit
+#		fi
+
+		exec /system/bin/bootmodem &
 	fi
 fi
 

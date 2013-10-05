@@ -11,6 +11,7 @@ CURRENT_USER_DIR=/data
 ALT_SYSTEM_MODE="0"
 
 if [ ! -f "$SS_CHECK_FILE" ]; then
+if [ "$2" = "pds" ]; then
 	. /system/etc/safestrap/ss_function.sh
 
 	# remount root as rw
@@ -285,6 +286,7 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 			$BBX umount $DATAMEDIA_MNT
 		fi
 	fi
+fi
 fi
 
 /system/$HIJACK_LOC/$HIJACK_BIN.bin "$@"

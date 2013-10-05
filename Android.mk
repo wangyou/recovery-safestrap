@@ -403,6 +403,16 @@ ifeq ($(SS_INCLUDE_UEVENTMON), true)
     include $(commands_recovery_local_path)/safestrap/ueventmon/Android.mk
 endif
 
+# delay-wrapper
+ifdef SS_DELAY_WRAPPER_BINARY
+    include $(commands_recovery_local_path)/safestrap/delay-wrapper/Android.mk
+endif
+
+# hijack-wrapper
+ifdef SS_HIJACK_WRAPPER_BINARY
+    include $(commands_recovery_local_path)/safestrap/hijack-wrapper/Android.mk
+endif
+
 ifeq ($(TW_INCLUDE_CRYPTO_SAMSUNG), true)
     include $(commands_recovery_local_path)/crypto/libcrypt_samsung/Android.mk
 endif

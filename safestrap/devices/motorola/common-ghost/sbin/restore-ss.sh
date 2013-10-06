@@ -39,10 +39,6 @@ if [ -d "/tmp/safestrap" ] && [ -f "/tmp/$HIJACK_BIN" ]; then
 	chown 0.2000 /system/$HIJACK_LOC/$HIJACK_BIN
 	chmod 755 /system/$HIJACK_LOC/$HIJACK_BIN
 
-	cp /tmp/hijack.sh /system/bin/hijack.sh
-	chown 0.2000 /system/bin/hijack.sh
-	chmod 755 /system/bin/hijack.sh
-
 	if [ ! -f "/system/bin/bootmodem.bin" ]; then
 		if [ -f "/system/bin/bootmodem" ]; then
 			mv /system/bin/bootmodem /system/bin/bootmodem.bin

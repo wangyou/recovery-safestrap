@@ -40,13 +40,20 @@ int main(int argc, char **argv)
 {
     struct stat to_stat;
     int r;
-    char *newenviron[] = { NULL };
+    char *newenv[] =
+    {
+        "HOME=/",
+        "PATH=/vendor/bin:/system/bin:/system/sbin:/sbin:/xbin",
+	"LD_LIBRARY_PATH=/vendor/lib:/system/lib",
+        0
+    };
 
     r = stat(SS_DELAY_WRAPPER_SKIP_FILE, &to_stat);
     if (r > -1) {
         /* User specified command for exec. */
         if (argc >= 1 ) {
-            if (execve(SS_DELAY_WRAPPER_BINARY, argv+1, newenviron) < 0) {
+            userlog("exec: %s ...\n", SS_DELAY_WRAPPER_BINARY);
+            if (execve(SS_DELAY_WRAPPER_BINARY, argv, newenv) < 0) {
                 userlog("exec failed for %s Error:%s\n", SS_DELAY_WRAPPER_BINARY, strerror(errno));
                 return -errno;
             }
@@ -56,7 +63,8 @@ int main(int argc, char **argv)
             userlog("not enough arguments\n");
         }
     }
-    else
+    else {
         userlog("Skipping exec file: %s (%s not found)\n", SS_DELAY_WRAPPER_BINARY, SS_DELAY_WRAPPER_SKIP_FILE);
+    }
     return 0;
 }

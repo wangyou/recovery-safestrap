@@ -37,18 +37,18 @@ userlog(const char* format, ...) {
 
 int main(int argc, char **argv)
 {
-    char *newenviron[] = { NULL };
+    char *newenv[] =
+    {
+        "HOME=/",
+        "PATH=/vendor/bin:/system/bin:/system/sbin:/sbin:/xbin",
+	"LD_LIBRARY_PATH=/vendor/lib:/system/lib",
+        0
+    };
 
-    /* User specified command for exec. */
-    if (argc >= 1 ) {
-        if (execve(SS_HIJACK_WRAPPER_BINARY, argv+1, newenviron) < 0) {
-            userlog("exec failed for %s Error:%s\n", SS_HIJACK_WRAPPER_BINARY, strerror(errno));
-            return -errno;
-        }
-        userlog("exec success for %s.\n", SS_HIJACK_WRAPPER_BINARY);
+    if (execve(SS_HIJACK_WRAPPER_BINARY, argv, newenv) < 0) {
+        userlog("exec failed for %s Error:%s\n", SS_HIJACK_WRAPPER_BINARY, strerror(errno));
+        return -errno;
     }
-    else {
-       userlog("not enough arguments\n");
-    }
+    userlog("exec success for %s.\n", SS_HIJACK_WRAPPER_BINARY);
     return 0;
 }

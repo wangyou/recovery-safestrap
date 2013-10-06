@@ -1,17 +1,21 @@
 #!/system/etc/safestrap/bbx sh
 # By Hashcode
+CURRENT_CMD=$@
 PATH=/system/xbin:/system/bin:/sbin
 
 RECOVERY_DIR=/system/etc/safestrap
 BBX=/sbin/bbx
 SS_CONFIG=/ss.config
 SS_CHECK_FILE=/.safestrapped
+SS_CHECK_FILE_VAL="1"
 CURRENT_SYS_DIR=/system
 CURRENT_USER_DIR=/data
 ALT_SYSTEM_MODE="0"
 
+. /system/etc/safestrap/ss_function.sh
+
 if [ ! -f "$SS_CHECK_FILE" ]; then
-	. /system/etc/safestrap/ss_function.sh
+	SS_CHECK_FILE_VAL="0"
 
 	# remount root as rw
 	$RECOVERY_DIR/bbx mount -o remount,rw rootfs
@@ -30,13 +34,18 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 
 	# move qe out of the way
 	$BBX mv /xbin/qe /xbin/qe.bak
+fi
 
-	readConfig
+readConfig
+
+if [ "$SS_CHECK_FILE_VAL" = "0" ]; then
 	if [ "$DEBUG_MODE" = "1" ]; then
 		dumpConfig
 	fi
 
 	if [ "$POWERUP_REASON" != "$POWERUP_REASON_CHARGER" ]; then
+		/system/bin/setprop ctl.stop bootmodem
+
 		# set backlight
 		$BBX echo $BACKLIGHT_BRIGHTNESS_VALUE > $BACKLIGHT_BRIGHTNESS_PATH
 
@@ -293,7 +302,6 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 				# adjust stock init.target.rc file to include /sbin/fixboot.sh
 				$BBX cat /init.target.rc | $BBX sed "s/on fs/on fs\n    exec \/sbin\/fixboot.sh/" > /init.target.rc.new0
 				$BBX cat /init.target.rc.new0 | $BBX sed "s/mount none \/data\/media \/mnt\/shell\/emulated bind/start sdcard/" > /init.target.rc.new1
-#				$BBX cat /init.target.rc.new1 | $BBX sed "s/service qe \/xbin\/qe/#service qe \/xbin\/qe/" > /init.target.rc.new2
 				$BBX cat /init.target.rc.new1 | $BBX sed "s/exec \/system\/bin\/defuse/#exec \/system\/bin\/defuse.sh\nstart sdcard/" > /init.target.rc.new3
 				$BBX cat /init.target.rc.new3 | $BBX sed "s/exec \/system\/bin\/setfattr/#exec \/system\/bin\/setfattr/" > /init.target.rc.new4
 				$BBX cat /init.target.rc.new4 | $BBX sed "s/service dropboxd/service sdcard \/system\/bin\/sdcard \/datamedia\/media \/mnt\/shell\/emulated 1015 1015\n    class late_start\n    disabled\n\nservice dropboxd/" > /init.target.rc.new5
@@ -354,36 +362,12 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 			$BBX umount $DATAMEDIA_MNT
 		fi
 
-#		if [ "0" = "1" ]; then
-			# HASH: Restart w/ 2nd-init here to get the timing right for bootmodem
-			if [ -f "/sbin/taskset" ]; then
-				$BBX mv /sbin/taskset /sbin/taskset.old
-			fi
-			$BBX unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
-			$BBX chmod 750 /sbin/*
-
-			# unmount old /system
-			$BBX umount -l /system
-
-			/sbin/hijack.killall
-
-			# mount point / symlink cleanup
-			$BBX rm /sdcard
-			$BBX rm -rf /mnt
-
-			/sbin/taskset -p -c 0 1
-			$BBX sync
-			if [ "$DEBUG_MODE" = "1" ]; then
-				logCurrentStatus
-			fi
-
-			/sbin/taskset -c 0 /sbin/2nd-init > /dev/kmsg
-			exit
-#		fi
-
-		exec /system/bin/bootmodem &
+		/system/bin/setprop ctl.start bootmodem
 	fi
 fi
 
-/system/$HIJACK_LOC/$HIJACK_BIN.bin "$@"
+if [ "$DEBUG_MODE" = "1" ]; then
+	$BBX echo Passing through hijack: /system/$HIJACK_LOC/$HIJACK_BIN.bin $CURRENT_CMD > /dev/kmsg
+fi
+/system/$HIJACK_LOC/$HIJACK_BIN.bin $CURRENT_CMD &
 

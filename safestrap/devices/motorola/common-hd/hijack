@@ -1,17 +1,21 @@
 #!/system/etc/safestrap/bbx sh
 # By Hashcode
+CURRENT_CMD=$@
 PATH=/system/xbin:/system/bin:/sbin
 
 RECOVERY_DIR=/system/etc/safestrap
 BBX=/sbin/bbx
 SS_CONFIG=/ss.config
 SS_CHECK_FILE=/.safestrapped
+SS_CHECK_FILE_VAL="1"
 CURRENT_SYS_DIR=/system
 CURRENT_USER_DIR=/data
 ALT_SYSTEM_MODE="0"
 
+. /system/etc/safestrap/ss_function.sh
+
 if [ ! -f "$SS_CHECK_FILE" ]; then
-	. /system/etc/safestrap/ss_function.sh
+	SS_CHECK_FILE_VAL="0"
 
 	# remount root as rw
 	$RECOVERY_DIR/bbx mount -o remount,rw rootfs
@@ -28,7 +32,13 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 	$BBX chmod 600 $SS_CONFIG
 	$BBX chown 0.0 $SS_CONFIG
 
-	readConfig
+	# move qe out of the way
+	$BBX mv /xbin/qe /xbin/qe.bak
+fi
+
+readConfig
+
+if [ "$SS_CHECK_FILE_VAL" = "0" ]; then
 	if [ "$DEBUG_MODE" = "1" ]; then
 		dumpConfig
 	fi
@@ -139,8 +149,12 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 			fi
 
 			/sbin/hijack.killall
+
 			/sbin/taskset -p -c 0 1 > /dev/kmsg
 			$BBX sync
+			if [ "$DEBUG_MODE" = "1" ]; then
+				logCurrentStatus
+			fi
 			/sbin/taskset -c 0 /sbin/2nd-init > /dev/kmsg
 			exit
 		fi
@@ -273,7 +287,11 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 
 				/sbin/taskset -p -c 0 1
 				$BBX sync
-				/sbin/taskset -c 0 /sbin/2nd-init
+				if [ "$DEBUG_MODE" = "1" ]; then
+					logCurrentStatus
+				fi
+
+				/sbin/taskset -c 0 /sbin/2nd-init > /dev/kmsg
 				exit
 			fi
 		fi
@@ -292,5 +310,8 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 	fi
 fi
 
-/system/$HIJACK_LOC/$HIJACK_BIN.bin "$@"
+if [ "$DEBUG_MODE" = "1" ]; then
+	$BBX echo Passing through hijack: /system/$HIJACK_LOC/$HIJACK_BIN.bin $CURRENT_CMD > /dev/kmsg
+fi
+/system/$HIJACK_LOC/$HIJACK_BIN.bin $CURRENT_CMD &
 

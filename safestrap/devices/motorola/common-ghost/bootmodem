@@ -1,0 +1,10 @@
+#!/system/bin/sh
+# By Hashcode
+PATH=/system/xbin:/system/bin:/sbin
+
+if [ -f "/.safestrapped" ]; then
+  echo "1" > /data/tmp/bootmodem
+  /system/bin/bootmodem.bin &
+fi
+exit 0
+

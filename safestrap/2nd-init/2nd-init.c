@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <string.h>
 
+long find_code(char* init_image, long image_base, long image_size, char *execve_code);
+
 union u 
 {
 	long val;
@@ -127,6 +129,37 @@ void get_base_image_address(pid_t pid, long* address, long* size)
   fclose(fp);
 }
 
+
+long find_code(char* init_image, long image_base, long image_size, char *execve_code)
+{
+	long execve_address = 0;
+	long c = 0, d = 0;
+
+	while (c < image_size - sizeof(execve_code))
+	{
+		int found = 1;
+
+		for(d = 0; d < sizeof(execve_code); d++)
+		{
+			if (init_image[c+d] != execve_code[d])
+			{
+				found = 0;
+				break;
+			}
+		}
+
+		if (found)
+		{
+			execve_address = image_base + c;
+			break;
+		}
+
+		c+=4; //ARM mode
+	}
+	return execve_address;
+}
+
+
 int main(int argc, char** argv)
 {
 	struct pt_regs regs;
@@ -182,6 +215,15 @@ int main(int argc, char** argv)
 	// LDMFD   SP!, {R4,R7}
 	//
 	// HEX: 90002DE9 0B70A0E3 000000EF 9000BDE8
+
+	// UPDATED FOR ANDROID 4.3
+	// MOV     IP, R7
+	// LDR     R7, #0xB
+	// SVC     0
+	// MOV     R7, IP
+	//
+	// HEX: 07C0A0E1 0B70A0E3 000000EF 0C70A0E1
+
 	
 	long image_base;
 	long image_size;
@@ -200,41 +242,26 @@ int main(int argc, char** argv)
 	getdata(1, image_base, init_image, image_size);
 	
 	//now look for the bytes
-	long c,d;
-	char execve_code[] = {	0x90, 0x00, 0x2D, 0xE9,
-													0x0B, 0x70, 0xA0, 0xE3,
-													0x00, 0x00, 0x00, 0xEF,
-													0x90, 0x00, 0xBD, 0xE8 };
-	
+	char execve_code[] = {		0x90, 0x00, 0x2D, 0xE9,
+					0x0B, 0x70, 0xA0, 0xE3,
+					0x00, 0x00, 0x00, 0xEF,
+					0x90, 0x00, 0xBD, 0xE8 };
+
+	char execve_code_43[] = {	0x07, 0xC0, 0xA0, 0xE1,
+					0x0B, 0x70, 0xA0, 0xE3,
+					0x00, 0x00, 0x00, 0xEF,
+					0x0C, 0x70, 0xA0, 0xE1 };
+
 	long execve_address = 0;
-	c = 0;
-												
-	while (c < image_size - sizeof(execve_code))
-	{
-		int found = 1;
-		
-		for(d = 0; d < sizeof(execve_code); d++)
-		{
-			if (init_image[c+d] != execve_code[d])
-			{
-				found = 0;
-				break;
-			}
-		}
-		
-		if (found)
-		{
-			execve_address = image_base + c; 
-			break;
-		}
-		
-		c+=4; //ARM mode
-	}
-	
+	execve_address = find_code(init_image, image_base, image_size, execve_code);
 	if (!execve_address)
 	{
-		printf("Failed locating execve.\n");
-		return 5;
+		printf("Failed locating execve <v4.2.2 code.\n");
+		execve_address = find_code(init_image, image_base, image_size, execve_code_43);
+		if (!execve_address) {
+			printf("Failed locating execve v4.3 code.\n");
+			return 5;
+		}
 	}
 	
 	printf("execve located on: 0x%08lX.\n", execve_address);

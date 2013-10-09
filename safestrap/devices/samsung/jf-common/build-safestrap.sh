@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+mkdir -p $OUT/recovery/root/etc
 mkdir -p $OUT/recovery/root/sbin
 mkdir -p $OUT/APP
 mkdir -p $OUT/install-files/etc/safestrap/res/

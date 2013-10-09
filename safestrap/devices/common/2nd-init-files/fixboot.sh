@@ -9,12 +9,12 @@ readConfig
 SS_PART=$SS_PART-orig
 
 # Double-check that these partitions are unmounted here
-$BBX umount /system
-$BBX umount /data
-$BBX umount /cache
+$BBX umount /system 2>/dev/null
+$BBX umount /data 2>/dev/null
+$BBX umount /cache 2>/dev/null
 
 # check for SS loopdevs
-if [ ! -f "$BLOCK_DIR/loop-system" ]; then
+if [ ! -e "$BLOCK_DIR/loop-system" ]; then
 	# create SS loopdevs
 	$BBX mknod -m600 /dev/block/loop-system b 7 99
 	$BBX mknod -m600 /dev/block/loop-userdata b 7 98
@@ -23,7 +23,7 @@ if [ ! -f "$BLOCK_DIR/loop-system" ]; then
 fi
 
 # check for systemorig partition alias so we don't run this twice
-if [ ! -f "$BLOCK_DIR/$BLOCK_SYSTEM-orig" ]; then
+if [ ! -e "$BLOCK_DIR/$BLOCK_SYSTEM-orig" ]; then
 	# move real partitions out of the way
 	$BBX mv $BLOCK_DIR/$BLOCK_SYSTEM $BLOCK_DIR/$BLOCK_SYSTEM-orig
 	$BBX mv $BLOCK_DIR/$BLOCK_USERDATA $BLOCK_DIR/$BLOCK_USERDATA-orig
@@ -32,11 +32,13 @@ if [ ! -f "$BLOCK_DIR/$BLOCK_SYSTEM-orig" ]; then
 
 	# remount root as rw
 	$BBX mount -o remount,rw rootfs
-	$BBX mkdir $SS_MNT
-	$BBX chmod 777 $SS_MNT
 
+	if [ ! -d "$SS_MNT" ]; then
+		$BBX mkdir $SS_MNT
+		$BBX chmod 777 $SS_MNT
+	fi
 	# mount safestrap partition
-	if [ "$SS_USE_DATAMEDIA" = "1" ]; then
+	if [ "$SS_USE_DATAMEDIA" = "1" ] && [ ! -d "$DATAMEDIA_MNT" ]; then
 		$BBX mkdir $DATAMEDIA_MNT
 		$BBX chown 0.0 $DATAMEDIA_MNT
 		$BBX chmod 777 $DATAMEDIA_MNT

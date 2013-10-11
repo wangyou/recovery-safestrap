@@ -59,6 +59,10 @@ $BBX cp -f $INSTALLPATH/install-files/$HIJACK_LOC/$HIJACK_BIN $DESTMOUNT/$HIJACK
 $BBX chown 0.2000 $DESTMOUNT/$HIJACK_LOC/$HIJACK_BIN >> $LOGFILE
 $BBX chmod 755 $DESTMOUNT/$HIJACK_LOC/$HIJACK_BIN >> $LOGFILE
 
+$BBX cp -f $INSTALLPATH/install-files/bin/hijack.sh $DESTMOUNT/bin/hijack.sh >> $LOGFILE
+$BBX chown 0.2000 $DESTMOUNT/bin/hijack.sh >> $LOGFILE
+$BBX chmod 755 $DESTMOUNT/bin/hijack.sh >> $LOGFILE
+
 # check for a /system/bin/bootmodem.bin file and its not there, make a copy
 if [ ! -f "$DESTMOUNT/bin/bootmodem.bin" ]; then
 	$BBX cp $DESTMOUNT/bin/bootmodem $DESTMOUNT/bin/bootmodem.bin >> $LOGFILE

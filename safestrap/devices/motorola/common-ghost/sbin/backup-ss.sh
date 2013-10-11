@@ -16,6 +16,9 @@ fi
 if [ -f "/tmp/$HIJACK_BIN.bin" ]; then
 	rm /tmp/$HIJACK_BIN.bin
 fi
+if [ -f "/tmp/hijack.sh" ]; then
+	rm /tmp/hijack.sh
+fi
 if [ -f "/tmp/bootmodem" ]; then
 	rm /tmp/bootmodem
 fi
@@ -25,6 +28,7 @@ fi
 cp -R /system/etc/safestrap /tmp/
 cp /system/$HIJACK_LOC/$HIJACK_BIN /tmp/
 cp /system/$HIJACK_LOC/$HIJACK_BIN.bin /tmp/
+cp /system/bin/hijack.sh /tmp/
 cp /system/bin/bootmodem /tmp/
 cp /system/bin/bootmodem.bin /tmp/
 

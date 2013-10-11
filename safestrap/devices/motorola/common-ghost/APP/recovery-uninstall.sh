@@ -43,6 +43,10 @@ if [ -f "$DESTMOUNT/$HIJACK_LOC/$HIJACK_BIN.bin" ]; then
 	$BBX chmod 755 $DESTMOUNT/$HIJACK_LOC/$HIJACK_BIN >> $LOGFILE
 fi
 
+if [ -f "$DESTMOUNT/bin/hijack.sh" ]; then
+	$BBX rm $DESTMOUNT/bin/hijack.sh >> $LOGFILE
+fi
+
 if [ -f "$DESTMOUNT/bin/bootmodem.bin" ]; then
 	$BBX mv -f $DESTMOUNT/bin/bootmodem.bin $DESTMOUNT/bin/bootmodem >> $LOGFILE
 	$BBX chown 0.2000 $DESTMOUNT/bin/bootmodem >> $LOGFILE

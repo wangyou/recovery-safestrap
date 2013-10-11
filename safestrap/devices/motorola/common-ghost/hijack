@@ -234,7 +234,10 @@ if [ "$SS_CHECK_FILE_VAL" = "0" ]; then
 				$BBX chown 0.2000 $CURRENT_SYS_DIR/$HIJACK_LOC/$HIJACK_BIN
 			fi
 
-			# on virtual systems, check for bootmodem.bin, and remove
+			if [ "$ALT_SYSTEM_MODE" = "1" ] && [ -f "$SYS2_MNT/bin/hijack.sh" ]; then
+				$BBX rm $CURRENT_SYS_DIR/bin/hijack.sh
+			fi
+
 			if [ "$ALT_SYSTEM_MODE" = "1" ] && [ -f "$SYS2_MNT/bin/bootmodem.bin" ]; then
 				$BBX rm $CURRENT_SYS_DIR/bin/bootmodem
 				$BBX mv $CURRENT_SYS_DIR/bin/bootmodem.bin $CURRENT_SYS_DIR/bin/bootmodem

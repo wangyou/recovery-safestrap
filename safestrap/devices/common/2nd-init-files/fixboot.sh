@@ -38,10 +38,12 @@ if [ ! -e "$BLOCK_DIR/$BLOCK_SYSTEM-orig" ]; then
 		$BBX chmod 777 $SS_MNT
 	fi
 	# mount safestrap partition
-	if [ "$SS_USE_DATAMEDIA" = "1" ] && [ ! -d "$DATAMEDIA_MNT" ]; then
-		$BBX mkdir $DATAMEDIA_MNT
-		$BBX chown 0.0 $DATAMEDIA_MNT
-		$BBX chmod 777 $DATAMEDIA_MNT
+	if [ "$SS_USE_DATAMEDIA" = "1" ]; then
+		if [ ! -d "$DATAMEDIA_MNT" ]; then
+			$BBX mkdir $DATAMEDIA_MNT
+			$BBX chown 0.0 $DATAMEDIA_MNT
+			$BBX chmod 777 $DATAMEDIA_MNT
+		fi
 		$BBX mount -t $SS_FSTYPE $BLOCK_DIR/$SS_PART $DATAMEDIA_MNT
 		$BBX mount $DATAMEDIA_MNT/media $SS_MNT
 	else

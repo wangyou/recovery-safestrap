@@ -99,19 +99,20 @@ error_out:
 	return 1;
 }
 
-int checkRomSlot(string path, bool remount) {
-	TWPartition* Part = PartitionManager.Find_Partition_By_Path(path);
+int checkRomSlot(string loopName, bool remount) {
+	char cmd[255];
+	TWPartition* Part = PartitionManager.Find_Partition_By_Path("/" + loopName);
 	string result;
 	if (Part) {
 		if (Part->Is_Mounted())
 			Part->UnMount(true);
-		DataManager::SetValue("tw_operation", "Checking filesystem on " + Part->Display_Name + "...");
-		gui_print("Checking filesystem on %s...\n", Part->Display_Name.c_str());
-		if (TWFunc::Exec_Cmd("e2fsck -pfv " + Part->Primary_Block_Device, result) < 0) {
-			gui_print("Check FAILED for %s\n", Part->Display_Name.c_str());
-			return -1;
-		}
-		gui_print("Filesystem on %s checked OK\n\n", Part->Display_Name.c_str());
+		DataManager::SetValue("tw_operation", "Checking/Fixing filesystem on " + Part->Display_Name + "...");
+		gui_print("Checking/Fixing filesystem on %s...\n", Part->Display_Name.c_str());
+
+		sprintf(cmd, "/sbin/check-fs.sh -%s", loopName.c_str());
+		fprintf(stderr, "checkRomSlot::%s\n", cmd);
+		usleep(100000);
+		TWFunc::Exec_Cmd(cmd, result);
 		if (remount)
 			Part->Mount(true);
 	}
@@ -398,11 +399,11 @@ int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */
 			// 1 at a time unmount partition and run e2fsck -pfv <block>
 
 			DataManager::SetValue("ui_progress", 0);
-			checkRomSlot("/system", false);
+			checkRomSlot("system", false);
 			DataManager::SetValue("ui_progress", 20);
-			checkRomSlot("/data", false);
+			checkRomSlot("data", false);
 			DataManager::SetValue("ui_progress", 80);
-			checkRomSlot("/cache", true);
+			checkRomSlot("cache", true);
 		}
 
 		operation_end(0, simulate);

@@ -47,9 +47,9 @@ unmountFS ext4
 unmountFS vfat
 unmountFS f2fs
 
-bbx umount /mnt/secure
-bbx umount /mnt/asec
-bbx umount /mnt/obb
+# bbx umount /mnt/secure
+# bbx umount /mnt/asec
+# bbx umount /mnt/obb
 
 # kill any existing adbd processes
 bbx kill $(bbx ps | bbx grep adbd)

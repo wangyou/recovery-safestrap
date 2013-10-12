@@ -3921,10 +3921,11 @@
 			<object type="action">
 				<action function="refreshsizesnt"></action>
 				<action function="set">tw_slot_system_size=%tw_ss_default_virt_system_size%</action>
-				<action function="set">tw_slot_data_size=0</action>
+				<action function="set">tw_slot_data_size=%tw_ss_default_virt_data_size%</action>
 				<action function="set">tw_slot_cache_size=%tw_ss_default_virt_cache_size%</action>
 				<action function="set">tw_slot_total_size=0</action>
 				<action function="addsubtract">tw_slot_total_size+%tw_slot_system_size%</action>
+				<action function="addsubtract">tw_slot_total_size+%tw_slot_data_size%</action>
 				<action function="addsubtract">tw_slot_total_size+%tw_slot_cache_size%</action>
 			</object>
 
@@ -3943,83 +3944,113 @@
 			</object>
 
 			<object type="button">
-				<condition var1="tw_slot_system_size" var2="%tw_ss_default_virt_system_size%" />
+				<condition var1="tw_slot_system_size" op=">" var2="tw_ss_default_virt_system_min_size" />
+				<highlight color="%highlight_color%" />
 				<placement x="%col1_x%" y="%row2_text_y%" />
-				<font resource="font" color="%text_color%" />
-				<text>%tw_ss_default_virt_system_size% MB</text>
-				<image resource="radio_true" />
+				<font resource="font" color="%button_text_color%" />
+				<text></text>
+				<image resource="minus_button" />
+				<action function="addsubtract">tw_slot_system_size-100</action>
+				<action function="set">tw_slot_total_size=0</action>
+				<action function="addsubtract">tw_slot_total_size+%tw_slot_system_size%</action>
+				<action function="addsubtract">tw_slot_total_size+%tw_slot_cache_size%</action>
+				<action function="addsubtract">tw_slot_total_size+%tw_slot_data_size%</action>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_slot_system_size" op="<=" var2="tw_ss_default_virt_system_min_size" />
+				<highlight color="%highlight_color%" />
+				<placement x="%col1_x%" y="%row2_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text></text>
+				<image resource="minus_button" />
 			</object>
 
 			<object type="text" color="%text_color%">
-				<placement x="%col1_x%" y="%row3_text_y%" />
+				<placement x="%col_center_x%" y="%row2_text_y%" />
+				<font resource="font" />
+				<text>%tw_slot_system_size% MB</text>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_slot_system_size" op="<" var2="tw_ss_default_virt_system_max_size" />
+				<highlight color="%highlight_color%" />
+				<placement x="%col2_x%" y="%row2_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text></text>
+				<image resource="plus_button" />
+				<action function="addsubtract">tw_slot_system_size+100</action>
+				<action function="set">tw_slot_total_size=0</action>
+				<action function="addsubtract">tw_slot_total_size+%tw_slot_system_size%</action>
+				<action function="addsubtract">tw_slot_total_size+%tw_slot_cache_size%</action>
+				<action function="addsubtract">tw_slot_total_size+%tw_slot_data_size%</action>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_slot_system_size" op=">=" var2="tw_ss_default_virt_system_max_size" />
+				<highlight color="%highlight_color%" />
+				<placement x="%col2_x%" y="%row2_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text></text>
+				<image resource="plus_button" />
+			</object>
+
+			<object type="text" color="%text_color%">
+				<placement x="%col1_x%" y="%row4_text_y%" />
 				<font resource="font" />
 				<text>Data partition size</text>
 			</object>
 
 			<object type="button">
-				<condition var1="tw_slot_data_size" var2="1024" />
-				<placement x="%col1_x%" y="%row4_text_y%" />
-				<font resource="font" color="%text_color%" />
-				<text>1GB</text>
-				<image resource="radio_true" />
-			</object>
-			<object type="button">
-				<condition var1="tw_slot_data_size" op="!=" var2="1024" />
-				<placement x="%col1_x%" y="%row4_text_y%" />
-				<font resource="font" color="%text_color%" />
-				<text>1GB</text>
-				<image resource="radio_false" />
-				<actions>
-					<action function="set">tw_slot_data_size=1024</action>
-					<action function="set">tw_slot_total_size=0</action>
-					<action function="addsubtract">tw_slot_total_size+%tw_slot_system_size%</action>
-					<action function="addsubtract">tw_slot_total_size+%tw_slot_cache_size%</action>
-					<action function="addsubtract">tw_slot_total_size+%tw_slot_data_size%</action>
-				</actions>
+				<condition var1="tw_slot_data_size" op=">" var2="tw_ss_default_virt_data_min_size" />
+				<highlight color="%highlight_color%" />
+				<placement x="%col1_x%" y="%row5_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text></text>
+				<image resource="minus_button" />
+				<action function="addsubtract">tw_slot_data_size-100</action>
+				<action function="set">tw_slot_total_size=0</action>
+				<action function="addsubtract">tw_slot_total_size+%tw_slot_system_size%</action>
+				<action function="addsubtract">tw_slot_total_size+%tw_slot_cache_size%</action>
+				<action function="addsubtract">tw_slot_total_size+%tw_slot_data_size%</action>
 			</object>
 
 			<object type="button">
-				<condition var1="tw_slot_data_size" var2="2048" />
+				<condition var1="tw_slot_data_size" op="<=" var2="tw_ss_default_virt_data_min_size" />
+				<highlight color="%highlight_color%" />
 				<placement x="%col1_x%" y="%row5_text_y%" />
-				<font resource="font" color="%text_color%" />
-				<text>2GB</text>
-				<image resource="radio_true" />
+				<font resource="font" color="%button_text_color%" />
+				<text></text>
+				<image resource="minus_button" />
 			</object>
-			<object type="button">
-				<condition var1="tw_slot_data_size" op="!=" var2="2048" />
-				<placement x="%col1_x%" y="%row5_text_y%" />
-				<font resource="font" color="%text_color%" />
-				<text>2GB</text>
-				<image resource="radio_false" />
-				<actions>
-					<action function="set">tw_slot_data_size=2048</action>
-					<action function="set">tw_slot_total_size=0</action>
-					<action function="addsubtract">tw_slot_total_size+%tw_slot_system_size%</action>
-					<action function="addsubtract">tw_slot_total_size+%tw_slot_cache_size%</action>
-					<action function="addsubtract">tw_slot_total_size+%tw_slot_data_size%</action>
-				</actions>
+
+			<object type="text" color="%text_color%">
+				<placement x="%col_center_x%" y="%row5_text_y%" />
+				<font resource="font" />
+				<text>%tw_slot_data_size% MB</text>
 			</object>
 
 			<object type="button">
-				<condition var1="tw_slot_data_size" var2="3072" />
-				<placement x="%col1_x%" y="%row6_text_y%" />
-				<font resource="font" color="%text_color%" />
-				<text>3GB</text>
-				<image resource="radio_true" />
+				<condition var1="tw_slot_data_size" op="<" var2="tw_ss_default_virt_data_max_size" />
+				<highlight color="%highlight_color%" />
+				<placement x="%col2_x%" y="%row5_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text></text>
+				<image resource="plus_button" />
+				<action function="addsubtract">tw_slot_data_size+100</action>
+				<action function="set">tw_slot_total_size=0</action>
+				<action function="addsubtract">tw_slot_total_size+%tw_slot_system_size%</action>
+				<action function="addsubtract">tw_slot_total_size+%tw_slot_cache_size%</action>
+				<action function="addsubtract">tw_slot_total_size+%tw_slot_data_size%</action>
 			</object>
+
 			<object type="button">
-				<condition var1="tw_slot_data_size" op="!=" var2="3072" />
-				<placement x="%col1_x%" y="%row6_text_y%" />
-				<font resource="font" color="%text_color%" />
-				<text>3GB</text>
-				<image resource="radio_false" />
-				<actions>
-					<action function="set">tw_slot_data_size=3072</action>
-					<action function="set">tw_slot_total_size=0</action>
-					<action function="addsubtract">tw_slot_total_size+%tw_slot_system_size%</action>
-					<action function="addsubtract">tw_slot_total_size+%tw_slot_cache_size%</action>
-					<action function="addsubtract">tw_slot_total_size+%tw_slot_data_size%</action>
-				</actions>
+				<condition var1="tw_slot_data_size" op=">=" var2="tw_ss_default_virt_data_max_size" />
+				<highlight color="%highlight_color%" />
+				<placement x="%col2_x%" y="%row5_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text></text>
+				<image resource="plus_button" />
 			</object>
 
 			<object type="text" color="%text_color%">
@@ -4029,11 +4060,55 @@
 			</object>
 
 			<object type="button">
-				<condition var1="tw_slot_cache_size" var2="%tw_ss_default_virt_cache_size%" />
+				<condition var1="tw_slot_cache_size" op=">" var2="tw_ss_default_virt_cache_min_size" />
+				<highlight color="%highlight_color%" />
 				<placement x="%col1_x%" y="%row8_text_y%" />
-				<font resource="font" color="%text_color%" />
-				<text>%tw_ss_default_virt_cache_size% MB</text>
-				<image resource="radio_true" />
+				<font resource="font" color="%button_text_color%" />
+				<text></text>
+				<image resource="minus_button" />
+				<action function="addsubtract">tw_slot_cache_size-100</action>
+				<action function="set">tw_slot_total_size=0</action>
+				<action function="addsubtract">tw_slot_total_size+%tw_slot_system_size%</action>
+				<action function="addsubtract">tw_slot_total_size+%tw_slot_cache_size%</action>
+				<action function="addsubtract">tw_slot_total_size+%tw_slot_data_size%</action>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_slot_cache_size" op="<=" var2="tw_ss_default_virt_cache_min_size" />
+				<highlight color="%highlight_color%" />
+				<placement x="%col1_x%" y="%row8_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text></text>
+				<image resource="minus_button" />
+			</object>
+
+			<object type="text" color="%text_color%">
+				<placement x="%col_center_x%" y="%row8_text_y%" />
+				<font resource="font" />
+				<text>%tw_slot_cache_size% MB</text>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_slot_cache_size" op="<" var2="tw_ss_default_virt_cache_max_size" />
+				<highlight color="%highlight_color%" />
+				<placement x="%col2_x%" y="%row8_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text></text>
+				<image resource="plus_button" />
+				<action function="addsubtract">tw_slot_cache_size+100</action>
+				<action function="set">tw_slot_total_size=0</action>
+				<action function="addsubtract">tw_slot_total_size+%tw_slot_system_size%</action>
+				<action function="addsubtract">tw_slot_total_size+%tw_slot_cache_size%</action>
+				<action function="addsubtract">tw_slot_total_size+%tw_slot_data_size%</action>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_slot_cache_size" op=">=" var2="tw_ss_default_virt_cache_max_size" />
+				<highlight color="%highlight_color%" />
+				<placement x="%col2_x%" y="%row8_text_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text></text>
+				<image resource="plus_button" />
 			</object>
 
 			<object type="text" color="%text_color%">

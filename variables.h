@@ -192,7 +192,14 @@
 #define SS_VERSION_VAR                   "ss_version"
 #define TW_SS_STORAGE_FREE_SIZE          "tw_ss_storage_free_size"
 #define TW_SS_DEFAULT_VIRT_SYSTEM_SIZE   "tw_ss_default_virt_system_size"
+#define TW_SS_DEFAULT_VIRT_SYSTEM_MIN_SIZE   "tw_ss_default_virt_system_min_size"
+#define TW_SS_DEFAULT_VIRT_SYSTEM_MAX_SIZE   "tw_ss_default_virt_system_max_size"
+#define TW_SS_DEFAULT_VIRT_DATA_SIZE   "tw_ss_default_virt_data_size"
+#define TW_SS_DEFAULT_VIRT_DATA_MIN_SIZE   "tw_ss_default_virt_data_min_size"
+#define TW_SS_DEFAULT_VIRT_DATA_MAX_SIZE   "tw_ss_default_virt_data_max_size"
 #define TW_SS_DEFAULT_VIRT_CACHE_SIZE    "tw_ss_default_virt_cache_size"
+#define TW_SS_DEFAULT_VIRT_CACHE_MIN_SIZE   "tw_ss_default_virt_cache_min_size"
+#define TW_SS_DEFAULT_VIRT_CACHE_MAX_SIZE   "tw_ss_default_virt_cache_max_size"
 #endif
 
 #endif  // _VARIABLES_HEADER_

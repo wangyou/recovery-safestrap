@@ -61,22 +61,25 @@ dumpConfig() {
 
 # unmount /sys/fs/selinux + clear out files
 fixSELinux() {
-	echo "umount /sys/fs/selinux" > /dev/kmsg
-	for i in $($BBX seq 1 10); do
-		TMP=$($BBX mount | $BBX grep /sys/fs/selinux)
-		if $BBX [[ -z "$TMP" ]] ; then
-			break
-		fi
-		$BBX umount -l /sys/fs/selinux
-		$BBX sleep 1
-	done
+	# HASH: disable for now
+	if [ "1" = "0" ]; then
+		echo "umount /sys/fs/selinux" > /dev/kmsg
+		for i in $($BBX seq 1 10); do
+			TMP=$($BBX mount | $BBX grep /sys/fs/selinux)
+			if $BBX [[ -z "$TMP" ]] ; then
+				break
+			fi
+			$BBX umount -l /sys/fs/selinux
+			$BBX sleep 1
+		done
 
-	# make sure to erase SElinux files
-	$BBX rm /file_contexts
-	$BBX rm /property_contexts
-	$BBX rm /seapp_contexts
-	$BBX rm /sepolicy
-	$BBX rm /sepolicy_version
+		# make sure to erase SElinux files
+		$BBX rm /file_contexts
+		$BBX rm /property_contexts
+		$BBX rm /seapp_contexts
+		$BBX rm /sepolicy
+		$BBX rm /sepolicy_version
+	fi
 }
 
 logCurrentStatus() {

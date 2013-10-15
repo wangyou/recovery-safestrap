@@ -7,16 +7,11 @@ RECOVERY_DIR=/system/etc/safestrap
 BBX=/sbin/bbx
 SS_CONFIG=/ss.config
 SS_CHECK_FILE=/.safestrapped
-SS_CHECK_FILE_VAL="1"
 CURRENT_SYS_DIR=/system
 CURRENT_USER_DIR=/data
 ALT_SYSTEM_MODE="0"
 
-. /system/etc/safestrap/ss_function.sh
-
 if [ ! -f "$SS_CHECK_FILE" ]; then
-	SS_CHECK_FILE_VAL="0"
-
 	# remount root as rw
 	$RECOVERY_DIR/bbx mount -o remount,rw rootfs
 
@@ -34,11 +29,10 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 
 	# move qe out of the way
 	$BBX mv /xbin/qe /xbin/qe.bak
-fi
 
-readConfig
+	. /system/etc/safestrap/ss_function.sh
+	readConfig
 
-if [ "$SS_CHECK_FILE_VAL" = "0" ]; then
 	if [ "$DEBUG_MODE" = "1" ]; then
 		dumpConfig
 	fi
@@ -310,8 +304,7 @@ if [ "$SS_CHECK_FILE_VAL" = "0" ]; then
 	fi
 fi
 
-if [ "$DEBUG_MODE" = "1" ]; then
-	$BBX echo Passing through hijack: /system/$HIJACK_LOC/$HIJACK_BIN.bin $CURRENT_CMD > /dev/kmsg
-fi
-/system/$HIJACK_LOC/$HIJACK_BIN.bin $CURRENT_CMD &
+$BBX echo "\nPassing through hijack: /system/etc/init.qcom.modem_links.sh.bin $CURRENT_CMD\n" > /dev/kmsg
+
+/system/etc/init.qcom.modem_links.sh.bin $CURRENT_CMD &
 

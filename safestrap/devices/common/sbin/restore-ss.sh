@@ -38,4 +38,3 @@ if [ -d "/tmp/safestrap" ] && [ -f "/tmp/$HIJACK_BIN" ]; then
 	chown 0.2000 /system/$HIJACK_LOC/$HIJACK_BIN
 	chmod 755 /system/$HIJACK_LOC/$HIJACK_BIN
 fi
-

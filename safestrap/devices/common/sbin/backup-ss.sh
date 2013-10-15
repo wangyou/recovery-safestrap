@@ -19,4 +19,3 @@ fi
 cp -R /system/etc/safestrap /tmp/
 cp /system/$HIJACK_LOC/$HIJACK_BIN /tmp/
 cp /system/$HIJACK_LOC/$HIJACK_BIN.bin /tmp/
-

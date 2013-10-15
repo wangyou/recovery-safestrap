@@ -43,7 +43,7 @@ int main(int argc, char **argv)
     char *newenv[] =
     {
         "HOME=/",
-        "PATH=/vendor/bin:/system/bin:/system/sbin:/sbin:/xbin",
+        "PATH=/vendor/bin:/system/bin:/system/xbin:/sbin:/xbin",
 	"LD_LIBRARY_PATH=/vendor/lib:/system/lib",
         0
     };

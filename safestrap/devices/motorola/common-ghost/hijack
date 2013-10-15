@@ -7,16 +7,12 @@ RECOVERY_DIR=/system/etc/safestrap
 BBX=/sbin/bbx
 SS_CONFIG=/ss.config
 SS_CHECK_FILE=/.safestrapped
-SS_CHECK_FILE_VAL="1"
 CURRENT_SYS_DIR=/system
-CURRENT_USER_DIR=/data
+# HASH: On ghost /data isn't mounted before hijack so use /datamedia instead
+CURRENT_USER_DIR=/datamedia
 ALT_SYSTEM_MODE="0"
 
-. /system/etc/safestrap/ss_function.sh
-
 if [ ! -f "$SS_CHECK_FILE" ]; then
-	SS_CHECK_FILE_VAL="0"
-
 	# remount root as rw
 	$RECOVERY_DIR/bbx mount -o remount,rw rootfs
 
@@ -34,18 +30,15 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 
 	# move qe out of the way
 	$BBX mv /xbin/qe /xbin/qe.bak
-fi
 
-readConfig
+	. /system/etc/safestrap/ss_function.sh
+	readConfig
 
-if [ "$SS_CHECK_FILE_VAL" = "0" ]; then
 	if [ "$DEBUG_MODE" = "1" ]; then
 		dumpConfig
 	fi
 
 	if [ "$POWERUP_REASON" != "$POWERUP_REASON_CHARGER" ]; then
-		/system/bin/setprop ctl.stop bootmodem
-
 		# set backlight
 		$BBX echo $BACKLIGHT_BRIGHTNESS_VALUE > $BACKLIGHT_BRIGHTNESS_PATH
 
@@ -234,17 +227,6 @@ if [ "$SS_CHECK_FILE_VAL" = "0" ]; then
 				$BBX chown 0.2000 $CURRENT_SYS_DIR/$HIJACK_LOC/$HIJACK_BIN
 			fi
 
-			if [ "$ALT_SYSTEM_MODE" = "1" ] && [ -f "$SYS2_MNT/bin/hijack.sh" ]; then
-				$BBX rm $CURRENT_SYS_DIR/bin/hijack.sh
-			fi
-
-			if [ "$ALT_SYSTEM_MODE" = "1" ] && [ -f "$SYS2_MNT/bin/bootmodem.bin" ]; then
-				$BBX rm $CURRENT_SYS_DIR/bin/bootmodem
-				$BBX mv $CURRENT_SYS_DIR/bin/bootmodem.bin $CURRENT_SYS_DIR/bin/bootmodem
-				$BBX chmod 755 $CURRENT_SYS_DIR/bin/bootmodem
-				$BBX chown 0.2000 $CURRENT_SYS_DIR/bin/bootmodem
-			fi
-
 			# check for kexec files
 			if [ -d "$CURRENT_SYS_DIR/etc/kexec" ]; then
 				$BBX cp $CURRENT_SYS_DIR/etc/kexec/* /
@@ -294,14 +276,6 @@ if [ "$SS_CHECK_FILE_VAL" = "0" ]; then
 					fixSELinux
 				fi
 
-				if [ -f "$CURRENT_SYS_DIR/etc/rootfs/sbin/adbd" ]; then
-					$BBX mv /sbin/adbd /sbin/adbd.old
-				fi
-				if [ -f "$CURRENT_SYS_DIR/etc/rootfs/init" ]; then
-					$BBX mv /init /init.old
-				fi
-				$BBX cp -R $CURRENT_SYS_DIR/etc/rootfs/* /
-
 				# adjust stock init.target.rc file to include /sbin/fixboot.sh
 				$BBX cat /init.target.rc | $BBX sed "s/on fs/on fs\n    exec \/sbin\/fixboot.sh/" > /init.target.rc.new0
 				$BBX cat /init.target.rc.new0 | $BBX sed "s/mount none \/data\/media \/mnt\/shell\/emulated bind/start sdcard/" > /init.target.rc.new1
@@ -311,6 +285,14 @@ if [ "$SS_CHECK_FILE_VAL" = "0" ]; then
 				$BBX mv /init.target.rc /init.target.rc.old
 				$BBX mv /init.target.rc.new5 /init.target.rc
 				$BBX rm /init.target.rc.new*
+
+				if [ -f "$CURRENT_SYS_DIR/etc/rootfs/sbin/adbd" ]; then
+					$BBX mv /sbin/adbd /sbin/adbd.old
+				fi
+				if [ -f "$CURRENT_SYS_DIR/etc/rootfs/init" ]; then
+					$BBX mv /init /init.old
+				fi
+				$BBX cp -R $CURRENT_SYS_DIR/etc/rootfs/* /
 
 				# reset permissions
 				$BBX chmod -R 755 /sbin/*
@@ -364,13 +346,10 @@ if [ "$SS_CHECK_FILE_VAL" = "0" ]; then
 		if [ "$SS_USE_DATAMEDIA" = "1" ]; then
 			$BBX umount $DATAMEDIA_MNT
 		fi
-
-		/system/bin/setprop ctl.start bootmodem
 	fi
 fi
 
-if [ "$DEBUG_MODE" = "1" ]; then
-	$BBX echo Passing through hijack: /system/$HIJACK_LOC/$HIJACK_BIN.bin $CURRENT_CMD > /dev/kmsg
-fi
-/system/$HIJACK_LOC/$HIJACK_BIN.bin $CURRENT_CMD &
+$BBX echo "\nPassing through hijack: /system/bin/resize2fs.bin $CURRENT_CMD\n" > /dev/kmsg
+
+/system/bin/resize2fs.bin $CURRENT_CMD
 

@@ -1,22 +1,16 @@
 #!/system/etc/safestrap/bbx sh
 # By Hashcode
-CURRENT_CMD=$@
 PATH=/system/xbin:/system/bin:/sbin
 
 RECOVERY_DIR=/system/etc/safestrap
 BBX=/sbin/bbx
 SS_CONFIG=/ss.config
 SS_CHECK_FILE=/.safestrapped
-SS_CHECK_FILE_VAL="1"
 CURRENT_SYS_DIR=/system
 CURRENT_USER_DIR=/data
 ALT_SYSTEM_MODE="0"
 
-. /system/etc/safestrap/ss_function.sh
-
 if [ ! -f "$SS_CHECK_FILE" ]; then
-	SS_CHECK_FILE_VAL="0"
-
 	# remount root as rw
 	$RECOVERY_DIR/bbx mount -o remount,rw rootfs
 
@@ -32,11 +26,9 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 	$BBX chmod 600 $SS_CONFIG
 	$BBX chown 0.0 $SS_CONFIG
 
-fi
+	. /system/etc/safestrap/ss_function.sh
+	readConfig
 
-readConfig
-
-if [ "$SS_CHECK_FILE_VAL" = "0" ]; then
 	if [ "$DEBUG_MODE" = "1" ]; then
 		dumpConfig
 	fi
@@ -316,16 +308,15 @@ if [ "$SS_CHECK_FILE_VAL" = "0" ]; then
 	fi
 fi
 
-/sbin/bbx rm /system/etc/firmware/q6.mdt
+$BBX rm /system/etc/firmware/q6.mdt
 
 # Run current file like expected by the system
-if [ "$DEBUG_MODE" = "1" ]; then
-	$BBX echo Passing through hijack: /system/$HIJACK_LOC/$HIJACK_BIN.bin $CURRENT_CMD > /dev/kmsg
-fi
-/system/bin/sh /system/$HIJACK_LOC/$HIJACK_BIN.bin $CURRENT_CMD &
+$BBX echo "\nPassing through hijack: /system/$HIJACK_LOC/$HIJACK_BIN.bin $@\n" > /dev/kmsg
+
+/system/bin/sh /system/$HIJACK_LOC/$HIJACK_BIN.bin "$@"
 
 # Copy out /firmware/image/q6.mdt to a ramdisk-based file and re symlink it there (disappears each boot)
-/sbin/bbx rm /system/etc/firmware/q6.mdt
-/sbin/bbx cp /firmware/image/q6.mdt /q6.mdt
-/sbin/bbx ln -s /q6.mdt /system/etc/firmware/q6.mdt
+$BBX rm /system/etc/firmware/q6.mdt
+$BBX cp /firmware/image/q6.mdt /q6.mdt
+$BBX ln -s /q6.mdt /system/etc/firmware/q6.mdt
 

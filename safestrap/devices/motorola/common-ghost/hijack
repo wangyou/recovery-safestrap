@@ -1,6 +1,5 @@
 #!/system/etc/safestrap/bbx sh
 # By Hashcode
-CURRENT_CMD=$@
 PATH=/system/xbin:/system/bin:/sbin
 
 RECOVERY_DIR=/system/etc/safestrap
@@ -349,7 +348,7 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 	fi
 fi
 
-$BBX echo "\nPassing through hijack: /system/bin/resize2fs.bin $CURRENT_CMD\n" > /dev/kmsg
+$BBX echo "\nPassing through hijack: /system/bin/resize2fs.bin $@\n" > /dev/kmsg
 
-/system/bin/resize2fs.bin $CURRENT_CMD
+/system/bin/resize2fs.bin "$@"
 

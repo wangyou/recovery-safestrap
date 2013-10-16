@@ -6,7 +6,11 @@ SS_CONFIG=/ss.config
 . /sbin/ss_function.sh
 
 readConfig
-SS_PART=$SS_PART-orig
+
+# If SS_PART uses DATAMEDIA we need to use the -orig partition in recovery
+if [ "$SS_USE_DATAMEDIA" = "1" ]; then
+	SS_PART=$SS_PART-orig
+fi
 
 # Double-check that these partitions are unmounted here
 $BBX umount /system 2>/dev/null

@@ -102,7 +102,7 @@ static int get_framebuffer(GGLSurface *fb)
     }
 
     if (ioctl(fd, FBIOGET_VSCREENINFO, &vi) < 0) {
-        perror("failed to get fb0 info");
+        perror("failed to get fb0 var info");
         close(fd);
         return -1;
     }
@@ -165,16 +165,20 @@ static int get_framebuffer(GGLSurface *fb)
     vi.activate = FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
 
     if (ioctl(fd, FBIOPUT_VSCREENINFO, &vi) < 0) {
-        perror("failed to put fb0 info");
+        perror("failed to put fb0 var info");
         close(fd);
         return -1;
     }
 
     if (ioctl(fd, FBIOGET_FSCREENINFO, &fi) < 0) {
-        perror("failed to get fb0 info");
+        perror("failed to get fb0 fixed info");
         close(fd);
         return -1;
     }
+
+#ifdef PRINT_SCREENINFO
+    print_fb_var_screeninfo();
+#endif
 
     bits = mmap(0, fi.smem_len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (bits == MAP_FAILED) {
@@ -222,10 +226,6 @@ static int get_framebuffer(GGLSurface *fb)
 #endif
     fb->format = PIXEL_FORMAT;
     memset(fb->data, 0, vi.yres * fb->stride * PIXEL_SIZE);
-
-#ifdef PRINT_SCREENINFO
-	print_fb_var_screeninfo();
-#endif
 
     return fd;
 }

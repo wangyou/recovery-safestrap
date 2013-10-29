@@ -1,4 +1,4 @@
-#!/system/etc/safestrap/bbx sh
+#!/system/bin/sh
 # By Hashcode
 PATH=/system/xbin:/system/bin:/sbin
 

@@ -8,6 +8,7 @@ mkdir -p $OUT/install-files/etc/safestrap/kexec/
 mkdir -p $OUT/install-files/etc/safestrap/res/
 cd $ANDROID_BUILD_TOP/bootable/recovery/safestrap/devices/motorola
 cp -fr common-omap4/res/* $OUT/install-files/etc/safestrap/res/
+cp -fr solana/res/* $OUT/install-files/etc/safestrap/res/
 cp -fr common-omap4/sbin-blobs/* $OUT/recovery/root/sbin/
 cp -fr solana/hijack $OUT/install-files/bin/logwrapper
 cp -fr solana/twrp.fstab $OUT/recovery/root/etc/twrp.fstab

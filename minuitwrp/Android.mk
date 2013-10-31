@@ -22,10 +22,6 @@ LOCAL_C_INCLUDES += \
     system/core/include \
     external/jpeg
 
-#ifeq ($(call is-vendor-board-platform,QCOM),true)
-    LOCAL_ADDITIONAL_DEPENDENCIES := $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr
-    LOCAL_C_INCLUDES += $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/include
-#endif
 TARGET_USES_QCOM_BSP := true
 ifeq ($(TARGET_USES_QCOM_BSP), true)
     LOCAL_CFLAGS += -DQCOM_BSP

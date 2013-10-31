@@ -43,8 +43,8 @@
 #include <linux/kd.h>
 
 #ifdef QCOM_BSP
-#include <linux/msm_mdp.h>
-#include <linux/msm_ion.h>
+#include "msm_mdp.h"
+#include "msm_ion.h"
 #endif
 
 #include <pixelflinger/pixelflinger.h>

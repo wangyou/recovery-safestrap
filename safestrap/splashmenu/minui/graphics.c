@@ -33,6 +33,8 @@
 
 #include "minui.h"
 
+#define PRINT_SCREENINFO 1
+
 #ifdef BOARD_USE_CUSTOM_RECOVERY_FONT
 #include BOARD_USE_CUSTOM_RECOVERY_FONT
 #else
@@ -53,8 +55,6 @@
 #endif
 
 #define NUM_BUFFERS 2
-
-// #define PRINT_SCREENINFO 1 // Enables printing of screen info to log
 
 typedef struct {
     GGLSurface texture;
@@ -87,16 +87,24 @@ int free_overlay(int fd);
 int overlay_display_frame(int fd, GGLubyte* data, size_t size);
 
 #ifdef PRINT_SCREENINFO
+static void print_fb_fixed_screeninfo()
+{
+    printf("fi.id: %s\n", fi.id);
+    printf("fi.smem_start: %ul\n", fi.smem_start);
+    printf("fi.smem_len: %ul\n", fi.smem_len);
+    printf("fi.line_length: %ul\n", fi.line_length);
+}
+
 static void print_fb_var_screeninfo()
 {
-	LOGI("vi.xres: %d\n", vi.xres);
-	LOGI("vi.yres: %d\n", vi.yres);
-	LOGI("vi.xres_virtual: %d\n", vi.xres_virtual);
-	LOGI("vi.yres_virtual: %d\n", vi.yres_virtual);
-	LOGI("vi.xoffset: %d\n", vi.xoffset);
-	LOGI("vi.yoffset: %d\n", vi.yoffset);
-	LOGI("vi.bits_per_pixel: %d\n", vi.bits_per_pixel);
-	LOGI("vi.grayscale: %d\n", vi.grayscale);
+    printf("vi.xres: %d\n", vi.xres);
+    printf("vi.yres: %d\n", vi.yres);
+    printf("vi.xres_virtual: %d\n", vi.xres_virtual);
+    printf("vi.yres_virtual: %d\n", vi.yres_virtual);
+    printf("vi.xoffset: %d\n", vi.xoffset);
+    printf("vi.yoffset: %d\n", vi.yoffset);
+    printf("vi.bits_per_pixel: %d\n", vi.bits_per_pixel);
+    printf("vi.grayscale: %d\n", vi.grayscale);
 }
 #endif
 
@@ -116,6 +124,10 @@ static int get_framebuffer(GGLSurface *fb)
         close(fd);
         return -1;
     }
+
+#ifdef PRINT_SCREENINFO
+    print_fb_var_screeninfo();
+#endif
 
     fprintf(stderr, "Pixel format: %dx%d @ %dbpp\n", vi.xres, vi.yres, vi.bits_per_pixel);
 
@@ -187,7 +199,7 @@ static int get_framebuffer(GGLSurface *fb)
     }
 
 #ifdef PRINT_SCREENINFO
-    print_fb_var_screeninfo();
+    print_fb_fixed_screeninfo();
 #endif
 
     has_overlay = target_has_overlay(fi.id);

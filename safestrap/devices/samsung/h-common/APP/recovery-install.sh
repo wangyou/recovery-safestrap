@@ -70,7 +70,7 @@ $BBX chmod 755 $DESTMOUNT/$RECOVERY_DIR/* >> $LOGFILE
 
 # Make sure the hijack is going to run by linking this firmware file to a ramdisk based file which will disappear after each boot
 $INSTALLPATH/busybox mount -o remount,rw /firmware
-$INSTALLPATH/busybox touch /firmware/images/modem.hijack
+$INSTALLPATH/busybox touch /firmware/image/modem.hijack
 $INSTALLPATH/busybox mount -o remount,ro /firmware
 
 # determine our active system, and umount/remount accordingly

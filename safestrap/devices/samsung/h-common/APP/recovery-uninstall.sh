@@ -49,7 +49,7 @@ fi
 
 # Fix up the firmware file used to enter recovery
 $INSTALLPATH/busybox mount -o remount,rw /firmware
-$INSTALLPATH/busybox rm /firmware/images/modem.hijack
+$INSTALLPATH/busybox rm /firmware/image/modem.hijack
 $INSTALLPATH/busybox mount -o remount,ro /firmware
 
 sync

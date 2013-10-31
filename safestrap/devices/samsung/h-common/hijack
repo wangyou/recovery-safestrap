@@ -104,10 +104,13 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 			$BBX losetup -d $BLOCK_DIR/loop-userdata
 		fi
 
+		# set /dev/ion permissions
+		/sbin/bbx chmod 666 /dev/ion
+
 		# turn on hard button backlight
 		/sbin/bbx echo 200 > /sys/class/leds/button-backlight/brightness
 
-		if [ "$ALT_SYSTEM_MODE" = "2" ] || [ $($RECOVERY_DIR/safestrapmenu $ALT_SYSTEM_MODE 2>&1 >/dev/kmsg ;echo $?) -eq 0 ]; then
+		if [ "$ALT_SYSTEM_MODE" = "2" ] || [ $($RECOVERY_DIR/safestrapmenu $ALT_SYSTEM_MODE >/dev/kmsg ;echo $?) -eq 0 ]; then
 			# turn off hard button backlight
 			/sbin/bbx echo 0 > /sys/class/leds/button-backlight/brightness
 

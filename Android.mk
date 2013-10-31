@@ -347,6 +347,10 @@ include $(CLEAR_VARS)
 # Create busybox symlinks... gzip and gunzip are excluded because those need to link to pigz instead
 BUSYBOX_LINKS := $(shell cat external/busybox/busybox-full.links)
 exclude := tune2fs mke2fs mkdosfs gzip gunzip
+ifeq ($(TWHAVE_SELINUX), true)
+	exclude += ls
+	# toolbox will provide ls support with ls -Z capability for listing SELinux contexts
+endif
 RECOVERY_BUSYBOX_SYMLINKS := $(addprefix $(TARGET_RECOVERY_ROOT_OUT)/sbin/,$(filter-out $(exclude),$(notdir $(BUSYBOX_LINKS))))
 $(RECOVERY_BUSYBOX_SYMLINKS): BUSYBOX_BINARY := busybox
 $(RECOVERY_BUSYBOX_SYMLINKS): $(LOCAL_INSTALLED_MODULE)
@@ -414,7 +418,8 @@ include $(commands_recovery_local_path)/injecttwrp/Android.mk \
     $(commands_recovery_local_path)/libcrecovery/Android.mk \
     $(commands_recovery_local_path)/libblkid/Android.mk \
     $(commands_recovery_local_path)/minuitwrp/Android.mk \
-    $(commands_recovery_local_path)/openaes/Android.mk
+    $(commands_recovery_local_path)/openaes/Android.mk \
+    $(commands_recovery_local_path)/toolbox/Android.mk
 
 # 2nd-init
 ifeq ($(SS_INCLUDE_2NDINIT), true)

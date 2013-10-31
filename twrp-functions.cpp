@@ -1,3 +1,21 @@
+/*
+	Copyright 2012 bigbiff/Dees_Troy TeamWin
+	This file is part of TWRP/TeamWin Recovery Project.
+
+	TWRP is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	TWRP is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with TWRP.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1016,6 +1034,13 @@ void TWFunc::Auto_Generate_Backup_Name() {
 			Backup_Name += " " + propvalue;
 			if (Backup_Name.size() > MAX_BACKUP_NAME_LEN)
 				Backup_Name.resize(MAX_BACKUP_NAME_LEN);
+			// Trailing spaces cause problems on some file systems, so remove them
+			string space_check, space = " ";
+			space_check = Backup_Name.substr(Backup_Name.size() - 1, 1);
+			while (space_check == space) {
+				Backup_Name.resize(Backup_Name.size() - 1);
+				space_check = Backup_Name.substr(Backup_Name.size() - 1, 1);
+			}
 			DataManager::SetValue(TW_BACKUP_NAME, Backup_Name);
 			break;
 		}

@@ -15,7 +15,8 @@
 	You should have received a copy of the GNU General Public License
 	along with TWRP.  If not, see <http://www.gnu.org/licenses/>.
 */
-// objects.h - Base classes for object manager of GUI
+
+// objects.hpp - Base classes for object manager of GUI
 
 #ifndef _OBJECTS_HEADER
 #define _OBJECTS_HEADER
@@ -215,7 +216,7 @@ protected:
 };
 
 // GUIImage - Used for static image
-class GUIImage : public RenderObject
+class GUIImage : public RenderObject, public Conditional
 {
 public:
 	GUIImage(xml_node<>* node);

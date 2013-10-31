@@ -34,6 +34,7 @@ extern "C" {
 #include <sstream>
 #include <vector>
 #include <dirent.h>
+#include <libgen.h>
 #include <sys/mman.h>
 #include "twrpTar.hpp"
 #include "twcommon.h"
@@ -532,10 +533,16 @@ int twrpTar::Generate_Multiple_Archives(string Path) {
 			continue; // Skip /data/media
 		if (de->d_type == DT_BLK || de->d_type == DT_CHR)
 			continue;
-		if (de->d_type == DT_DIR && strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0 && strcmp(de->d_name, "lost+foud") != 0)
+		if (de->d_type == DT_DIR && strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0)
 		{
 			unsigned long long folder_size = TWFunc::Get_Folder_Size(FileName, false);
 			if (Archive_Current_Size + folder_size > MAX_ARCHIVE_SIZE) {
+				// Add the root folder first
+				LOGINFO("Adding root folder '%s' before splitting.\n", FileName.c_str());
+				if (addFile(FileName, true) != 0) {
+					LOGERR("Error adding folder '%s' to split archive.\n", FileName.c_str());
+					return -1;
+				}
 				LOGINFO("Calling Generate_Multiple_Archives\n");
 				if (Generate_Multiple_Archives(FileName) < 0)
 					return -1;
@@ -717,7 +724,11 @@ int twrpTar::tarDirs(bool include_root) {
 			if (strcmp(de->d_name, ".") != 0) {
 				subfolder += de->d_name;
 			} else {
-				LOGINFO("addFile '%s' including root: %i\n", buf, include_root);
+				std::string parentDir = basename(subfolder.c_str());
+				LOGINFO("parentDir: %s\n", parentDir.c_str());
+				if (!parentDir.compare("lost+found"))
+					continue;
+				LOGINFO("tarDirs addFile '%s' including root: %i\n", subfolder.c_str(), include_root);
 				if (addFile(subfolder, include_root) != 0)
 					return -1;
 				continue;

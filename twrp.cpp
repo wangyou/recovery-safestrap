@@ -108,10 +108,18 @@ int main(int argc, char **argv) {
 	gui_loadResources();
 
 #ifdef HAVE_SELINUX
+	if (TWFunc::Path_Exists("/prebuilt_file_contexts")) {
+		if (TWFunc::Path_Exists("/file_contexts")) {
+			printf("Renaming regular /file_contexts -> /file_contexts.bak\n");
+			rename("/file_contexts", "/file_contexts.bak");
+		}
+		printf("Moving /prebuilt_file_contexts -> /file_contexts\n");
+		rename("/prebuilt_file_contexts", "/file_contexts");
+	}
 	struct selinux_opt selinux_options[] = {
 		{ SELABEL_OPT_PATH, "/file_contexts" }
 	};
-    selinux_handle = selabel_open(SELABEL_CTX_FILE, selinux_options, 1);
+	selinux_handle = selabel_open(SELABEL_CTX_FILE, selinux_options, 1);
 	if (!selinux_handle)
 		printf("No file contexts for SELinux\n");
 	else
@@ -152,6 +160,9 @@ int main(int argc, char **argv) {
 				ptr = argptr;
 				index2 = 0;
 				while (*ptr != '=' && *ptr != '\n')
+					ptr++;
+				// skip the = before grabbing Zip_File
+				while (*ptr == '=')
 					ptr++;
 				if (*ptr) {
 					Zip_File = ptr;

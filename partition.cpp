@@ -1,24 +1,20 @@
-/* Partition class for TWRP
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 and
- * only version 2 as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301, USA.
- *
- * The code was written from scratch by Dees_Troy dees_troy at
- * yahoo
- *
- * Copyright (c) 2012
- */
+/*
+	Copyright 2012 bigbiff/Dees_Troy TeamWin
+	This file is part of TWRP/TeamWin Recovery Project.
+
+	TWRP is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	TWRP is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with TWRP.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,6 +49,9 @@ extern "C" {
 	#include "make_ext4fs.h"
 #endif
 }
+#ifdef HAVE_SELINUX
+#include "selinux/selinux.h"
+#endif
 
 using namespace std;
 
@@ -599,9 +598,9 @@ void TWPartition::Setup_Image(bool Display_Error) {
 		Backup_Size = Size;
 	} else {
 		if (Display_Error)
-			LOGERR("Unable to find parition size for '%s'\n", Mount_Point.c_str());
+			LOGERR("Unable to find partition size for '%s'\n", Mount_Point.c_str());
 		else
-			LOGINFO("Unable to find parition size for '%s'\n", Mount_Point.c_str());
+			LOGINFO("Unable to find partition size for '%s'\n", Mount_Point.c_str());
 	}
 }
 
@@ -1325,6 +1324,12 @@ bool TWPartition::Wipe_EXT4() {
 		LOGERR("Unable to wipe '%s' using function call.\n", Mount_Point.c_str());
 		return false;
 	} else {
+		#ifdef HAVE_SELINUX
+		string sedir = Mount_Point + "/lost+found";
+		PartitionManager.Mount_By_Path(sedir.c_str(), true);
+		rmdir(sedir.c_str());
+		mkdir(sedir.c_str(), S_IRWXU | S_IRWXG | S_IWGRP | S_IXGRP);
+		#endif
 		return true;
 	}
 #else

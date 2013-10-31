@@ -4,9 +4,9 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES := events.c resources.c
 
 ifneq ($(TW_BOARD_CUSTOM_GRAPHICS),)
-    LOCAL_SRC_FILES += $(TW_BOARD_CUSTOM_GRAPHICS)
+    LOCAL_SRC_FILES += $(TW_BOARD_CUSTOM_GRAPHICS) graphics_overlay.c
 else
-    LOCAL_SRC_FILES += graphics.c
+    LOCAL_SRC_FILES += graphics.c graphics_overlay.c
 endif
 
 LOCAL_C_INCLUDES +=\
@@ -66,6 +66,11 @@ endif
 ifneq ($(BOARD_USE_CUSTOM_RECOVERY_FONT),)
   LOCAL_CFLAGS += -DBOARD_USE_CUSTOM_RECOVERY_FONT=$(BOARD_USE_CUSTOM_RECOVERY_FONT)
 endif
+
+ifeq ($(TARGET_USES_QCOM_BSP), true)
+    LOCAL_CFLAGS += -DQCOM_BSP
+endif
+
 LOCAL_STATIC_LIBRARIES += liblog libpng libpixelflinger_static
 LOCAL_MODULE_TAGS := eng
 LOCAL_MODULE := libminui_ss

@@ -28,7 +28,7 @@ SPLASH_CONTINUE_KEY := KEY_BACK
 
 TW_DEFAULT_EXTERNAL_STORAGE := true
 TARGET_USERIMAGES_USE_EXT4 := true
-TW_BRIGHTNESS_PATH := /sys/class/lcd/panel/backlight
+TW_BRIGHTNESS_PATH := /sys/class/backlight/panel/brightness
 
 # Virtual partition size default (in mb)
 BOARD_DEFAULT_VIRT_SYSTEM_SIZE := 2600

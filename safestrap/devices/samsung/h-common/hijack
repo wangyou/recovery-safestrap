@@ -110,7 +110,7 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 		# turn on hard button backlight
 		/sbin/bbx echo 200 > /sys/class/leds/button-backlight/brightness
 
-		if [ "$ALT_SYSTEM_MODE" = "2" ] || [ $($RECOVERY_DIR/safestrapmenu $ALT_SYSTEM_MODE >/dev/kmsg ;echo $?) -eq 0 ]; then
+		if [ "$ALT_SYSTEM_MODE" = "2" ] || [ $($RECOVERY_DIR/safestrapmenu $ALT_SYSTEM_MODE > /dev/null 2>&1;echo $?) -eq 0 ]; then
 			# turn off hard button backlight
 			/sbin/bbx echo 0 > /sys/class/leds/button-backlight/brightness
 

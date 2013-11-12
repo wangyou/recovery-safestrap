@@ -22,7 +22,6 @@ LOCAL_C_INCLUDES += \
     system/core/include \
     external/jpeg
 
-TARGET_USES_QCOM_BSP := true
 ifeq ($(TARGET_USES_QCOM_BSP), true)
     LOCAL_CFLAGS += -DQCOM_BSP
 endif

@@ -83,6 +83,7 @@ static bool overlay_supported = false;
 
 bool target_has_overlay(char *version)
 {
+#ifdef QCOM_BSP
     int ret;
     int mdp_version;
 
@@ -101,6 +102,9 @@ bool target_has_overlay(char *version)
     }
 
     return true;//overlay_supported;
+#else
+    return false;
+#endif
 }
 
 #ifdef QCOM_BSP

@@ -83,6 +83,7 @@ static bool overlay_supported = false;
 
 bool target_has_overlay(char *version)
 {
+#ifdef QCOM_BSP
     int ret;
     int mdp_version;
 
@@ -100,7 +101,10 @@ bool target_has_overlay(char *version)
         }
     }
 
-    return overlay_supported;
+    return true;//overlay_supported;
+#else
+    return false;
+#endif
 }
 
 #ifdef QCOM_BSP
@@ -138,8 +142,6 @@ int alloc_ion_mem(unsigned int size)
     int result;
     struct ion_fd_data fd_data;
     struct ion_allocation_data ionAllocData;
-
-    printf("alloc_ion_mem: size == %ul\n", size);
 
     mem_info.ion_fd = open("/dev/ion", O_RDWR|O_DSYNC);
     if (mem_info.ion_fd < 0) {
@@ -187,11 +189,8 @@ int allocate_overlay(int fd, GGLSurface gr_fb[])
     if (!overlay_supported)
         return -EINVAL;
 
-    printf("allocate_overlay: fd == %d\n", fd);
-
     // Check if overlay is already allocated
     if (MSMFB_NEW_REQUEST == overlay_id) {
-        printf("allocate_overlay: (MSMFB_NEW_REQUEST == overlay_id)\n");
         struct mdp_overlay overlay;
         int ret = 0;
 
@@ -224,8 +223,6 @@ int free_overlay(int fd)
 {
     if (!overlay_supported)
         return -EINVAL;
-
-    printf("free_overlay: fd == %d\n", fd);
 
     int ret = 0;
     struct mdp_display_commit ext_commit;
@@ -265,8 +262,6 @@ int overlay_display_frame(int fd, GGLubyte* data, size_t size)
         perror("display_frame failed, no overlay\n");
         return -EINVAL;
     }
-
-    printf("overlay_display_frame: fd == %d\n", fd);
 
     memcpy(mem_info.mem_buf, data, size);
 

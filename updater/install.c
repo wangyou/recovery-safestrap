@@ -29,8 +29,14 @@
 #include <time.h>
 #include <selinux/selinux.h>
 #include <ftw.h>
-#include <sys/capability.h>
 #include <sys/xattr.h>
+#if !defined(TARGET_RECOVERY_SKIP_CAPABILITIES)
+#if defined(XATTR_CAPS_SUFFIX)
+#include <sys/capability.h>
+#else
+#include <linux/capability.h>
+#endif
+#endif
 #include <linux/xattr.h>
 #include <inttypes.h>
 
@@ -800,13 +806,16 @@ static int ApplyParsedPerms(
 
     if (parsed.has_capabilities && S_ISREG(statptr->st_mode)) {
         if (parsed.capabilities == 0) {
+#if defined(XATTR_CAPS_SUFFIX) && !defined(TARGET_RECOVERY_SKIP_CAPABILITIES)
             if ((removexattr(filename, XATTR_NAME_CAPS) == -1) && (errno != ENODATA)) {
                 // Report failure unless it's ENODATA (attribute not set)
                 printf("ApplyParsedPerms: removexattr of %s to %" PRIx64 " failed: %s\n",
                        filename, parsed.capabilities, strerror(errno));
                 bad++;
             }
+#endif
         } else {
+#if defined(XATTR_CAPS_SUFFIX) && !defined(TARGET_RECOVERY_SKIP_CAPABILITIES)
             struct vfs_cap_data cap_data;
             memset(&cap_data, 0, sizeof(cap_data));
             cap_data.magic_etc = VFS_CAP_REVISION | VFS_CAP_FLAGS_EFFECTIVE;
@@ -819,6 +828,7 @@ static int ApplyParsedPerms(
                        filename, parsed.capabilities, strerror(errno));
                 bad++;
             }
+#endif
         }
     }
 

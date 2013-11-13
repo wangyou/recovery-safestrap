@@ -42,7 +42,7 @@
 #include <linux/fb.h>
 #include <linux/kd.h>
 
-#ifdef QCOM_BSP
+#ifdef TW_QCOM_BSP
 #include "msm_mdp.h"
 #include "msm_ion.h"
 #endif
@@ -53,7 +53,7 @@
 
 #define MDP_V4_0 400
 
-#ifdef QCOM_BSP
+#ifdef TW_QCOM_BSP
 #define ALIGN(x, align) (((x) + ((align)-1)) & ~((align)-1))
 
 typedef struct {
@@ -77,13 +77,13 @@ static int map_mdp_pixel_format()
 #endif
     return format;
 }
-#endif // #ifdef QCOM_BSP
+#endif // #ifdef TW_QCOM_BSP
 
 static bool overlay_supported = false;
 
 bool target_has_overlay(char *version)
 {
-#ifdef QCOM_BSP
+#ifdef TW_QCOM_BSP
     int ret;
     int mdp_version;
 
@@ -107,7 +107,7 @@ bool target_has_overlay(char *version)
 #endif
 }
 
-#ifdef QCOM_BSP
+#ifdef TW_QCOM_BSP
 
 int free_ion_mem(void) {
     if (!overlay_supported)
@@ -313,5 +313,5 @@ int overlay_display_frame(int fd, GGLubyte* data, size_t size)
     return -EINVAL;
 }
 
-#endif //#ifdef QCOM_BSP
+#endif //#ifdef TW_QCOM_BSP
 

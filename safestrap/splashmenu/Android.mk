@@ -23,8 +23,8 @@ ifdef SPLASH_USE_REBOOT
   LOCAL_CFLAGS += -DSPLASH_USE_REBOOT
 endif
 
-ifeq ($(TARGET_USES_QCOM_BSP), true)
-    LOCAL_CFLAGS += -DQCOM_BSP
+ifeq ($(TW_TARGET_USES_QCOM_BSP), true)
+    LOCAL_CFLAGS += -DTW_QCOM_BSP
 endif
 
 LOCAL_MODULE := safestrapmenu

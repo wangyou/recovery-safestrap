@@ -213,8 +213,8 @@ static int get_framebuffer(GGLSurface *fb)
         }
     }
     else {
-#ifdef QCOM_BSP
-        printf("qcom overlay detected -- QCOM_BSP enabled!\n");
+#ifdef TW_QCOM_BSP
+        printf("qcom overlay detected -- TW_QCOM_BSP enabled!\n");
 #else
         printf("qcom overlay detected -- not flagged to handle!\n");
 #endif

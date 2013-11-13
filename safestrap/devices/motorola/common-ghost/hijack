@@ -1,6 +1,6 @@
 #!/system/bin/sh
 # By Hashcode
-PATH=/sbin:/system/sbin:/system/bin:/system/xbin
+PATH=/system/xbin:/system/bin:/sbin
 
 RECOVERY_DIR=/system/etc/safestrap
 BBX=/sbin/bbx
@@ -13,7 +13,7 @@ ALT_SYSTEM_MODE="0"
 
 if [ ! -f "$SS_CHECK_FILE" ]; then
 	# remount root as rw
-	$RECOVERY_DIR/bbx mount -o remount,rw rootfs
+	mount -o remount,rw rootfs
 
 	# don't do this processing again
 	$RECOVERY_DIR/bbx touch $SS_CHECK_FILE
@@ -166,7 +166,6 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 		$BBX mkdir /tmp
 		# move bins out of the way so they don't block
 		$BBX mv /sbin/adbd /sbin/adbd.old
-		$BBX mv /sbin/taskset /sbin/taskset.old
 		$BBX mv /init /init.old
 
 		if [ -d "/sys/fs/selinux" ]; then
@@ -177,6 +176,9 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 		# extract recovery ramdisk
 		cd /
 		$BBX gzip -dc $RECOVERY_DIR/ramdisk-recovery.img | $BBX cpio -iu
+		$BBX mv /sbin/getprop /sbin/getprop.bak
+		$BBX rm /sbin/stop /sbin/stop.bak
+		$BBX rm /sbin/taskset /sbin/taskset.bak
 		$BBX unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
 		$BBX chmod 750 /sbin/*
 		$BBX sync
@@ -271,6 +273,10 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 				$BBX cp -R $RECOVERY_DIR/rootfs/* /
 			fi
 
+			if [ -d "/sys/fs/selinux" ]; then
+				fixSELinux
+			fi
+
 			if [ -f "$CURRENT_SYS_DIR/etc/rootfs/sbin/adbd" ]; then
 				$BBX mv /sbin/adbd /sbin/adbd.old
 			fi
@@ -278,10 +284,6 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 				$BBX mv /init /init.old
 			fi
 			$BBX cp -R $CURRENT_SYS_DIR/etc/rootfs/* /
-
-			if [ -d "/sys/fs/selinux" ]; then
-				fixSELinux
-			fi
 
 			# adjust stock init.target.rc file to include /sbin/fixboot.sh
 			$BBX cat /init.target.rc | $BBX sed "s/on fs/on fs\n    exec \/sbin\/fixboot.sh/" > /init.target.rc.new0

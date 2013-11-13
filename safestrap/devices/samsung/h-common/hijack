@@ -1,6 +1,6 @@
 #!/system/bin/sh
 # By Hashcode
-PATH=/sbin:/system/sbin:/system/bin:/system/xbin
+PATH=/system/xbin:/system/bin:/sbin
 
 RECOVERY_DIR=/system/etc/safestrap
 BBX=/sbin/bbx
@@ -128,7 +128,6 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 		$BBX mkdir /tmp
 		# move bins out of the way so they don't block
 		$BBX mv /sbin/adbd /sbin/adbd.old
-		$BBX mv /sbin/taskset /sbin/taskset.old
 		$BBX mv /init /init.old
 
 		if [ -d "/sys/fs/selinux" ]; then
@@ -139,6 +138,9 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 		# extract recovery ramdisk
 		cd /
 		$BBX gzip -dc $RECOVERY_DIR/ramdisk-recovery.img | $BBX cpio -iu
+		$BBX mv /sbin/getprop /sbin/getprop.bak
+		$BBX rm /sbin/stop /sbin/stop.bak
+		$BBX rm /sbin/taskset /sbin/taskset.bak
 		$BBX unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
 		$BBX chmod 750 /sbin/*
 		$BBX sync
@@ -249,11 +251,11 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 			$BBX cp -R $CURRENT_SYS_DIR/etc/rootfs/* /
 
 			# adjust stock init.rc file to include /sbin/fixboot.sh
-			/sbin/bbx cat /init.rc | /sbin/bbx sed "s/on fs/on fs\nexec \/sbin\/fixboot.sh/" > /init.rc.new0
-			/sbin/bbx cat /init.rc.new0 | /sbin/bbx sed "s/service sdcard \/system\/bin\/sdcard \/data\/media/service sdcard \/system\/bin\/sdcard \/datamedia\/media/" > /init.rc.new2
-			/sbin/bbx mv /init.rc /init.rc.old
-			/sbin/bbx mv /init.rc.new2 /init.rc
-			/sbin/bbx rm /init.rc.new*
+			$BBX cat /init.rc | $BBX sed "s/on fs/on fs\nexec \/sbin\/fixboot.sh/" > /init.rc.new0
+			$BBX cat /init.rc.new0 | $BBX sed "s/service sdcard \/system\/bin\/sdcard \/data\/media/service sdcard \/system\/bin\/sdcard \/datamedia\/media/" > /init.rc.new2
+			$BBX mv /init.rc /init.rc.old
+			$BBX mv /init.rc.new2 /init.rc
+			$BBX rm /init.rc.new*
 
 			# adjust init.<hardware>.rc for where to mount /sdcard
 			$BBX cat /init.qcom.rc | $BBX sed "s/service sdcard \/system\/bin\/sdcard \/data\/media/service sdcard \/system\/bin\/sdcard \/datamedia\/media/" > /init.qcom.rc.new0

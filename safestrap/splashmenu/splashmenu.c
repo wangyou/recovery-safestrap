@@ -38,6 +38,7 @@ enum {
   BUTTON_TIMEOUT,
 };
 
+static unsigned long total_delay = 8;
 
 /**
  * compare_string()
@@ -64,6 +65,7 @@ static int wait_key(int key, int skipkey) {
   int i;
   int result = 0;
   int keyp = 0;
+  float delay_counter = 0;
 
 //  evt_init();
   for(i=0; i < 400; i++) {
@@ -73,7 +75,10 @@ static int wait_key(int key, int skipkey) {
       break;
     }
     else {
-      usleep(20000); //20ms * 400 = 8sec
+      usleep(20000);
+      delay_counter += .02;
+      if (delay_counter >= total_delay)
+        break;
     }
   }
 //  evt_exit();
@@ -89,7 +94,7 @@ int main(int argc, char **argv) {
 
   ui_init();
 
-  if (argc == 2 && 0 == strcmp(argv[1], "1")) {
+  if (argc >= 2 && 0 == strcmp(argv[1], "1")) {
       ui_set_background(BACKGROUND_ALT);
 #ifdef SPLASH_USE_REBOOT
   } else if (argc == 3 && 0 == strcmp(argv[1], "reboot")) {
@@ -114,8 +119,19 @@ int main(int argc, char **argv) {
       LOGI("result: %d\n", result);
       exit(result);
 #endif
+  } else if (argc >= 2 && 0 == strcmp(argv[1], "2")) {
+      ui_set_background(BACKGROUND_BLANK);
   } else {
       ui_set_background(BACKGROUND_DEFAULT);
+  }
+
+  // HASH: if a 3rd param is passed then use it for the total # of seconds to wait
+  if (argc == 3) {
+    long int temp = 8;
+    char * pEnd;
+    temp = strtol(argv[2], &pEnd, 10);
+    if (temp > 0)
+      total_delay = (float)temp;
   }
 
   ui_show_text(1);

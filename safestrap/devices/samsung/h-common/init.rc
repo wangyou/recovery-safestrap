@@ -2,24 +2,17 @@ import /init.recovery.${ro.hardware}.rc
 
 on early-init
     start ueventd
+    start healthd
 
 on init
     export PATH /sbin
     export LD_LIBRARY_PATH .:/sbin
     export ANDROID_ROOT /system
     export ANDROID_DATA /data
-    export EXTERNAL_STORAGE /external_sd
-
-    symlink /system/etc /etc
+    export EXTERNAL_STORAGE /sdcard
 
     mkdir /boot
     mkdir /recovery
-    mkdir /sdcard
-    mkdir /internal_sd
-    mkdir /external_sd
-    mkdir /sd-ext
-    mkdir /datadata
-    mkdir /emmc
     mkdir /system
     mkdir /data
     mkdir /cache
@@ -37,6 +30,7 @@ on init
     write /sys/class/android_usb/android0/iManufacturer ${ro.product.manufacturer}
     write /sys/class/android_usb/android0/iProduct ${ro.product.model}
     write /sys/class/android_usb/android0/iSerial ${ro.serialno}
+
 
 on boot
     exec /sbin/fixboot.sh
@@ -73,13 +67,20 @@ on boot
 
     class_start default
 
+on property:sys.powerctl=*
+   powerctl ${sys.powerctl}
+
 service ueventd /sbin/ueventd
+    critical
+
+service healthd /sbin/healthd -n
     critical
 
 service recovery /sbin/recovery
 
-service adbd /sbin/adbd recovery
+service adbd /sbin/strace -ff -F -tt -s 200 /sbin/adbd recovery
     disabled
+    socket adbd stream 660 system system
 
 # Always start adbd on userdebug and eng builds
 on property:ro.debuggable=1

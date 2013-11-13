@@ -104,18 +104,17 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 	fi
 
 	# set /dev/ion permissions
-	/sbin/bbx chmod 666 /dev/ion
+	$BBX chmod 666 /dev/ion
 
 	# turn on hard button backlight
-	/sbin/bbx echo 200 > /sys/class/leds/button-backlight/brightness
+	$BBX echo 200 > /sys/class/leds/button-backlight/brightness
 
 	if [ "$ALT_SYSTEM_MODE" = "2" ] || [ $($RECOVERY_DIR/safestrapmenu $ALT_SYSTEM_MODE > /dev/null 2>&1;echo $?) -eq 0 ]; then
-		if [ "$ALT_SYSTEM_MODE" = "2" ]; then
-			/sbin/bbx sleep 1
-		fi
-
 		# turn off hard button backlight
-		/sbin/bbx echo 0 > /sys/class/leds/button-backlight/brightness
+		$BBX echo 0 > /sys/class/leds/button-backlight/brightness
+
+		# HASH: Hacky here.  We need to setup the framebuffer
+		$RECOVERY_DIR/safestrapmenu 2 1
 
 		# filesystem cleanup
 		$BBX rm /d
@@ -164,7 +163,7 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 	fi
 
 	# turn off hard button backlight
-	/sbin/bbx echo 0 > /sys/class/leds/button-backlight/brightness
+	$BBX echo 0 > /sys/class/leds/button-backlight/brightness
 
 	# either way we mount virtual "system" or real "system" and check for:
 	# 1. /system/etc/rootfs (2nd-init boot)

@@ -1,6 +1,6 @@
 #!/system/bin/sh
 # By Hashcode
-PATH=/system/xbin:/system/bin:/sbin
+PATH=/sbin:/system/bin:/system/xbin
 
 RECOVERY_DIR=/system/etc/safestrap
 BBX=/sbin/bbx

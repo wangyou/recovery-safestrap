@@ -121,6 +121,9 @@ int main(int argc, char **argv) {
 #endif
   } else if (argc >= 2 && 0 == strcmp(argv[1], "2")) {
       ui_set_background(BACKGROUND_BLANK);
+  } else if (argc >= 2 && 0 == strcmp(argv[1], "3")) {
+      ui_set_background(BACKGROUND_BLANK);
+      gr_fb_blank(1);
   } else {
       ui_set_background(BACKGROUND_DEFAULT);
   }

@@ -675,6 +675,7 @@ int gr_init(void)
     GGLContext *gl = gr_context;
 
     gr_init_font();
+/*
     gr_vt_fd = open("/dev/tty0", O_RDWR | O_SYNC);
     if (gr_vt_fd < 0) {
         // This is non-fatal; post-Cupcake kernels don't have tty0.
@@ -684,7 +685,7 @@ int gr_init(void)
         gr_exit();
         return -1;
     }
-
+*/
     gr_fb_fd = get_framebuffer(gr_framebuffer);
     if (gr_fb_fd < 0) {
         perror("Unable to get framebuffer.\n");
@@ -732,9 +733,11 @@ void gr_exit(void)
 
     free(gr_mem_surface.data);
 
+/*
     ioctl(gr_vt_fd, KDSETMODE, (void*) KD_TEXT);
     close(gr_vt_fd);
     gr_vt_fd = -1;
+*/
 }
 
 int gr_fb_width(void)

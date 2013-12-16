@@ -9,8 +9,12 @@ SS_CHECK_FILE=/.safestrapped
 CURRENT_SYS_DIR=/system
 CURRENT_USER_DIR=/data
 ALT_SYSTEM_MODE="0"
+RUN_SS="0"
 
 if [ ! -f "$SS_CHECK_FILE" ]; then
+	# startup safestrap
+	RUN_SS="1"
+
 	# remount root as rw
 	mount -o remount,rw rootfs
 
@@ -25,10 +29,12 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 	$BBX cp $RECOVERY_DIR/ss.config $SS_CONFIG
 	$BBX chmod 600 $SS_CONFIG
 	$BBX chown 0.0 $SS_CONFIG
+fi
 
 	. /system/etc/safestrap/ss_function.sh
 	readConfig
 
+if [ "$RUN_SS" = "1" ]; then
 	if [ "$DEBUG_MODE" = "1" ]; then
 		dumpConfig
 	fi
@@ -91,6 +97,8 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 		$BBX losetup $BLOCK_DIR/loop-userdata $SS_DIR/$SLOT_LOC/userdata.img
 		$BBX mount -t $USERDATA_FSTYPE $BLOCK_DIR/loop-userdata $USER2_MNT
 		CURRENT_USER_DIR=$USER2_MNT
+	else
+		$BBX mount -t $USERDATA_FSTYPE $BLOCK_DIR/$BLOCK_USERDATA /data
 	fi
 
 	if [ -f $CURRENT_USER_DIR/$SS_RECOVERY_FILE ]; then
@@ -101,6 +109,8 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 	if [ "$CURRENT_USER_DIR" = "$USER2_MNT" ]; then
 		$BBX umount $USER2_MNT
 		$BBX losetup -d $BLOCK_DIR/loop-userdata
+	else
+		$BBX umount $CURRENT_USER_DIR
 	fi
 
 	# set /dev/ion permissions
@@ -315,7 +325,7 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 fi
 
 # Run current file like expected by the system
-$BBX echo "\nPassing through hijack: /system/$HIJACK_LOC/$HIJACK_BIN.bin $@\n" > /dev/kmsg
+$BBX echo "Passing through hijack: /system/$HIJACK_LOC/$HIJACK_BIN.bin $@" > /dev/kmsg
 
-/system/bin/sh /system/$HIJACK_LOC/$HIJACK_BIN.bin "$@"
+/system/$HIJACK_LOC/$HIJACK_BIN.bin "$@"
 

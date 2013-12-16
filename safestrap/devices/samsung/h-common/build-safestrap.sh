@@ -13,4 +13,5 @@ cp -fr h-common/ss.config $OUT/install-files/etc/safestrap/ss.config
 cp -fr h-common/ss.config $OUT/APP/ss.config
 cp -fr h-common/ss.config $OUT/recovery/root/ss.config
 cp -fr h-common/rootfs/* $OUT/install-files/etc/safestrap/rootfs/
+cp -fr ../../sbin-extras/* $OUT/recovery/root/sbin/
 cd ../../../gui

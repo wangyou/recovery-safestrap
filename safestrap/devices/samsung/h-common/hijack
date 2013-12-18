@@ -10,7 +10,13 @@ CURRENT_SYS_DIR=/system
 CURRENT_USER_DIR=/data
 ALT_SYSTEM_MODE="0"
 RUN_SS="0"
+RECOVERY_BOOT=$(cat /proc/cmdline | $RECOVERY_DIR/bbx grep -c "androidboot.boot_recovery=1")
+CHARGER_BOOT=$(cat /proc/cmdline | $RECOVERY_DIR/bbx grep -c "androidboot.bootchg=true")
 
+# check cmdline for androidboot.mode=charger
+# check cmdline for androidboot.boot_recovery=1
+if [ "$RECOVERY_BOOT" -ne "1" ]; then
+if [ "$CHARGER_BOOT" -ne "1" ]; then
 if [ ! -f "$SS_CHECK_FILE" ]; then
 	# startup safestrap
 	RUN_SS="1"
@@ -35,12 +41,15 @@ fi
 	readConfig
 
 if [ "$RUN_SS" = "1" ]; then
+	echo "<1>Running Safestrap hijack" > /dev/kmsg
+
 	if [ "$DEBUG_MODE" = "1" ]; then
 		dumpConfig
 	fi
 
 	# set backlight
-	$BBX echo $BACKLIGHT_BRIGHTNESS_VALUE > $BACKLIGHT_BRIGHTNESS_PATH
+	# HASH: this blows up N3
+#	$BBX echo $BACKLIGHT_BRIGHTNESS_VALUE > $BACKLIGHT_BRIGHTNESS_PATH
 
 	# create SS loopdevs
 	$BBX mknod -m600 /dev/block/loop-system b 7 99
@@ -91,6 +100,12 @@ if [ "$RUN_SS" = "1" ]; then
 		fi
 	fi
 
+#######
+#	if [ "$DEBUG_MODE" = "1" ]; then
+#		CMD_LINE=$(cat /proc/cmdline)
+#		$BBX echo "CMD_LINE=$CMD_LINE\n" >> $SS_DIR/cmd_line
+#	fi
+
 	# check for .recovery_mode on current /data mount
 	if [ "$ALT_SYSTEM_MODE" = "1" ]; then
 		# setup loopback
@@ -116,13 +131,23 @@ if [ "$RUN_SS" = "1" ]; then
 	# set /dev/ion permissions
 	$BBX chmod 666 /dev/ion
 
-	# turn on hard button backlight
-	$BBX echo 200 > /sys/class/leds/button-backlight/brightness
+	ENTER_RECOVERY="0"
+	CHECK_RECOVERY_ENTRY="1"
+	if [ "$ALT_SYSTEM_MODE" = "2" ]; then
+		ENTER_RECOVERY="1"
+        fi
 
-	if [ "$ALT_SYSTEM_MODE" = "2" ] || [ $($RECOVERY_DIR/safestrapmenu $ALT_SYSTEM_MODE > /dev/null 2>&1;echo $?) -eq 0 ]; then
-		# turn off hard button backlight
-		$BBX echo 0 > /sys/class/leds/button-backlight/brightness
+	if [ "$ENTER_RECOVERY" = "0" ]; then
+		CHECK_RECOVERY_ENTRY=$($RECOVERY_DIR/safestrapmenu $ALT_SYSTEM_MODE > /dev/null 2>&1;echo $?)
+		if [ "$CHECK_RECOVERY_ENTRY" = "0" ]; then
+			ENTER_RECOVERY="1"
+		fi
+		if [ "$CHECK_RECOVERY_ENTRY" = "2" ]; then
+			ALT_SYSTEM_MODE="0"
+		fi
+	fi
 
+	if [ "$ENTER_RECOVERY" = "1" ]; then
 		# HASH: Hacky here.  We need to setup the framebuffer
 		$RECOVERY_DIR/safestrapmenu 2 1
 
@@ -171,9 +196,6 @@ if [ "$RUN_SS" = "1" ]; then
 		/sbin/taskset -c 0 /sbin/2nd-init > /dev/kmsg
 		exit
 	fi
-
-	# turn off hard button backlight
-	$BBX echo 0 > /sys/class/leds/button-backlight/brightness
 
 	# either way we mount virtual "system" or real "system" and check for:
 	# 1. /system/etc/rootfs (2nd-init boot)
@@ -323,9 +345,15 @@ if [ "$RUN_SS" = "1" ]; then
 		$BBX umount $DATAMEDIA_MNT
 	fi
 fi
+else
+	echo "<1>Skip safestrap hijack because of charger mode" > /dev/kmsg
+fi
+else
+	echo "<1>Skip safestrap hijack because of recovery mode" > /dev/kmsg
+fi
 
 # Run current file like expected by the system
-$BBX echo "Passing through hijack: /system/$HIJACK_LOC/$HIJACK_BIN.bin $@" > /dev/kmsg
+$BBX echo "<1>Passing through hijack: /system/$HIJACK_LOC/$HIJACK_BIN.bin $@" > /dev/kmsg
 
 /system/$HIJACK_LOC/$HIJACK_BIN.bin "$@"
 

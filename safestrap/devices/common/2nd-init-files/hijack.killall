@@ -10,7 +10,7 @@ unmountFS() {
 			break;
 		fi
 		for j in $(bbx mount | bbx grep $UNMOUNT_FS_TYPE | bbx awk '{print $3}'); do
-			echo "umount -l $j" > /dev/kmsg
+			echo "<1>umount -l $j" > /dev/kmsg
 			bbx umount -l "$j"
 		done
 		bbx sleep 1
@@ -23,7 +23,7 @@ bbx sleep 1s
 # kill all services
 for i in $(getprop | bbx grep init.svc | bbx sed -r 's/^\[init\.svc\.(.+)\]:.*$/\1/'); do
 	if bbx [[ ! "${i}" = "$SKIP_SERVICE" ]]; then
-		echo "stopping ${i}" > /dev/kmsg
+		echo "<1>stopping ${i}" > /dev/kmsg
 		stop ${i}
 		bbx sleep 1
 	fi
@@ -52,8 +52,8 @@ unmountFS f2fs
 # bbx umount /mnt/obb
 
 # kill any existing adbd processes
-bbx kill $(bbx ps | bbx grep adbd)
-bbx kill -s KILL `bbx ps | bbx grep ueventd | bbx head -n 1 | bbx sed 's_ root       [0-9]* [A-Z]    /sbin/ueventd__'`
+bbx kill $(bbx ps | bbx grep adbd | bbx head -n 1 | bbx awk '{print $1}')
+bbx kill -s KILL $(bbx ps | bbx grep ueventd | bbx head -n 1 | bbx awk '{print $1}')
 
 # try to remove our sockets!
 bbx rm -f /dev/socket/*

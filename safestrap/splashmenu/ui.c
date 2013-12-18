@@ -357,12 +357,19 @@ void ui_show_text(int visible)
     pthread_mutex_unlock(&gUpdateMutex);
 }
 
-int ui_key_pressed(int key, int skipkey)
+int ui_key_pressed(int key, int skipkey, int disablekey)
 {
     // This is a volatile static array, don't bother locking
-    if (key_pressed[key] != 0) return key;
-    else if (key_pressed[skipkey] != 0) return skipkey;
-    else return 0;
+    if (key_pressed[key] != 0) {
+        return key;
+    }
+    else if (key_pressed[skipkey] != 0) {
+        return skipkey;
+    }
+    else if (disablekey > -1) {
+        if (key_pressed[disablekey] != 0) return disablekey;
+    }
+    return 0;
 }
 
 void ui_clear_key_queue() {

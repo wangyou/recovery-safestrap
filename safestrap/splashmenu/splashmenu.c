@@ -32,12 +32,6 @@
 #endif
 #endif
 
-enum { 
-  BUTTON_ERROR,
-  BUTTON_PRESSED,
-  BUTTON_TIMEOUT,
-};
-
 static unsigned long total_delay = 8;
 
 /**
@@ -61,7 +55,7 @@ static void ui_finish(void) {
  * wait_key()
  *
  */
-static int wait_key(int key, int skipkey) {
+static int wait_key(int key, int skipkey, int disablekey) {
   int i;
   int result = 0;
   int keyp = 0;
@@ -69,7 +63,7 @@ static int wait_key(int key, int skipkey) {
 
 //  evt_init();
   for(i=0; i < 400; i++) {
-    keyp = ui_key_pressed(key, skipkey);
+    keyp = ui_key_pressed(key, skipkey, disablekey);
     if(keyp != 0) {
       result = keyp;
       break;
@@ -87,7 +81,7 @@ static int wait_key(int key, int skipkey) {
 
 
 int main(int argc, char **argv) {
-  int defmode, mode, status = BUTTON_ERROR;
+  int defmode, mode;
   int result = 1;
 
   LOGI("Starting Safestrap Splash\n");
@@ -139,12 +133,11 @@ int main(int argc, char **argv) {
 
   ui_show_text(1);
 
-  int keyp = wait_key(SPLASH_RECOVERY_KEY, SPLASH_CONTINUE_KEY);
-  status = ((keyp == SPLASH_RECOVERY_KEY) ? BUTTON_PRESSED : BUTTON_TIMEOUT);
-
-  if (status == BUTTON_PRESSED) {
-      result = 0;
-  }
+  int keyp = wait_key(SPLASH_RECOVERY_KEY, SPLASH_CONTINUE_KEY, SPLASH_DISABLE_KEY);
+  if (keyp == SPLASH_RECOVERY_KEY)
+    result = 0;
+  else if (keyp == SPLASH_DISABLE_KEY)
+    result = 2;
 
   ui_set_background(BACKGROUND_BLANK);
   ui_finish();

@@ -119,12 +119,22 @@ $(warning **********************************************************************
 $(error stopping)
 endif
 
+ifeq ($(BUILD_SAFESTRAP), true)
+ifeq "$(wildcard bootable/recovery/safestrap/devices/common/res/$(DEVICE_RESOLUTION))" ""
+$(warning ********************************************************************************)
+$(warning * DEVICE_RESOLUTION ($(DEVICE_RESOLUTION)) does NOT EXIST in bootable/recovery/safestrap/devices/common/res )
+$(warning * Please choose an existing theme or create a new one for your device )
+$(warning ********************************************************************************)
+$(error stopping)
+endif
+else
 ifeq "$(wildcard bootable/recovery/gui/devices/$(DEVICE_RESOLUTION))" ""
 $(warning ********************************************************************************)
 $(warning * DEVICE_RESOLUTION ($(DEVICE_RESOLUTION)) does NOT EXIST in bootable/recovery/gui/devices )
 $(warning * Please choose an existing theme or create a new one for your device )
 $(warning ********************************************************************************)
 $(error stopping)
+endif
 endif
 
 LOCAL_C_INCLUDES += bionic external/stlport/stlport $(commands_recovery_local_path)/gui/devices/$(DEVICE_RESOLUTION)

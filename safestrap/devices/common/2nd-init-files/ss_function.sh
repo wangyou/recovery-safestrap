@@ -34,29 +34,29 @@ readConfig() {
 
 # print ss.config to kmsg
 dumpConfig() {
-	$BBX echo "DUMP ss.config" > /dev/kmsg
-	$BBX echo "BLOCK_SYSTEM=$BLOCK_SYSTEM" > /dev/kmsg
-	$BBX echo "SYSTEM_FSTYPE=$SYSTEM_FSTYPE" > /dev/kmsg
-	$BBX echo "BLOCK_USERDATA=$BLOCK_USERDATA" > /dev/kmsg
-	$BBX echo "USERDATA_FSTYPE=$USERDATA_FSTYPE" > /dev/kmsg
-	$BBX echo "BLOCK_CACHE=$BLOCK_CACHE" > /dev/kmsg
-	$BBX echo "BLOCK_BOOT=$BLOCK_BOOT" > /dev/kmsg
-	$BBX echo "SS_PART=$SS_PART" > /dev/kmsg
-	$BBX echo "SS_FSTYPE=$SS_FSTYPE" > /dev/kmsg
-	$BBX echo "SS_DIR=$SS_DIR" > /dev/kmsg
-	$BBX echo "HIJACK_BIN=$HIJACK_BIN" > /dev/kmsg
-	$BBX echo "BOOTMODE=$BOOTMODE" > /dev/kmsg
-	$BBX echo "CHECK_BOOTMODE=$CHECK_BOOTMODE" > /dev/kmsg
-	$BBX echo "DEVICE=$DEVICE" > /dev/kmsg
-	$BBX echo "CHARGER_MODE=$CHARGER_MODE" > /dev/kmsg
-	$BBX echo "POWERUP_REASON_TEMP=$POWERUP_REASON_TEMP" > /dev/kmsg
-	$BBX echo "POWERUP_REASON=$POWERUP_REASON" > /dev/kmsg
-	$BBX echo "POWERUP_REASON_CHARGER=$POWERUP_REASON_CHARGER" > /dev/kmsg
-	$BBX echo "BACKLIGHT_BRIGHTNESS_PATH=$BACKLIGHT_BRIGHTNESS_PATH" > /dev/kmsg
-	$BBX echo "BACKLIGHT_BRIGHTNESS_VALUE=$BACKLIGHT_BRIGHTNESS_VALUE" > /dev/kmsg
-	$BBX echo "TASKSET_CPUS=$TASKSET_CPUS" > /dev/kmsg
-	$BBX echo "SS_USE_DATAMEDIA=$SS_USE_DATAMEDIA" > /dev/kmsg
-	$BBX echo "DEBUG_MODE=$DEBUG_MODE" > /dev/kmsg
+	$BBX echo "<1>DUMP ss.config" > /dev/kmsg
+	$BBX echo "<1>BLOCK_SYSTEM=$BLOCK_SYSTEM" > /dev/kmsg
+	$BBX echo "<1>SYSTEM_FSTYPE=$SYSTEM_FSTYPE" > /dev/kmsg
+	$BBX echo "<1>BLOCK_USERDATA=$BLOCK_USERDATA" > /dev/kmsg
+	$BBX echo "<1>USERDATA_FSTYPE=$USERDATA_FSTYPE" > /dev/kmsg
+	$BBX echo "<1>BLOCK_CACHE=$BLOCK_CACHE" > /dev/kmsg
+	$BBX echo "<1>BLOCK_BOOT=$BLOCK_BOOT" > /dev/kmsg
+	$BBX echo "<1>SS_PART=$SS_PART" > /dev/kmsg
+	$BBX echo "<1>SS_FSTYPE=$SS_FSTYPE" > /dev/kmsg
+	$BBX echo "<1>SS_DIR=$SS_DIR" > /dev/kmsg
+	$BBX echo "<1>HIJACK_BIN=$HIJACK_BIN" > /dev/kmsg
+	$BBX echo "<1>BOOTMODE=$BOOTMODE" > /dev/kmsg
+	$BBX echo "<1>CHECK_BOOTMODE=$CHECK_BOOTMODE" > /dev/kmsg
+	$BBX echo "<1>DEVICE=$DEVICE" > /dev/kmsg
+	$BBX echo "<1>CHARGER_MODE=$CHARGER_MODE" > /dev/kmsg
+	$BBX echo "<1>POWERUP_REASON_TEMP=$POWERUP_REASON_TEMP" > /dev/kmsg
+	$BBX echo "<1>POWERUP_REASON=$POWERUP_REASON" > /dev/kmsg
+	$BBX echo "<1>POWERUP_REASON_CHARGER=$POWERUP_REASON_CHARGER" > /dev/kmsg
+	$BBX echo "<1>BACKLIGHT_BRIGHTNESS_PATH=$BACKLIGHT_BRIGHTNESS_PATH" > /dev/kmsg
+	$BBX echo "<1>BACKLIGHT_BRIGHTNESS_VALUE=$BACKLIGHT_BRIGHTNESS_VALUE" > /dev/kmsg
+	$BBX echo "<1>TASKSET_CPUS=$TASKSET_CPUS" > /dev/kmsg
+	$BBX echo "<1>SS_USE_DATAMEDIA=$SS_USE_DATAMEDIA" > /dev/kmsg
+	$BBX echo "<1>DEBUG_MODE=$DEBUG_MODE" > /dev/kmsg
 }
 
 # unmount /sys/fs/selinux + clear out files
@@ -83,11 +83,11 @@ fixSELinux() {
 }
 
 logCurrentStatus() {
-	$BBX echo "LOG CURRENT STATUS:" > /dev/kmsg
-	$BBX ls -l / > /dev/kmsg
-	$BBX echo "______________________" > /dev/kmsg
-	$BBX mount > /dev/kmsg
-	$BBX echo "______________________" > /dev/kmsg
-	$BBX ps > /dev/kmsg
-	$BBX echo "______________________" > /dev/kmsg
+	$BBX echo "<1>LOG CURRENT STATUS:" > /dev/kmsg
+	$BBX echo "<1>$($BBX ls -l /init*)" > /dev/kmsg
+	$BBX echo "<1>______________________" > /dev/kmsg
+#	$BBX echo "<1>$($BBX mount)" > /dev/kmsg
+#	$BBX echo "<1>______________________" > /dev/kmsg
+#	$BBX echo "<1>$($BBX ps)" > /dev/kmsg
+#	$BBX echo "<1>______________________" > /dev/kmsg
 }

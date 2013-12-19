@@ -2,6 +2,7 @@
 # By: Hashcode
 BBX=/sbin/bbx
 SS_CONFIG=/ss.config
+echo "<1>Starting Safestrap fixboot.sh" > /dev/kmsg
 
 . /sbin/ss_function.sh
 
@@ -35,7 +36,7 @@ if [ ! -e "$BLOCK_DIR/$BLOCK_SYSTEM-orig" ]; then
 	$BBX mv $BLOCK_DIR/$BLOCK_BOOT $BLOCK_DIR/$BLOCK_BOOT-orig
 
 	# remount root as rw
-	$BBX mount -o remount,rw rootfs
+	echo "<1>$($BBX mount -o remount,rw rootfs)" > /dev/kmsg
 
 	if [ ! -d "$SS_MNT" ]; then
 		$BBX mkdir $SS_MNT
@@ -77,5 +78,9 @@ if [ ! -e "$BLOCK_DIR/$BLOCK_SYSTEM-orig" ]; then
 		$BBX ln -s /dev/null $BLOCK_DIR/$BLOCK_BOOT
 	fi
 fi
+
+echo "<1>$($BBX mount | $BBX grep rootfs)" > /dev/kmsg
+echo "<1>$($BBX ls -l /dev/block/loop-*)" > /dev/kmsg
+echo "<1>$($BBX ls -l /dev/block/*-orig)" > /dev/kmsg
 
 /sbin/taskset -p -c $TASKSET_CPUS 1

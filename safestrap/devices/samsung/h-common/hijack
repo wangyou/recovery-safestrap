@@ -164,9 +164,6 @@ if [ "$RUN_SS" = "1" ]; then
 		$BBX mv /sbin/adbd /sbin/adbd.old
 		$BBX mv /init /init.old
 
-		if [ -d "/sys/fs/selinux" ]; then
-			fixSELinux
-		fi
 		$BBX rm /*
 
 		# extract recovery ramdisk
@@ -188,12 +185,12 @@ if [ "$RUN_SS" = "1" ]; then
 
 		/sbin/hijack.killall
 
-		/sbin/taskset -p -c 0 1 > /dev/kmsg
+		echo "<1>$(/sbin/taskset -p -c 0 1)" > /dev/kmsg
 		$BBX sync
 		if [ "$DEBUG_MODE" = "1" ]; then
 			logCurrentStatus
 		fi
-		/sbin/taskset -c 0 /sbin/2nd-init > /dev/kmsg
+		echo "<1>$(/sbin/taskset -c 0 /sbin/2nd-init)" > /dev/kmsg
 		exit
 	fi
 
@@ -268,11 +265,6 @@ if [ "$RUN_SS" = "1" ]; then
 				fi
 				$BBX cp -R $RECOVERY_DIR/rootfs/* /
 			fi
-
-			if [ -d "/sys/fs/selinux" ]; then
-				fixSELinux
-			fi
-
 			if [ -f "$CURRENT_SYS_DIR/etc/rootfs/sbin/adbd" ]; then
 				$BBX mv /sbin/adbd /sbin/adbd.old
 			fi
@@ -281,16 +273,14 @@ if [ "$RUN_SS" = "1" ]; then
 			fi
 			$BBX cp -R $CURRENT_SYS_DIR/etc/rootfs/* /
 
-			# adjust stock init.rc file to include /sbin/fixboot.sh
-			$BBX cat /init.rc | $BBX sed "s/on fs/on fs\nexec \/sbin\/fixboot.sh/" > /init.rc.new0
-			$BBX cat /init.rc.new0 | $BBX sed "s/service sdcard \/system\/bin\/sdcard \/data\/media/service sdcard \/system\/bin\/sdcard \/datamedia\/media/" > /init.rc.new2
-			$BBX mv /init.rc /init.rc.old
-			$BBX mv /init.rc.new2 /init.rc
-			$BBX rm /init.rc.new*
+			# set loglevel
+			$BBX sed -i "s/loglevel 3/loglevel 8/" /init.rc
+
+			# adjust stock init.target.rc file to include /sbin/fixboot.sh
+			$BBX sed -i "s/mount_all fstab.qcom/exec \/sbin\/fixboot.sh\n    mount_all fstab.qcom/" /init.target.rc
 
 			# adjust init.<hardware>.rc for where to mount /sdcard
-			$BBX cat /init.qcom.rc | $BBX sed "s/service sdcard \/system\/bin\/sdcard \/data\/media/service sdcard \/system\/bin\/sdcard \/datamedia\/media/" > /init.qcom.rc.new0
-			$BBX mv /init.qcom.rc.new0 /init.qcom.rc
+			$BBX sed -i "s/service sdcard \/system\/bin\/sdcard \/data\/media/service sdcard \/system\/bin\/sdcard \/datamedia\/media/" /init.qcom.rc
 
 			# reset permissions
 			$BBX chmod -R 755 /sbin/*
@@ -322,13 +312,13 @@ if [ "$RUN_SS" = "1" ]; then
 			$BBX rm /sdcard
 			$BBX rm -rf /mnt
 
-			/sbin/taskset -p -c 0 1
+			echo "<1>$(/sbin/taskset -p -c 0 1)" > /dev/kmsg
 			$BBX sync
 			if [ "$DEBUG_MODE" = "1" ]; then
 				logCurrentStatus
 			fi
 
-			/sbin/taskset -c 0 /sbin/2nd-init > /dev/kmsg
+			echo "<1>$(/sbin/taskset -c 0 /sbin/2nd-init)" > /dev/kmsg
 			exit
 		fi
 	fi

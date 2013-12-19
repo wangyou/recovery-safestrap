@@ -9,8 +9,18 @@ SS_CHECK_FILE=/.safestrapped
 CURRENT_SYS_DIR=/system
 CURRENT_USER_DIR=/data
 ALT_SYSTEM_MODE="0"
+RUN_SS="0"
+RECOVERY_BOOT=$(cat /proc/cmdline | $RECOVERY_DIR/bbx grep -c "androidboot.boot_recovery=1")
+CHARGER_BOOT=$(cat /proc/cmdline | $RECOVERY_DIR/bbx grep -c "androidboot.bootchg=true")
 
+# check cmdline for androidboot.mode=charger
+# check cmdline for androidboot.boot_recovery=1
+if [ "$RECOVERY_BOOT" -ne "1" ]; then
+if [ "$CHARGER_BOOT" -ne "1" ]; then
 if [ ! -f "$SS_CHECK_FILE" ]; then
+	# startup safestrap
+	RUN_SS="1"
+
 	# remount root as rw
 	mount -o remount,rw rootfs
 
@@ -25,16 +35,21 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 	$BBX cp $RECOVERY_DIR/ss.config $SS_CONFIG
 	$BBX chmod 600 $SS_CONFIG
 	$BBX chown 0.0 $SS_CONFIG
+fi
 
 	. /system/etc/safestrap/ss_function.sh
 	readConfig
+
+if [ "$RUN_SS" = "1" ]; then
+	echo "<1>Running Safestrap hijack" > /dev/kmsg
 
 	if [ "$DEBUG_MODE" = "1" ]; then
 		dumpConfig
 	fi
 
 	# set backlight
-	$BBX echo $BACKLIGHT_BRIGHTNESS_VALUE > $BACKLIGHT_BRIGHTNESS_PATH
+	# HASH: this could blow up Mega
+#	$BBX echo $BACKLIGHT_BRIGHTNESS_VALUE > $BACKLIGHT_BRIGHTNESS_PATH
 
 	# create SS loopdevs
 	$BBX mknod -m600 /dev/block/loop-system b 7 99
@@ -85,12 +100,20 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 		fi
 	fi
 
+#######
+#	if [ "$DEBUG_MODE" = "1" ]; then
+#		CMD_LINE=$(cat /proc/cmdline)
+#		$BBX echo "CMD_LINE=$CMD_LINE\n" >> $SS_DIR/cmd_line
+#	fi
+
 	# check for .recovery_mode on current /data mount
 	if [ "$ALT_SYSTEM_MODE" = "1" ]; then
 		# setup loopback
 		$BBX losetup $BLOCK_DIR/loop-userdata $SS_DIR/$SLOT_LOC/userdata.img
 		$BBX mount -t $USERDATA_FSTYPE $BLOCK_DIR/loop-userdata $USER2_MNT
 		CURRENT_USER_DIR=$USER2_MNT
+	else
+		$BBX mount -t $USERDATA_FSTYPE $BLOCK_DIR/$BLOCK_USERDATA /data
 	fi
 
 	if [ -f $CURRENT_USER_DIR/$SS_RECOVERY_FILE ]; then
@@ -101,14 +124,32 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 	if [ "$CURRENT_USER_DIR" = "$USER2_MNT" ]; then
 		$BBX umount $USER2_MNT
 		$BBX losetup -d $BLOCK_DIR/loop-userdata
+	else
+		$BBX umount $CURRENT_USER_DIR
 	fi
 
-	# turn on hard button backlight
-	$BBX echo 200 > /sys/class/leds/button-backlight/brightness
+	# set /dev/ion permissions
+	$BBX chmod 666 /dev/ion
 
-	if [ "$ALT_SYSTEM_MODE" = "2" ] || [ $($RECOVERY_DIR/safestrapmenu $ALT_SYSTEM_MODE > /dev/null 2>&1;echo $?) -eq 0 ]; then
-		# turn off hard button backlight
-		$BBX echo 0 > /sys/class/leds/button-backlight/brightness
+	ENTER_RECOVERY="0"
+	CHECK_RECOVERY_ENTRY="1"
+	if [ "$ALT_SYSTEM_MODE" = "2" ]; then
+		ENTER_RECOVERY="1"
+        fi
+
+	if [ "$ENTER_RECOVERY" = "0" ]; then
+		CHECK_RECOVERY_ENTRY=$($RECOVERY_DIR/safestrapmenu $ALT_SYSTEM_MODE > /dev/null 2>&1;echo $?)
+		if [ "$CHECK_RECOVERY_ENTRY" = "0" ]; then
+			ENTER_RECOVERY="1"
+		fi
+		if [ "$CHECK_RECOVERY_ENTRY" = "2" ]; then
+			ALT_SYSTEM_MODE="0"
+		fi
+	fi
+
+	if [ "$ENTER_RECOVERY" = "1" ]; then
+		# HASH: Hacky here.  We need to setup the framebuffer
+		$RECOVERY_DIR/safestrapmenu 2 1
 
 		# filesystem cleanup
 		$BBX rm /d
@@ -123,9 +164,6 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 		$BBX mv /sbin/adbd /sbin/adbd.old
 		$BBX mv /init /init.old
 
-		if [ -d "/sys/fs/selinux" ]; then
-			fixSELinux
-		fi
 		$BBX rm /*
 
 		# extract recovery ramdisk
@@ -147,17 +185,14 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 
 		/sbin/hijack.killall
 
-		/sbin/taskset -p -c 0 1 > /dev/kmsg
+		echo "<1>$(/sbin/taskset -p -c 0 1)" > /dev/kmsg
 		$BBX sync
 		if [ "$DEBUG_MODE" = "1" ]; then
 			logCurrentStatus
 		fi
-		/sbin/taskset -c 0 /sbin/2nd-init > /dev/kmsg
+		echo "<1>$(/sbin/taskset -c 0 /sbin/2nd-init)" > /dev/kmsg
 		exit
 	fi
-
-	# turn off hard button backlight
-	$BBX echo 0 > /sys/class/leds/button-backlight/brightness
 
 	# either way we mount virtual "system" or real "system" and check for:
 	# 1. /system/etc/rootfs (2nd-init boot)
@@ -230,11 +265,6 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 				fi
 				$BBX cp -R $RECOVERY_DIR/rootfs/* /
 			fi
-
-			if [ -d "/sys/fs/selinux" ]; then
-				fixSELinux
-			fi
-
 			if [ -f "$CURRENT_SYS_DIR/etc/rootfs/sbin/adbd" ]; then
 				$BBX mv /sbin/adbd /sbin/adbd.old
 			fi
@@ -243,16 +273,15 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 			fi
 			$BBX cp -R $CURRENT_SYS_DIR/etc/rootfs/* /
 
+			# set loglevel
+			$BBX sed -i "s/loglevel 3/loglevel 8/" /init.rc
+
 			# adjust stock init.rc file to include /sbin/fixboot.sh
-			$BBX cat /init.rc | $BBX sed "s/on fs/on fs\nexec \/sbin\/fixboot.sh/" > /init.rc.new0
-			$BBX cat /init.rc.new0 | $BBX sed "s/service sdcard \/system\/bin\/sdcard \/data\/media/service sdcard \/system\/bin\/sdcard \/datamedia\/media/" > /init.rc.new2
-			$BBX mv /init.rc /init.rc.old
-			$BBX mv /init.rc.new2 /init.rc
-			$BBX rm /init.rc.new*
+			$BBX sed -i "s/on fs/on fs\nexec \/sbin\/fixboot.sh/" /init.rc
 
 			# adjust init.<hardware>.rc for where to mount /sdcard
-			$BBX cat /init.qcom.rc | $BBX sed "s/service sdcard \/system\/bin\/sdcard \/data\/media/service sdcard \/system\/bin\/sdcard \/datamedia\/media/" > /init.qcom.rc.new0
-			$BBX mv /init.qcom.rc.new0 /init.qcom.rc
+			$BBX sed -i "s/service sdcard \/system\/bin\/sdcard \/data\/media/service sdcard \/system\/bin\/sdcard \/datamedia\/media/" /init.rc
+			$BBX sed -i "s/service sdcard \/system\/bin\/sdcard \/data\/media/service sdcard \/system\/bin\/sdcard \/datamedia\/media/" /init.qcom.rc
 
 			# reset permissions
 			$BBX chmod -R 755 /sbin/*
@@ -284,13 +313,13 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 			$BBX rm /sdcard
 			$BBX rm -rf /mnt
 
-			/sbin/taskset -p -c 0 1
+			echo "<1>$(/sbin/taskset -p -c 0 1)" > /dev/kmsg
 			$BBX sync
 			if [ "$DEBUG_MODE" = "1" ]; then
 				logCurrentStatus
 			fi
 
-			/sbin/taskset -c 0 /sbin/2nd-init > /dev/kmsg
+			echo "<1>$(/sbin/taskset -c 0 /sbin/2nd-init)" > /dev/kmsg
 			exit
 		fi
 	fi
@@ -307,16 +336,15 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 		$BBX umount $DATAMEDIA_MNT
 	fi
 fi
-
-$BBX rm /system/etc/firmware/q6.mdt
+else
+	echo "<1>Skip safestrap hijack because of charger mode" > /dev/kmsg
+fi
+else
+	echo "<1>Skip safestrap hijack because of recovery mode" > /dev/kmsg
+fi
 
 # Run current file like expected by the system
-$BBX echo "\nPassing through hijack: /system/$HIJACK_LOC/$HIJACK_BIN.bin $@\n" > /dev/kmsg
+$BBX echo "<1>Passing through hijack: /system/$HIJACK_LOC/$HIJACK_BIN.bin $@" > /dev/kmsg
 
-/system/bin/sh /system/$HIJACK_LOC/$HIJACK_BIN.bin "$@"
-
-# Copy out /firmware/image/q6.mdt to a ramdisk-based file and re symlink it there (disappears each boot)
-$BBX rm /system/etc/firmware/q6.mdt
-$BBX cp /firmware/image/q6.mdt /q6.mdt
-$BBX ln -s /q6.mdt /system/etc/firmware/q6.mdt
+/system/$HIJACK_LOC/$HIJACK_BIN.bin "$@"
 

@@ -696,8 +696,10 @@ int gr_init(void)
     gl->enable(gl, GGL_BLEND);
     gl->blendFunc(gl, GGL_SRC_ALPHA, GGL_ONE_MINUS_SRC_ALPHA);
 
-//    gr_fb_blank(true);
-//    gr_fb_blank(false);
+#ifdef RECOVERY_GRAPHICS_DO_INITIAL_BLANK
+    gr_fb_blank(true);
+    gr_fb_blank(false);
+#endif
 
     if (has_overlay) {
         if (alloc_ion_mem(vi.xres_virtual * vi.yres * PIXEL_SIZE) ||

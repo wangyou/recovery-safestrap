@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 mkdir -p $OUT/recovery/root/etc
 mkdir -p $OUT/recovery/root/sbin
-mkdir -p $OUT/APP
 mkdir -p $OUT/install-files/etc/safestrap/res/
 mkdir -p $OUT/install-files/etc/safestrap/rootfs/
 cd $ANDROID_BUILD_TOP/bootable/recovery/safestrap/devices/amazon
@@ -11,5 +10,6 @@ cp -fr common-hdx/ss.config $OUT/install-files/etc/safestrap/ss.config
 cp -fr common-hdx/ss.config $OUT/APP/ss.config
 cp -fr common-hdx/ss.config $OUT/recovery/root/ss.config
 cp -fr common-hdx/rootfs/* $OUT/install-files/etc/safestrap/rootfs/
+cp -fr common-hdx/build-fs.sh $OUT/recovery/root/sbin/
 cp -fr ../../sbin-extras/* $OUT/recovery/root/sbin/
 cd ../../../gui

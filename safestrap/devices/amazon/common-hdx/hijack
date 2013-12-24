@@ -10,8 +10,12 @@ CURRENT_SYS_DIR=/system
 # HASH: On HDX /data isn't mounted before hijack so use /datamedia instead
 CURRENT_USER_DIR=/datamedia
 ALT_SYSTEM_MODE="0"
+RUN_SS="0"
 
 if [ ! -f "$SS_CHECK_FILE" ]; then
+	# startup safestrap
+	RUN_SS="1"
+
 	# remount root as rw
 	mount -o remount,rw rootfs
 
@@ -26,9 +30,13 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 	$BBX cp $RECOVERY_DIR/ss.config $SS_CONFIG
 	$BBX chmod 600 $SS_CONFIG
 	$BBX chown 0.0 $SS_CONFIG
+fi
 
 	. /system/etc/safestrap/ss_function.sh
 	readConfig
+
+if [ "$RUN_SS" = "1" ]; then
+	echo "<1>Running Safestrap hijack" > /dev/kmsg
 
 	if [ "$DEBUG_MODE" = "1" ]; then
 		dumpConfig
@@ -107,10 +115,23 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 	# set /dev/ion permissions
 	$BBX chmod 666 /dev/ion
 
-	if [ "$ALT_SYSTEM_MODE" = "2" ] || [ $($RECOVERY_DIR/safestrapmenu $ALT_SYSTEM_MODE > /dev/null 2>&1;echo $?) -eq 0 ]; then
-		# HASH: Hacky here.  We need to screenblank and reset fb
-		$RECOVERY_DIR/safestrapmenu 3 1
+	ENTER_RECOVERY="0"
+	CHECK_RECOVERY_ENTRY="1"
+	if [ "$ALT_SYSTEM_MODE" = "2" ]; then
+		ENTER_RECOVERY="1"
+        fi
 
+	if [ "$ENTER_RECOVERY" = "0" ]; then
+		CHECK_RECOVERY_ENTRY=$($RECOVERY_DIR/safestrapmenu $ALT_SYSTEM_MODE > /dev/null 2>&1;echo $?)
+		if [ "$CHECK_RECOVERY_ENTRY" = "0" ]; then
+			ENTER_RECOVERY="1"
+		fi
+		if [ "$CHECK_RECOVERY_ENTRY" = "2" ]; then
+			ALT_SYSTEM_MODE="0"
+		fi
+	fi
+
+	if [ "$ENTER_RECOVERY" = "1" ]; then
 		# filesystem cleanup
 		$BBX rm /d
 		$BBX rm /etc
@@ -124,9 +145,6 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 		$BBX mv /sbin/adbd /sbin/adbd.old
 		$BBX mv /init /init.old
 
-		if [ -d "/sys/fs/selinux" ]; then
-			fixSELinux
-		fi
 		$BBX rm /*
 
 		# extract recovery ramdisk
@@ -148,12 +166,12 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 
 		/sbin/hijack.killall
 
-		/sbin/taskset -p -c 0 1 > /dev/kmsg
+		echo "<1>$(/sbin/taskset -p -c 0 1)" > /dev/kmsg
 		$BBX sync
 		if [ "$DEBUG_MODE" = "1" ]; then
 			logCurrentStatus
 		fi
-		/sbin/taskset -c 0 /sbin/2nd-init > /dev/kmsg
+		echo "<1>$(/sbin/taskset -c 0 /sbin/2nd-init)" > /dev/kmsg
 		exit
 	fi
 
@@ -228,11 +246,6 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 				fi
 				$BBX cp -R $RECOVERY_DIR/rootfs/* /
 			fi
-
-			if [ -d "/sys/fs/selinux" ]; then
-				fixSELinux
-			fi
-
 			if [ -f "$CURRENT_SYS_DIR/etc/rootfs/sbin/adbd" ]; then
 				$BBX mv /sbin/adbd /sbin/adbd.old
 			fi
@@ -241,15 +254,14 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 			fi
 			$BBX cp -R $CURRENT_SYS_DIR/etc/rootfs/* /
 
+			# set loglevel
+			$BBX sed -i "s/loglevel 3/loglevel 8/" /init.rc
+
 			# adjust stock init.target.rc file to include /sbin/fixboot.sh
-			$BBX cat /init.target.rc | $BBX sed "s/on fs/on fs\nexec \/sbin\/fixboot.sh/" > /init.target.rc.new0
-			$BBX mv /init.target.rc /init.target.rc.old
-			$BBX mv /init.target.rc.new0 /init.target.rc
-			$BBX rm /init.target.rc.new*
+			$BBX sed -i "s/on fs/on fs\nexec \/sbin\/fixboot.sh/" /init.target.rc
 
 			# adjust init.<hardware>.rc for where to mount /sdcard
-			$BBX cat /init.qcom.rc | $BBX sed "s/service sdcard \/system\/bin\/sdcard \/data\/media/service sdcard \/system\/bin\/sdcard \/datamedia\/media/" > /init.qcom.rc.new0
-			$BBX mv /init.qcom.rc.new0 /init.qcom.rc
+			$BBX sed -i "s/service sdcard \/system\/bin\/sdcard \/data\/media/service sdcard \/system\/bin\/sdcard \/datamedia\/media/" /init.qcom.rc
 
 			# reset permissions
 			$BBX chmod -R 755 /sbin/*
@@ -281,13 +293,13 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 			$BBX rm /sdcard
 			$BBX rm -rf /mnt
 
-			/sbin/taskset -p -c 0 1
+			echo "<1>$(/sbin/taskset -p -c 0 1)" > /dev/kmsg
 			$BBX sync
 			if [ "$DEBUG_MODE" = "1" ]; then
 				logCurrentStatus
 			fi
 
-			/sbin/taskset -c 0 /sbin/2nd-init > /dev/kmsg
+			echo "<1>$(/sbin/taskset -c 0 /sbin/2nd-init)" > /dev/kmsg
 			exit
 		fi
 	fi
@@ -306,7 +318,7 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 fi
 
 # Run current file like expected by the system
-$BBX echo "\nPassing through hijack: /system/$HIJACK_LOC/$HIJACK_BIN.bin $@\n" > /dev/kmsg
+$BBX echo "<1>Passing through hijack: /system/$HIJACK_LOC/$HIJACK_BIN.bin $@" > /dev/kmsg
 
 /system/bin/sh /system/$HIJACK_LOC/$HIJACK_BIN.bin "$@"
 

@@ -1,5 +1,10 @@
 include $(ANDROID_BUILD_TOP)/bootable/recovery/safestrap/devices/common/safestrap-common.mk
 
+TARGET_RECOVERY_PIXEL_FORMAT := "RGBX_8888"
+DEVICE_RESOLUTION := 720x1280
+RECOVERY_GRAPHICS_USE_LINELENGTH := true
+RECOVERY_GRAPHICS_DONT_DOUBLE_BUFFER := true
+
 #TWRP
 TW_INTERNAL_STORAGE_PATH := "/datamedia/media"
 TW_INTERNAL_STORAGE_MOUNT_POINT := "datamedia"

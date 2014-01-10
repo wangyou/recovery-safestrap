@@ -105,6 +105,7 @@ static void print_fb_var_screeninfo()
     printf("vi.yoffset: %d\n", vi.yoffset);
     printf("vi.bits_per_pixel: %d\n", vi.bits_per_pixel);
     printf("vi.grayscale: %d\n", vi.grayscale);
+    printf("vi.activate: %d\n", vi.activate);
 }
 #endif
 
@@ -184,7 +185,9 @@ static int get_framebuffer(GGLSurface *fb)
     }
 
     vi.vmode = FB_VMODE_NONINTERLACED;
+#ifndef RECOVERY_GRAPHICS_DONT_SET_ACTIVATE
     vi.activate = FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
+#endif
 
     if (ioctl(fd, FBIOPUT_VSCREENINFO, &vi) < 0) {
         perror("failed to put fb0 var info");

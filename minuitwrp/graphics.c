@@ -172,7 +172,9 @@ static int get_framebuffer(GGLSurface *fb)
     }
 
     vi.vmode = FB_VMODE_NONINTERLACED;
+#ifndef RECOVERY_GRAPHICS_DONT_SET_ACTIVATE
     vi.activate = FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
+#endif
 
     if (ioctl(fd, FBIOPUT_VSCREENINFO, &vi) < 0) {
         perror("failed to put fb0 info");

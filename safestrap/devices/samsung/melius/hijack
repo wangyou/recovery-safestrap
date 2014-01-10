@@ -148,9 +148,6 @@ if [ "$RUN_SS" = "1" ]; then
 	fi
 
 	if [ "$ENTER_RECOVERY" = "1" ]; then
-		# HASH: Hacky here.  We need to setup the framebuffer
-		$RECOVERY_DIR/safestrapmenu 2 1
-
 		# filesystem cleanup
 		$BBX rm /d
 		$BBX rm /etc

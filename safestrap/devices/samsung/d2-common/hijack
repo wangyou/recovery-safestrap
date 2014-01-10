@@ -147,13 +147,6 @@ if [ "$RUN_SS" = "1" ]; then
 	fi
 
 	if [ "$ENTER_RECOVERY" = "1" ]; then
-		# set module bypass
-		# to load modules need /firmware mounted for tz firmware
-		PRODUCT=$(cat /system/build.prop | $BBX grep "ro.build.product=" | $BBX sed "s/ro.build.product=//g")
-		DISPLAYID=$(cat /system/build.prop | $BBX grep "ro.build.display.id=" | $BBX sed "s/ro.build.display.id=//g")
-		echo "<1>Running bypasslkm $PRODUCT $DISPLAYID" > /dev/kmsg
-		echo "<1>$($RECOVERY_DIR/bypasslkm $PRODUCT $DISPLAYID)" > /dev/kmsg
-
 		# turn off hard button backlight
 		$BBX echo 0 > /sys/class/leds/button-backlight/brightness
 

@@ -448,6 +448,11 @@ ifdef SS_HIJACK_WRAPPER_BINARY
     include $(commands_recovery_local_path)/safestrap/hijack-wrapper/Android.mk
 endif
 
+# bypasslkm
+ifdef SS_INCLUDE_BYPASSLKM
+    include $(commands_recovery_local_path)/safestrap/bypasslkm/Android.mk
+endif
+
 ifeq ($(TW_INCLUDE_CRYPTO_SAMSUNG), true)
     include $(commands_recovery_local_path)/crypto/libcrypt_samsung/Android.mk
 endif

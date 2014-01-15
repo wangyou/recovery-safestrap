@@ -7,4 +7,3 @@
 /system         ext3      /dev/block/system                        flags=usermrf
 /systemorig     auto      /dev/block/mmcblk1p21-orig               flags=hidden
 /ss             vfat      /dev/block/emstorage                     flags=hidden
-

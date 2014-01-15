@@ -19,7 +19,7 @@ cp $ANDROID_BUILD_TOP/bootable/recovery/safestrap/devices/motorola/common-omap4/
 cp $ANDROID_BUILD_TOP/bootable/recovery/safestrap/devices/motorola/solana/init.target.rc ./
 
 cd $OUT/recovery/root
-cp $OUT/kernel $OUT/install-files/etc/safestrap/kernel
+cp $OUT/kernel $OUT/install-files/etc/safestrap/kexec/kernel
 cp $ANDROID_BUILD_TOP/device/motorola/solana/kexec/* $OUT/install-files/etc/safestrap/kexec/
 cp $ANDROID_BUILD_TOP/device/motorola/omap4-common/kexec/kexec $OUT/install-files/etc/safestrap/kexec/
 cp $ANDROID_BUILD_TOP/bootable/recovery/safestrap/devices/motorola/solana/safestrapmenu $OUT/install-files/etc/safestrap/

@@ -9,9 +9,13 @@ SS_CHECK_FILE=/.safestrapped
 CURRENT_SYS_DIR=/system
 CURRENT_USER_DIR=/data
 ALT_SYSTEM_MODE="0"
+RUN_SS="0"
 
 if [ "$2" = "pds" ]; then
 if [ ! -f "$SS_CHECK_FILE" ]; then
+	# startup safestrap
+	RUN_SS="1"
+
 	# remount root as rw
 	mount -o remount,rw rootfs
 
@@ -29,9 +33,13 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 
 	# move qe out of the way
 	$BBX mv /xbin/qe /xbin/qe.bak
+fi
 
 	. /system/etc/safestrap/ss_function.sh
 	readConfig
+
+if [ "$RUN_SS" = "1" ]; then
+	echo "<1>Running Safestrap hijack" > /dev/kmsg
 
 	if [ "$DEBUG_MODE" = "1" ]; then
 		dumpConfig
@@ -112,7 +120,23 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 		$BBX umount $CURRENT_USER_DIR
 	fi
 
-	if [ "$ALT_SYSTEM_MODE" = "2" ] || [ $($RECOVERY_DIR/safestrapmenu $ALT_SYSTEM_MODE > /dev/null 2>&1;echo $?) -eq 0 ]; then
+	ENTER_RECOVERY="0"
+	CHECK_RECOVERY_ENTRY="1"
+	if [ "$ALT_SYSTEM_MODE" = "2" ]; then
+		ENTER_RECOVERY="1"
+        fi
+
+	if [ "$ENTER_RECOVERY" = "0" ]; then
+		CHECK_RECOVERY_ENTRY=$($RECOVERY_DIR/safestrapmenu $ALT_SYSTEM_MODE > /dev/null 2>&1;echo $?)
+		if [ "$CHECK_RECOVERY_ENTRY" = "0" ]; then
+			ENTER_RECOVERY="1"
+		fi
+		if [ "$CHECK_RECOVERY_ENTRY" = "2" ]; then
+			ALT_SYSTEM_MODE="0"
+		fi
+	fi
+
+	if [ "$ENTER_RECOVERY" = "1" ]; then
 		# filesystem cleanup
 		$BBX rm /d
 		$BBX rm /etc
@@ -127,9 +151,6 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 		$BBX mv /sbin/adbd /sbin/adbd.old
 		$BBX mv /init /init.old
 
-		if [ -d "/sys/fs/selinux" ]; then
-			fixSELinux
-		fi
 		$BBX rm /*
 
 		# extract recovery ramdisk
@@ -151,12 +172,12 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 
 		/sbin/hijack.killall
 
-		/sbin/taskset -p -c 0 1 > /dev/kmsg
+		echo "<1>$(/sbin/taskset -p -c 0 1)" > /dev/kmsg
 		$BBX sync
 		if [ "$DEBUG_MODE" = "1" ]; then
 			logCurrentStatus
 		fi
-		/sbin/taskset -c 0 /sbin/2nd-init > /dev/kmsg
+		echo "<1>$(/sbin/taskset -c 0 /sbin/2nd-init)" > /dev/kmsg
 		exit
 	fi
 
@@ -231,11 +252,6 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 				fi
 				$BBX cp -R $RECOVERY_DIR/rootfs/* /
 			fi
-
-			if [ -d "/sys/fs/selinux" ]; then
-				fixSELinux
-			fi
-
 			if [ -f "$CURRENT_SYS_DIR/etc/rootfs/sbin/adbd" ]; then
 				$BBX mv /sbin/adbd /sbin/adbd.old
 			fi
@@ -244,10 +260,11 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 			fi
 			$BBX cp -R $CURRENT_SYS_DIR/etc/rootfs/* /
 
+			# set loglevel
+			$BBX sed -i "s/loglevel 3/loglevel 8/" /init.rc
+
 			# adjust stock init.rc file to include /sbin/fixboot.sh
-			$BBX cat /init.rc | $BBX sed "s/on fs/on fs\nexec \/sbin\/fixboot.sh/" > /init.rc.new
-			$BBX mv /init.rc /init.rc.old
-			$BBX mv /init.rc.new /init.rc
+			$BBX sed -i "s/on fs/on fs\nexec \/sbin\/fixboot.sh/" /init.rc
 
 			# reset permissions
 			$BBX chmod -R 755 /sbin/*
@@ -280,13 +297,13 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 			$BBX rm /sdcard-ext
 			$BBX rm -rf /mnt
 
-			/sbin/taskset -p -c 0 1
+			echo "<1>$(/sbin/taskset -p -c 0 1)" > /dev/kmsg
 			$BBX sync
 			if [ "$DEBUG_MODE" = "1" ]; then
 				logCurrentStatus
 			fi
 
-			/sbin/taskset -c 0 /sbin/2nd-init > /dev/kmsg
+			echo "<1>$(/sbin/taskset -c 0 /sbin/2nd-init)" > /dev/kmsg
 			exit
 		fi
 	fi
@@ -302,11 +319,14 @@ if [ ! -f "$SS_CHECK_FILE" ]; then
 	if [ "$SS_USE_DATAMEDIA" = "1" ]; then
 		$BBX umount $DATAMEDIA_MNT
 	fi
+	else
+		echo "<1>Skip safestrap hijack because of charger mode" > /dev/kmsg
 	fi
 fi
 fi
 
-$BBX echo "\nPassing through hijack: /system/bin/logwrapper.bin $@\n" > /dev/kmsg
+# Run current file like expected by the system
+$BBX echo "<1>Passing through hijack: /system/$HIJACK_LOC/$HIJACK_BIN.bin $@" > /dev/kmsg
 
-/system/bin/logwrapper.bin "$@"
+/system/$HIJACK_LOC/$HIJACK_BIN.bin "$@"
 

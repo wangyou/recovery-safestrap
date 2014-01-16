@@ -210,8 +210,10 @@ static int get_framebuffer(GGLSurface *fb)
 
     has_overlay = target_has_overlay(fi.id);
 
+#ifdef TW_QCOM_BSP
     if (isTargetMdp5())
         setDisplaySplit();
+#endif
 
     if (!has_overlay) {
         printf("Not using qualcomm overlay, '%s'\n", fi.id);

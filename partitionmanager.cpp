@@ -36,6 +36,7 @@
 #include "twrp-functions.hpp"
 #include "fixPermissions.hpp"
 #include "twrpDigest.hpp"
+#include "twrpDU.hpp"
 
 #ifdef TW_INCLUDE_CRYPTO
 	#ifdef TW_INCLUDE_JB_CRYPTO
@@ -45,6 +46,9 @@
 	#endif
 	#include "cutils/properties.h"
 #endif
+
+TWPartitionManager::TWPartitionManager(void) {
+}
 
 #ifdef BUILD_SAFESTRAP
 int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error, bool Reset_Partition_List) {
@@ -809,7 +813,7 @@ int TWPartitionManager::Run_Backup(void) {
 
 	time(&total_stop);
 	int total_time = (int) difftime(total_stop, total_start);
-	unsigned long long actual_backup_size = TWFunc::Get_Folder_Size(Full_Backup_Path, true);
+	uint64_t actual_backup_size = du.Get_Folder_Size(Full_Backup_Path);
     actual_backup_size /= (1024LLU * 1024LLU);
 
 	int prev_img_bps, use_compression;

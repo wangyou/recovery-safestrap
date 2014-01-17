@@ -432,7 +432,6 @@
 				<actions>
 					<action function="readslotnames"></action>
 					<action function="set">tw_clear_destination=main2</action>
-					<action function="readbootslot">tw_bootslot</action>
 					<action function="page">clear_vars</action>
 				</actions>
 			</object>
@@ -4266,52 +4265,52 @@
 			<object type="text" color="%text_color%">
 				<condition var1="tw_trybootslot" op="!=" var2="stock" />
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row2_text_y%" />
+				<placement x="%col1_x%" y="%row8_text_y%" />
 				<text>Nickname:</text>
 			</object>
 			<object type="text" color="%text_color%">
 				<condition var1="tw_trybootslot" op="!=" var2="stock" />
 				<font resource="font" />
-				<placement x="%center_x%" y="%row2_text_y%" />
+				<placement x="%center_x%" y="%row8_text_y%" />
 				<text>%tw_slotname%</text>
 			</object>
 
 			<object type="text" color="%text_color%">
 				<condition var1="tw_trybootslot" op="=" var2="tw_bootslot" />
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row3_text_y%" />
+				<placement x="%col1_x%" y="%row9_text_y%" />
 				<text>System partition size:</text>
 			</object>
 			<object type="text" color="%text_color%">
 				<condition var1="tw_trybootslot" op="=" var2="tw_bootslot" />
 				<font resource="font" />
-				<placement x="%center_x%" y="%row3_text_y%" />
+				<placement x="%center_x%" y="%row9_text_y%" />
 				<text>%tw_slot_system_size%MB (%tw_slot_system_free%MB Free)</text>
 			</object>
 
 			<object type="text" color="%text_color%">
 				<condition var1="tw_trybootslot" op="=" var2="tw_bootslot" />
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row4_text_y%" />
+				<placement x="%col1_x%" y="%row10_text_y%" />
 				<text>Data partition size:</text>
 			</object>
 			<object type="text" color="%text_color%">
 				<condition var1="tw_trybootslot" op="=" var2="tw_bootslot" />
 				<font resource="font" />
-				<placement x="%center_x%" y="%row4_text_y%" />
+				<placement x="%center_x%" y="%row10_text_y%" />
 				<text>%tw_slot_data_size%MB (%tw_slot_data_free%MB Free)</text>
 			</object>
 
 			<object type="text" color="%text_color%">
 				<condition var1="tw_trybootslot" op="=" var2="tw_bootslot" />
 				<font resource="font" />
-				<placement x="%col1_x%" y="%row5_text_y%" />
+				<placement x="%col1_x%" y="%row11_text_y%" />
 				<text>Cache partition size:</text>
 			</object>
 			<object type="text" color="%text_color%">
 				<condition var1="tw_trybootslot" op="=" var2="tw_bootslot" />
 				<font resource="font" />
-				<placement x="%center_x%" y="%row5_text_y%" />
+				<placement x="%center_x%" y="%row11_text_y%" />
 				<text>%tw_slot_cache_size%MB (%tw_slot_cache_free%MB Free)</text>
 			</object>
 
@@ -4332,7 +4331,7 @@
 				<condition var1="tw_trybootslot" op="!=" var2="stock" />
 				<placement x="%col2_x%" y="%row2_y%" />
 				<font resource="font" color="%button_text_disable_color%" />
-				<text>FS Check (Not Active)</text>
+				<text>FS Check (Inactive)</text>
 				<image resource="main_button" />
 			</object>
 			<object type="button">

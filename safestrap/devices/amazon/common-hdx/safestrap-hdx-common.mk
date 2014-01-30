@@ -3,6 +3,7 @@ TARGET_RECOVERY_PIXEL_FORMAT := "RGBX_8888"
 RECOVERY_GRAPHICS_USE_LINELENGTH := true
 RECOVERY_GRAPHICS_DO_INITIAL_BLANK := true
 TW_TARGET_USES_QCOM_BSP := true
+RECOVERY_INCLUDE_DIR := bootable/recovery/safestrap/devices/amazon/common-hdx/include
 
 RECOVERY_SDCARD_ON_DATA := true
 TW_INTERNAL_STORAGE_PATH := "/datamedia/media"

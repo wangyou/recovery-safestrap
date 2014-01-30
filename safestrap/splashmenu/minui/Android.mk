@@ -9,10 +9,15 @@ else
     LOCAL_SRC_FILES += graphics.c graphics_overlay.c
 endif
 
+ifndef RECOVERY_INCLUDE_DIR
+    RECOVERY_INCLUDE_DIR := bootable/recovery/safestrap/devices/common/include
+endif
+
 LOCAL_C_INCLUDES +=\
     external/libpng\
     external/zlib \
-    system/core/include
+    system/core/include \
+    $(RECOVERY_INCLUDE_DIR)
 
 
 ifeq ($(RECOVERY_TOUCHSCREEN_SWAP_XY), true)

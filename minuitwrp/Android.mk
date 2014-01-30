@@ -6,6 +6,10 @@ BUILD_SAFESTRAP := true
 ifeq ($(BUILD_SAFESTRAP), true)
     LOCAL_CFLAGS += -DBUILD_SAFESTRAP
     LOCAL_CPPFLAGS += -DBUILD_SAFESTRAP
+ifndef RECOVERY_INCLUDE_DIR
+    RECOVERY_INCLUDE_DIR := bootable/recovery/safestrap/devices/common/include
+endif
+    LOCAL_C_INCLUDES += $(RECOVERY_INCLUDE_DIR)
 endif
 
 LOCAL_SRC_FILES := events.c resources.c graphics_overlay.c

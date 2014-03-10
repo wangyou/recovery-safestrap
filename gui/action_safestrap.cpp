@@ -241,10 +241,13 @@ int GUIAction::doSafestrapAction(Action action, int isThreaded /* = 0 */) {
 				fprintf(stderr, "found: tw_%s_name=%s\n", var.c_str(), str.c_str());
 				DataManager::SetValue("tw_" + var + "_name", str);
 			}
+// HASH: Don't complain so much about missing rom-slots
+#if 0
 			else {
 				DataManager::GetValue("tw_" + var + "_name", str);
 				fprintf(stderr, "not found: tw_%s_name=%s\n", var.c_str(), str.c_str());
 			}
+#endif
 		}
 		return 0;
 	}

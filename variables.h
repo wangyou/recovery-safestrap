@@ -17,10 +17,10 @@
 #ifndef _VARIABLES_HEADER_
 #define _VARIABLES_HEADER_
 
-#define TW_VERSION_STR              "2.6.3.1"
+#define TW_VERSION_STR              "2.7.0.0"
 
 #ifdef BUILD_SAFESTRAP
-#define SS_VERSION_STR              "3.71"
+#define SS_VERSION_STR              "3.72"
 #endif
 #define TW_USE_COMPRESSION_VAR      "tw_use_compression"
 #define TW_FILENAME                 "tw_filename"

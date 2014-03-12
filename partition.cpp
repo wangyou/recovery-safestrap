@@ -40,6 +40,7 @@
 #include "twrpDigest.hpp"
 #include "twrpTar.hpp"
 #include "twrpDU.hpp"
+#include "fixPermissions.hpp"
 extern "C" {
 	#include "mtdutils/mtdutils.h"
 	#include "mtdutils/mounts.h"
@@ -49,9 +50,23 @@ extern "C" {
 #ifdef USE_EXT4
 	#include "make_ext4fs.h"
 #endif
+
+#ifdef TW_INCLUDE_CRYPTO
+	#ifdef TW_INCLUDE_JB_CRYPTO
+		#include "crypto/jb/cryptfs.h"
+	#else
+		#include "crypto/ics/cryptfs.h"
+	#endif
+#endif
 }
 #ifdef HAVE_SELINUX
 #include "selinux/selinux.h"
+#include <selinux/label.h>
+#endif
+#ifdef HAVE_CAPABILITIES
+#include <sys/capability.h>
+#include <sys/xattr.h>
+#include <linux/xattr.h>
 #endif
 
 using namespace std;
@@ -74,10 +89,18 @@ static struct flag_list mount_flags[] = {
 	{ "remount",    MS_REMOUNT },
 	{ "bind",       MS_BIND },
 	{ "rec",        MS_REC },
+#ifdef MS_UNBINDABLE
 	{ "unbindable", MS_UNBINDABLE },
+#endif
+#ifdef MS_PRIVATE
 	{ "private",    MS_PRIVATE },
+#endif
+#ifdef MS_SLAVE
 	{ "slave",      MS_SLAVE },
+#endif
+#ifdef MS_SHARED
 	{ "shared",     MS_SHARED },
+#endif
 	{ "sync",       MS_SYNCHRONOUS },
 	{ "defaults",   0 },
 	{ 0,            0 },
@@ -290,14 +313,38 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 				Decrypted_Block_Device = crypto_blkdev;
 				LOGINFO("Data already decrypted, new block device: '%s'\n", crypto_blkdev);
 			} else if (!Mount(false)) {
-				Is_Encrypted = true;
-				Is_Decrypted = false;
-				Can_Be_Mounted = false;
-				Current_File_System = "emmc";
-				Setup_Image(Display_Error);
-				DataManager::SetValue(TW_IS_ENCRYPTED, 1);
-				DataManager::SetValue(TW_CRYPTO_PASSWORD, "");
-				DataManager::SetValue("tw_crypto_display", "");
+				if (Is_Present) {
+#ifdef TW_INCLUDE_JB_CRYPTO
+					// No extra flags needed
+#else
+					property_set("ro.crypto.fs_type", CRYPTO_FS_TYPE);
+					property_set("ro.crypto.fs_real_blkdev", CRYPTO_REAL_BLKDEV);
+					property_set("ro.crypto.fs_mnt_point", CRYPTO_MNT_POINT);
+					property_set("ro.crypto.fs_options", CRYPTO_FS_OPTIONS);
+					property_set("ro.crypto.fs_flags", CRYPTO_FS_FLAGS);
+					property_set("ro.crypto.keyfile.userdata", CRYPTO_KEY_LOC);
+#ifdef CRYPTO_SD_FS_TYPE
+					property_set("ro.crypto.sd_fs_type", CRYPTO_SD_FS_TYPE);
+					property_set("ro.crypto.sd_fs_real_blkdev", CRYPTO_SD_REAL_BLKDEV);
+					property_set("ro.crypto.sd_fs_mnt_point", EXPAND(TW_INTERNAL_STORAGE_PATH));
+#endif
+					property_set("rw.km_fips_status", "ready");
+#endif
+					if (cryptfs_check_footer() == 0) {
+						Is_Encrypted = true;
+						Is_Decrypted = false;
+						Can_Be_Mounted = false;
+						Current_File_System = "emmc";
+						Setup_Image(Display_Error);
+						DataManager::SetValue(TW_IS_ENCRYPTED, 1);
+						DataManager::SetValue(TW_CRYPTO_PASSWORD, "");
+						DataManager::SetValue("tw_crypto_display", "");
+					} else {
+						LOGERR("Could not mount /data and unable to find crypto footer.\n");
+					}
+				} else {
+					LOGERR("Primary block device '%s' for mount point '%s' is not present!\n", Primary_Block_Device.c_str(), Mount_Point.c_str());
+				}
 			} else {
 				// Filesystem is not encrypted and the mount
 				// succeeded, so get it back to the original
@@ -388,10 +435,6 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Is_Storage = true;
 			Removable = true;
 			Wipe_Available_in_GUI = true;
-#ifndef RECOVERY_SDCARD_ON_DATA
-			Setup_AndSec();
-			Mount_Storage_Retry();
-#endif
 #endif
 		}
 #ifdef TW_INTERNAL_STORAGE_PATH
@@ -400,20 +443,12 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Is_Settings_Storage = true;
 			Storage_Path = EXPAND(TW_INTERNAL_STORAGE_PATH);
 			Wipe_Available_in_GUI = true;
-#ifndef RECOVERY_SDCARD_ON_DATA
-			Setup_AndSec();
-			Mount_Storage_Retry();
-#endif
 		}
 #else
 		if (Mount_Point == "/emmc" || Mount_Point == "/internal_sd" || Mount_Point == "/internal_sdcard") {
 			Is_Storage = true;
 			Is_Settings_Storage = true;
 			Wipe_Available_in_GUI = true;
-#ifndef RECOVERY_SDCARD_ON_DATA
-			Setup_AndSec();
-			Mount_Storage_Retry();
-#endif
 		}
 #endif
 	} else if (Is_Image(Fstab_File_System)) {
@@ -426,7 +461,6 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 		} else if (Mount_Point == "/recovery") {
 			Display_Name = "Recovery";
 			Backup_Display_Name = Display_Name;
-			Can_Be_Backed_Up = true;
 		}
 	}
 
@@ -493,8 +527,19 @@ bool TWPartition::Process_Flags(string Flags, bool Display_Error) {
 		ptr_len = strlen(ptr);
 		if (strcmp(ptr, "removable") == 0) {
 			Removable = true;
-		} else if (strcmp(ptr, "storage") == 0) {
-			Is_Storage = true;
+		} else if (strncmp(ptr, "storage", 7) == 0) {
+			if (ptr_len == 7) {
+				Is_Storage = true;
+			} else if (ptr_len == 9) {
+				ptr += 9;
+				if (*ptr == '1' || *ptr == 'y' || *ptr == 'Y') {
+					LOGINFO("storage set to true\n");
+					Is_Storage = true;
+				} else {
+					LOGINFO("storage set to false\n");
+					Is_Storage = false;
+				}
+			}
 		} else if (strcmp(ptr, "settingsstorage") == 0) {
 			Is_Storage = true;
 		} else if (strcmp(ptr, "canbewiped") == 0) {
@@ -683,6 +728,7 @@ void TWPartition::Setup_AndSec(void) {
 	Backup_Path = Symlink_Mount_Point;
 	Make_Dir("/and-sec", true);
 	Recreate_AndSec_Folder();
+	Mount_Storage_Retry();
 }
 
 void TWPartition::Find_Real_Block_Device(string& Block, bool Display_Error) {
@@ -980,7 +1026,7 @@ bool TWPartition::Mount(bool Display_Error) {
 			}
 			return true;
 		}
-	} else if (!exfat_mounted && mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str(), Mount_Flags, Mount_Options.c_str()) != 0) {
+	} else if (!exfat_mounted && mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str(), Mount_Flags, Mount_Options.c_str()) != 0 && mount(Actual_Block_Device.c_str(), Mount_Point.c_str(), Current_File_System.c_str(), Mount_Flags, NULL) != 0) {
 #ifdef TW_NO_EXFAT_FUSE
 		if (Current_File_System == "exfat") {
 			LOGINFO("Mounting exfat failed, trying vfat...\n");
@@ -1388,17 +1434,25 @@ bool TWPartition::Wipe_EXT4() {
 		return false;
 
 #if defined(HAVE_SELINUX) && defined(USE_EXT4)
+	int ret;
+	char *secontext = NULL;
+
 	gui_print("Formatting %s using make_ext4fs function.\n", Display_Name.c_str());
-	if (make_ext4fs(Actual_Block_Device.c_str(), Length, Mount_Point.c_str(), selinux_handle) != 0) {
+
+	if (!selinux_handle || selabel_lookup(selinux_handle, &secontext, Mount_Point.c_str(), S_IFDIR) < 0) {
+		LOGINFO("Cannot lookup security context for '%s'\n", Mount_Point.c_str());
+		ret = make_ext4fs(Actual_Block_Device.c_str(), Length, Mount_Point.c_str(), NULL);
+	} else {
+		ret = make_ext4fs(Actual_Block_Device.c_str(), Length, Mount_Point.c_str(), selinux_handle);
+	}
+	if (ret != 0) {
 		LOGERR("Unable to wipe '%s' using function call.\n", Mount_Point.c_str());
 		return false;
 	} else {
-		#ifdef HAVE_SELINUX
 		string sedir = Mount_Point + "/lost+found";
 		PartitionManager.Mount_By_Path(sedir.c_str(), true);
 		rmdir(sedir.c_str());
 		mkdir(sedir.c_str(), S_IRWXU | S_IRWXG | S_IWGRP | S_IXGRP);
-		#endif
 		return true;
 	}
 #else
@@ -1556,6 +1610,9 @@ bool TWPartition::Wipe_F2FS() {
 
 bool TWPartition::Wipe_Data_Without_Wiping_Media() {
 	string dir;
+	#ifdef HAVE_SELINUX
+	fixPermissions perms;
+	#endif
 
 	// This handles wiping data on devices with "sdcard" in /data/media
 	if (!Mount(true))
@@ -1572,8 +1629,9 @@ bool TWPartition::Wipe_Data_Without_Wiping_Media() {
 			// The media folder is the "internal sdcard"
 			// The .layout_version file is responsible for determining whether 4.2 decides up upgrade
 			// the media folder for multi-user.
+			//TODO: convert this to use twrpDU.cpp
 			if (strcmp(de->d_name, "media") == 0 || strcmp(de->d_name, ".layout_version") == 0)   continue;
-			
+
 			dir = "/data/";
 			dir.append(de->d_name);
 			if (de->d_type == DT_DIR) {
@@ -1584,6 +1642,11 @@ bool TWPartition::Wipe_Data_Without_Wiping_Media() {
 			}
 		}
 		closedir(d);
+
+		#ifdef HAVE_SELINUX
+		perms.fixDataInternalContexts();
+		#endif
+
 		gui_print("Done.\n");
 		return true;
 	}
@@ -1619,6 +1682,9 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 		tar.use_encryption = use_encryption;
 		if (Use_Userdata_Encryption)
 			tar.userdata_encryption = use_encryption;
+		string Password;
+		DataManager::GetValue("tw_backup_password", Password);
+		tar.setpassword(Password);
 	} else {
 		use_encryption = false;
 	}
@@ -1628,35 +1694,12 @@ bool TWPartition::Backup_Tar(string backup_folder) {
 	Backup_FileName = back_name;
 	Full_FileName = backup_folder + "/" + Backup_FileName;
 	tar.has_data_media = Has_Data_Media;
-	if (!use_encryption && Backup_Size > MAX_ARCHIVE_SIZE) {
-		// This backup needs to be split into multiple archives
-		gui_print("Breaking backup file into multiple archives...\n");
-		sprintf(back_name, "%s", Backup_Path.c_str());
-		tar.setdir(back_name);
-		tar.setfn(Full_FileName);
-		backup_count = tar.splitArchiveFork();
-		if (backup_count == -1) {
-			LOGERR("Error tarring split files!\n");
-			return false;
-		}
-		return true;
-	} else {
-		Full_FileName = backup_folder + "/" + Backup_FileName;
-		tar.setdir(Backup_Path);
-		tar.setfn(Full_FileName);
-		if (tar.createTarFork() != 0)
-			return false;
-		if (use_compression && !use_encryption) {
-			string gzname = Full_FileName + ".gz";
-			rename(gzname.c_str(), Full_FileName.c_str());
-		}
-		if (use_encryption)
-			Full_FileName += "000";
-		if (TWFunc::Get_File_Size(Full_FileName) == 0) {
-			LOGERR("Backup file size for '%s' is 0 bytes.\n", Full_FileName.c_str());
-			return false;
-		}
-	}
+	Full_FileName = backup_folder + "/" + Backup_FileName;
+	tar.setdir(Backup_Path);
+	tar.setfn(Full_FileName);
+	tar.setsize(Backup_Size);
+	if (tar.createTarFork() != 0)
+		return false;
 	return true;
 }
 
@@ -1714,6 +1757,7 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 	string Full_FileName, Command;
 	int index = 0;
 	char split_index[5];
+	bool ret = false;
 
 	if (Has_Android_Secure) {
 		if (!Wipe_AndSec())
@@ -1730,38 +1774,40 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 		return false;
 
 	Full_FileName = restore_folder + "/" + Backup_FileName;
-	/*if (!TWFunc::Path_Exists(Full_FileName)) {
-		if (!TWFunc::Path_Exists(Full_FileName)) {
-			// Backup is multiple archives
-			LOGINFO("Backup is multiple archives.\n");
-			sprintf(split_index, "%03i", index);
-			Full_FileName = restore_folder + "/" + Backup_FileName + split_index;
-			while (TWFunc::Path_Exists(Full_FileName)) {
-				index++;
-				gui_print("Restoring archive %i...\n", index);
-				LOGINFO("Restoring '%s'...\n", Full_FileName.c_str());
-				twrpTar tar;
-				tar.setdir("/");
-				tar.setfn(Full_FileName);
-				if (tar.extractTarFork() != 0)
-					return false;
-				sprintf(split_index, "%03i", index);
-				Full_FileName = restore_folder + "/" + Backup_FileName + split_index;
-			}
-			if (index == 0) {
-				LOGERR("Error locating restore file: '%s'\n", Full_FileName.c_str());
-				return false;
-			}
+	twrpTar tar;
+	tar.setdir(Backup_Path);
+	tar.setfn(Full_FileName);
+	tar.backup_name = Backup_Name;
+#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
+	string Password;
+	DataManager::GetValue("tw_restore_password", Password);
+	if (!Password.empty())
+		tar.setpassword(Password);
+#endif
+	if (tar.extractTarFork() != 0)
+		ret = false;
+	else
+		ret = true;
+#ifdef HAVE_CAPABILITIES
+	// Restore capabilities to the run-as binary
+	if (Mount_Point == "/system" && Mount(true) && TWFunc::Path_Exists("/system/bin/run-as")) {
+		struct vfs_cap_data cap_data;
+		uint64_t capabilities = (1 << CAP_SETUID) | (1 << CAP_SETGID);
+
+		memset(&cap_data, 0, sizeof(cap_data));
+		cap_data.magic_etc = VFS_CAP_REVISION | VFS_CAP_FLAGS_EFFECTIVE;
+		cap_data.data[0].permitted = (uint32_t) (capabilities & 0xffffffff);
+		cap_data.data[0].inheritable = 0;
+		cap_data.data[1].permitted = (uint32_t) (capabilities >> 32);
+		cap_data.data[1].inheritable = 0;
+		if (setxattr("/system/bin/run-as", XATTR_NAME_CAPS, &cap_data, sizeof(cap_data), 0) < 0) {
+			LOGINFO("Failed to reset capabilities of /system/bin/run-as binary.\n");
+		} else {
+			LOGINFO("Reset capabilities of /system/bin/run-as binary successful.\n");
 		}
-	} else {*/
-		twrpTar tar;
-		tar.setdir(Backup_Path);
-		tar.setfn(Full_FileName);
-		tar.backup_name = Backup_Name;
-		if (tar.extractTarFork() != 0)
-			return false;
-	//}
-	return true;
+	}
+#endif
+	return ret;
 }
 
 bool TWPartition::Restore_DD(string restore_folder) {
@@ -1834,6 +1880,7 @@ bool TWPartition::Update_Size(bool Display_Error) {
 			unsigned long long data_media_used, actual_data;
 			du.add_relative_dir("media");
 			Used = du.Get_Folder_Size("/data");
+			du.clear_relative_dir("media");
 			Backup_Size = Used;
 			int bak = (int)(Used / 1048576LLU);
 			int fre = (int)(Free / 1048576LLU);
@@ -1883,6 +1930,10 @@ void TWPartition::Recreate_Media_Folder(void) {
 	char path[255];
 #endif
 
+	#ifdef HAVE_SELINUX
+	fixPermissions perms;
+	#endif
+
 	if (!Mount(true)) {
 		LOGERR("Unable to recreate /data/media folder.\n");
 #ifdef BUILD_SAFESTRAP
@@ -1898,6 +1949,9 @@ void TWPartition::Recreate_Media_Folder(void) {
 #else
 		mkdir("/data/media", S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH); 
 #endif
+		#ifdef HAVE_SELINUX
+		perms.fixDataInternalContexts();
+		#endif
 		PartitionManager.UnMount_By_Path(Symlink_Mount_Point, true);
 	}
 }

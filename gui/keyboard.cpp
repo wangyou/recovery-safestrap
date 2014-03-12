@@ -30,6 +30,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include "../data.hpp"
 
 #include <string>
 
@@ -42,11 +43,11 @@ extern "C" {
 #include "objects.hpp"
 
 GUIKeyboard::GUIKeyboard(xml_node<>* node)
-	: Conditional(node)
+	: GUIObject(node)
 {
 	int layoutindex, rowindex, keyindex, Xindex, Yindex, keyHeight = 0, keyWidth = 0;
 	rowY = colX = -1;
-	highlightRenderCount = hasHighlight = 0;
+	highlightRenderCount = hasHighlight = hasCapsHighlight = 0;
 	char resource[10], layout[8], row[5], key[6], longpress[7];
 	xml_attribute<>* attr;
 	xml_node<>* child;
@@ -78,6 +79,17 @@ GUIKeyboard::GUIKeyboard(xml_node<>* node)
 			hasHighlight = 1;
 			std::string color = attr->value();
 			ConvertStrToColor(color, &mHighlightColor);
+		}
+	}
+
+	memset(&mCapsHighlightColor, 0, sizeof(COLOR));
+	child = node->first_node("capshighlight");
+	if (child) {
+		attr = child->first_attribute("color");
+		if (attr) {
+			hasCapsHighlight = 1;
+			std::string color = attr->value();
+			ConvertStrToColor(color, &mCapsHighlightColor);
 		}
 	}
 
@@ -127,6 +139,16 @@ GUIKeyboard::GUIKeyboard(xml_node<>* node)
 				keyWidth = atoi(attr->value());
 			else
 				keyWidth = 0;
+			attr = child->first_attribute("capslock");
+			if (attr)
+				caps_tracking[layoutindex - 1].capslock = atoi(attr->value());
+			else
+				caps_tracking[layoutindex - 1].capslock = 1;
+			attr = child->first_attribute("revert_layout");
+			if (attr)
+				caps_tracking[layoutindex - 1].revert_layout = atoi(attr->value());
+			else
+				caps_tracking[layoutindex - 1].revert_layout = -1;
 		}
 
 		rowindex = 1;
@@ -303,10 +325,7 @@ GUIKeyboard::GUIKeyboard(xml_node<>* node)
 
 GUIKeyboard::~GUIKeyboard()
 {
-	int layoutindex;
 
-	for (layoutindex=0; layoutindex<MAX_KEYBOARD_LAYOUTS; layoutindex++)
-		if (keyboardImg[layoutindex])   delete keyboardImg[layoutindex];
 }
 
 int GUIKeyboard::Render(void)
@@ -321,6 +340,30 @@ int GUIKeyboard::Render(void)
 
 	if (keyboardImg[currentLayout - 1] && keyboardImg[currentLayout - 1]->GetResource())
 		gr_blit(keyboardImg[currentLayout - 1]->GetResource(), 0, 0, KeyboardWidth, KeyboardHeight, mRenderX, mRenderY);
+
+	// Draw highlight for capslock
+	if (hasCapsHighlight && caps_tracking[currentLayout - 1].capslock == 0 && caps_tracking[currentLayout - 1].set_capslock) {
+		int boxheight, boxwidth, x;
+		gr_color(mCapsHighlightColor.red, mCapsHighlightColor.green, mCapsHighlightColor.blue, mCapsHighlightColor.alpha);
+		for (int indexy=0; indexy<MAX_KEYBOARD_ROWS; indexy++) {
+			for (int indexx=0; indexx<MAX_KEYBOARD_KEYS; indexx++) {
+				if ((int)keyboard_keys[currentLayout - 1][indexy][indexx].key == KEYBOARD_LAYOUT && (int)keyboard_keys[currentLayout - 1][indexy][indexx].layout == caps_tracking[currentLayout - 1].revert_layout) {
+					if (indexy == 0)
+						boxheight = row_heights[currentLayout - 1][indexy];
+					else
+						boxheight = row_heights[currentLayout - 1][indexy] - row_heights[currentLayout - 1][indexy - 1];
+					if (indexx == 0) {
+						x = mRenderX;
+						boxwidth = keyboard_keys[currentLayout - 1][indexy][indexx].end_x;
+					} else {
+						x = mRenderX + keyboard_keys[currentLayout - 1][indexy][indexx - 1].end_x;
+						boxwidth = keyboard_keys[currentLayout - 1][indexy][indexx].end_x - keyboard_keys[currentLayout - 1][indexy][indexx - 1].end_x;
+					}
+					gr_fill(x, mRenderY + row_heights[currentLayout - 1][indexy - 1], boxwidth, boxheight);
+				}
+			}
+		}
+	}
 
 	if (hasHighlight && highlightRenderCount != 0) {
 		int boxheight, boxwidth, x;
@@ -475,12 +518,27 @@ int GUIKeyboard::NotifyTouch(TOUCH_STATE state, int x, int y)
 					startSelection = 0;
 					break;
 				} else if (state == TOUCH_RELEASE && was_held == 0) {
+					DataManager::Vibrate("tw_keyboard_vibrate");
 					if ((int)keyboard_keys[currentLayout - 1][rowIndex][indexx].key < KEYBOARD_SPECIAL_KEYS && (int)keyboard_keys[currentLayout - 1][rowIndex][indexx].key > 0) {
 						// Regular key
 						PageManager::NotifyKeyboard(keyboard_keys[currentLayout - 1][rowIndex][indexx].key);
+						if (caps_tracking[currentLayout - 1].capslock == 0 && !caps_tracking[currentLayout - 1].set_capslock) {
+							// caps lock was not set, change layouts
+							currentLayout = caps_tracking[currentLayout - 1].revert_layout;
+							mRendered = false;
+						}
 					} else if ((int)keyboard_keys[currentLayout - 1][rowIndex][indexx].key == KEYBOARD_LAYOUT) {
 						// Switch layouts
-						currentLayout = keyboard_keys[currentLayout - 1][rowIndex][indexx].layout;
+						if (caps_tracking[currentLayout - 1].capslock == 0 && keyboard_keys[currentLayout - 1][rowIndex][indexx].layout == caps_tracking[currentLayout - 1].revert_layout) {
+							if (!caps_tracking[currentLayout - 1].set_capslock) {
+								caps_tracking[currentLayout - 1].set_capslock = 1; // Set the caps lock
+							} else {
+								caps_tracking[currentLayout - 1].set_capslock = 0; // Unset the caps lock and change layouts
+								currentLayout = keyboard_keys[currentLayout - 1][rowIndex][indexx].layout;
+							}
+						} else {
+							currentLayout = keyboard_keys[currentLayout - 1][rowIndex][indexx].layout;
+						}
 						mRendered = false;
 					} else if ((int)keyboard_keys[currentLayout - 1][rowIndex][indexx].key == KEYBOARD_ACTION) {
 						// Action
@@ -500,6 +558,7 @@ int GUIKeyboard::NotifyTouch(TOUCH_STATE state, int x, int y)
 						PageManager::NotifyKeyboard(keyboard_keys[currentLayout - 1][rowIndex][indexx].key);
 					} else if ((int)keyboard_keys[currentLayout - 1][rowIndex][indexx].longpresskey < KEYBOARD_SPECIAL_KEYS && (int)keyboard_keys[currentLayout - 1][rowIndex][indexx].longpresskey > 0) {
 						// Long Press Key
+						DataManager::Vibrate("tw_keyboard_vibrate");
 						PageManager::NotifyKeyboard(keyboard_keys[currentLayout - 1][rowIndex][indexx].longpresskey);
 					}
 				} else if (state == TOUCH_REPEAT) {

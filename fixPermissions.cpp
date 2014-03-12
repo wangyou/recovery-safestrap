@@ -42,11 +42,13 @@ using namespace std;
 using namespace rapidxml;
 
 #ifdef HAVE_SELINUX
+struct selabel_handle *sehandle;
+struct selinux_opt selinux_options[] = {
+	{ SELABEL_OPT_PATH, "/file_contexts" }
+};
+
 int fixPermissions::restorecon(string entry, struct stat *sb) {
 	char *oldcontext, *newcontext;
-	struct selabel_handle *sehandle;
-
-	sehandle = selinux_android_file_context_handle();
 	if (lgetfilecon(entry.c_str(), &oldcontext) < 0) {
 		LOGINFO("Couldn't get selinux context for %s\n", entry.c_str());
 		return -1;
@@ -55,9 +57,11 @@ int fixPermissions::restorecon(string entry, struct stat *sb) {
 		LOGINFO("Couldn't lookup selinux context for %s\n", entry.c_str());
 		return -1;
 	}
-	LOGINFO("Relabeling %s from %s to %s\n", entry.c_str(), oldcontext, newcontext);
-	if (lsetfilecon(entry.c_str(), newcontext) < 0) {
-		LOGINFO("Couldn't label %s with %s: %s\n", entry.c_str(), newcontext, strerror(errno));
+	if (strcmp(oldcontext, newcontext) != 0) {
+		LOGINFO("Relabeling %s from %s to %s\n", entry.c_str(), oldcontext, newcontext);
+		if (lsetfilecon(entry.c_str(), newcontext) < 0) {
+			LOGINFO("Couldn't label %s with %s: %s\n", entry.c_str(), newcontext, strerror(errno));
+		}
 	}
 	freecon(oldcontext);
 	freecon(newcontext);
@@ -65,25 +69,71 @@ int fixPermissions::restorecon(string entry, struct stat *sb) {
 }
 
 int fixPermissions::fixDataDataContexts(void) {
+	string dir = "/data/data/";
+	sehandle = selabel_open(SELABEL_CTX_FILE, selinux_options, 1);
+	if (TWFunc::Path_Exists(dir)) {
+		fixContextsRecursively(dir, 0);
+	}
+	selabel_close(sehandle);
+	return 0;
+}
+
+int fixPermissions::fixContextsRecursively(string name, int level) {
 	DIR *d;
 	struct dirent *de;
 	struct stat sb;
-	struct selabel_handle *selinux_handle;
-	struct selinux_opt selinux_options[] = {
-		{ SELABEL_OPT_PATH, "/file_contexts" }
-	};
-	selinux_handle = selabel_open(SELABEL_CTX_FILE, selinux_options, 1);
-	if (!selinux_handle)
-		printf("No file contexts for SELinux\n");
+	string path;
+
+	if (!(d = opendir(name.c_str())))
+		return -1;
+	if (!(de = readdir(d)))
+		return -1;
+
+	do {
+		if (de->d_type ==  DT_DIR) {
+			if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0)
+				continue;
+			path = name + "/" + de->d_name;
+			restorecon(path, &sb);
+			fixContextsRecursively(path, level + 1);
+		}
+		else {
+			path = name + "/" + de->d_name;
+			restorecon(path, &sb);
+		}
+	} while (de = readdir(d));
+	closedir(d);
+	return 0;
+}
+
+int fixPermissions::fixDataInternalContexts(void) {
+	DIR *d;
+	struct dirent *de;
+	struct stat sb;
+	string dir, androiddir;
+	sehandle = selabel_open(SELABEL_CTX_FILE, selinux_options, 1);
+
+	if (TWFunc::Path_Exists("/data/media/0"))
+		dir = "/data/media/0";
 	else
-		printf("SELinux contexts loaded from /file_contexts\n");
-	d = opendir("/data/data");
+		dir = "/data/media";
+	LOGINFO("Fixing %s contexts\n", dir.c_str());
+	restorecon(dir, &sb);
+	d = opendir(dir.c_str());
+
 	while (( de = readdir(d)) != NULL) {
 		stat(de->d_name, &sb);
-		string f = "/data/data/";
-		f = f + de->d_name;
+		string f;
+		f = dir + "/" + de->d_name;
 		restorecon(f, &sb);
 	}
+	closedir(d);
+
+	androiddir = dir + "/Android/";
+	if (TWFunc::Path_Exists(androiddir)) {
+		fixContextsRecursively(androiddir, 0);
+	}
+	selabel_close(sehandle);
 	return 0;
 }
 #endif
@@ -171,8 +221,9 @@ int fixPermissions::fixPerms(bool enable_debug, bool remove_data_for_missing_app
 		}
 	}
 	#ifdef HAVE_SELINUX
-	gui_print("Fixing /data/data contexts.\n");
+	gui_print("Fixing /data/data/ contexts.\n");
 	fixDataDataContexts();
+	fixDataInternalContexts();
 	#endif
 	gui_print("Done fixing permissions.\n");
 	return 0;

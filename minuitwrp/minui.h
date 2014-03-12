@@ -39,6 +39,7 @@ int twgr_text(int x, int y, const char *s);
 static inline int gr_text(int x, int y, const char *s)     { return gr_textEx(x, y, s, NULL); }
 int gr_measureEx(const char *s, void* font);
 static inline int gr_measure(const char *s)                { return gr_measureEx(s, NULL); }
+int gr_maxExW(const char *s, void* font, int max_width);
 
 int gr_getFontDetails(void* font, unsigned* cheight, unsigned* maxwidth);
 static inline void gr_font_size(int *x, int *y)            { gr_getFontDetails(NULL, (unsigned*) y, (unsigned*) x); }
@@ -58,6 +59,7 @@ struct input_event;
 int ev_init(void);
 void ev_exit(void);
 int ev_get(struct input_event *ev, unsigned dont_wait);
+int ev_has_mouse(void);
 
 // Resources
 
@@ -69,5 +71,7 @@ void res_free_surface(gr_surface surface);
 int ev_wait(int timeout);
 void ev_dispatch(void);
 int ev_get_input(int fd, short revents, struct input_event *ev);
+
+int vibrate(int timeout_ms);
 
 #endif

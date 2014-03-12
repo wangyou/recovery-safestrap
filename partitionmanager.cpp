@@ -104,6 +104,9 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 		for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
 			if ((*iter)->Is_Storage) {
 				(*iter)->Is_Settings_Storage = true;
+#ifndef RECOVERY_SDCARD_ON_DATA
+				(*iter)->Setup_AndSec();
+#endif
 				Found_Settings_Storage = true;
 				DataManager::SetValue("tw_settings_path", (*iter)->Storage_Path);
 				DataManager::SetValue("tw_storage_path", (*iter)->Storage_Path);
@@ -1444,9 +1447,9 @@ int TWPartitionManager::Decrypt_Device(string Password) {
 	property_set("ro.crypto.keyfile.userdata", CRYPTO_KEY_LOC);
 
 #ifdef CRYPTO_SD_FS_TYPE
-    property_set("ro.crypto.sd_fs_type", CRYPTO_SD_FS_TYPE);
-    property_set("ro.crypto.sd_fs_real_blkdev", CRYPTO_SD_REAL_BLKDEV);
-    property_set("ro.crypto.sd_fs_mnt_point", EXPAND(TW_INTERNAL_STORAGE_PATH));
+	property_set("ro.crypto.sd_fs_type", CRYPTO_SD_FS_TYPE);
+	property_set("ro.crypto.sd_fs_real_blkdev", CRYPTO_SD_REAL_BLKDEV);
+	property_set("ro.crypto.sd_fs_mnt_point", EXPAND(TW_INTERNAL_STORAGE_PATH));
 #endif
 
     property_set("rw.km_fips_status", "ready");
@@ -1937,10 +1940,11 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 				restore_path = Restore_List.substr(start_pos, end_pos - start_pos);
 				if ((restore_part = Find_Partition_By_Path(restore_path)) != NULL) {
 #ifdef BUILD_SAFESTRAP
-					if ((restore_part->Backup_Name == "recovery" || restore_part->Is_SubPartition) && !restore_part->Hidden) {
+					if (((restore_part->Backup_Name == "recovery" && !restore_part->Can_Be_Backed_Up) || restore_part->Is_SubPartition) && !restore_part->Hidden) {
 #else
-					if (restore_part->Backup_Name == "recovery" || restore_part->Is_SubPartition) {
+					if ((restore_part->Backup_Name == "recovery" && !restore_part->Can_Be_Backed_Up) || restore_part->Is_SubPartition) {
 #endif
+
 						// Don't allow restore of recovery (causes problems on some devices)
 						// Don't add subpartitions to the list of items
 					} else {

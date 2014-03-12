@@ -38,6 +38,7 @@
 		<resource name="keyboard2" type="image" filename="keyboard2" />
 		<resource name="keyboard3" type="image" filename="keyboard3" />
 		<resource name="keyboard4" type="image" filename="keyboard4" />
+		<resource name="cursor" type="image" filename="cursor" />
 	</resources>
 
 	<variables>
@@ -101,6 +102,7 @@
 		<variable name="text_success_color" value="#33B5E5" />
 		<variable name="text_fail_color" value="#FF0101" />
 		<variable name="highlight_color" value="#90909080" />
+		<variable name="caps_highlight_color" value="#33B5E580" />
 		<variable name="slider_x" value="435" />
 		<variable name="slider_y" value="600" />
 		<variable name="slider_text_y" value="650" />
@@ -204,6 +206,12 @@
 		<variable name="slidervalue_sliderw" value="15" />
 		<variable name="slidervalue_sliderh" value="60" />
 	</variables>
+
+	<mousecursor>
+		<placement w="15" h="15" />
+		<background color="#FFFF00FF" resource="cursor" />
+		<speed multiplier="2" />
+	</mousecursor>
 
 	<templates>
 		<template name="header">
@@ -375,6 +383,7 @@
 				<placement x="0" y="438" />
 				<layout resource1="keyboard1" resource2="keyboard2" resource3="keyboard3" resource4="keyboard4" />
 				<highlight color="%highlight_color%" />
+				<capshighlight color="%caps_highlight_color%" />
 				<layout1>
 					<keysize height="91" width="106" />
 					<row1 key01="102:" key02="q" long02="1" key03="w" long03="2" key04="e" long04="3" key05="r" long05="4" key06="t" long06="5" key07="y" long07="6" key08="u" long08="7" key09="i" long09="8" key10="o" long10="9" key11="p" long11="0" key12="118:c:8" />
@@ -383,7 +392,7 @@
 					<row4 key01="190:" key02=":" long02="+" key03="104:/" long03="@" key04="480: " key05="102:'" long05="102:c:34" key06="-" long06="_" />
 				</layout1>
 				<layout2>
-					<keysize height="90" width="106" />
+					<keysize height="90" width="106" capslock="0" revert_layout="1" />
 					<row1 key01="102:" key02="Q" long02="1" key03="W" long03="2" key04="E" long04="3" key05="R" long05="4" key06="T" long06="5" key07="Y" long07="6" key08="U" long08="7" key09="I" long09="8" key10="O" long10="9" key11="P" long11="0" key12="118:c:8" />
 					<row2 key01="142:layout3" key02="104:A" key03="104:S" key04="104:D" key05="104:F" key06="104:G" key07="104:H" key08="104:J" key09="104:K" key10="104:L" key11="202:action" />
 					<row3 key01="176:layout1" key02="103:Z" key03="103:X" key04="103:C" key05="103:V" key06="103:B" key07="103:N" key08="103:M" key09="103:," long09="!" key10="103:." long10="?" key11="177:layout1" />
@@ -2430,20 +2439,29 @@
 
 			<object type="button">
 				<highlight color="%highlight_color%" />
+				<placement x="%col2_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Restore Defaults</text>
+				<image resource="main_button" />
+				<action function="restoredefaultsettings"></action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
+				<placement x="%col3_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Vibration Duration</text>
+				<image resource="main_button" />
+				<action function="page">Vibrate</action>
+			</object>
+
+			<object type="button">
+				<highlight color="%highlight_color%" />
 				<placement x="%col4_x%" y="%row2_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Screen</text>
 				<image resource="main_button" />
 				<action function="page">screen</action>
-			</object>
-
-			<object type="button">
-				<highlight color="%highlight_color%" />
-				<placement x="%col_center_x%" y="%slider_y%" />
-				<font resource="font" color="%button_text_color%" />
-				<text>Restore Defaults</text>
-				<image resource="main_button" />
-				<action function="restoredefaultsettings"></action>
 			</object>
 
 			<object type="action">
@@ -2637,6 +2655,52 @@
 					<action function="compute">tw_brightness/100</action>
 					<action function="cmd">echo %tw_brightness% > &quot;%tw_brightness_file%&quot;</action>
 				</actions>
+			</object>
+
+			<object type="action">
+				<touch key="home" />
+				<action function="page">main</action>
+			</object>
+
+			<object type="action">
+				<touch key="back" />
+				<action function="page">settings</action>
+			</object>
+
+			<object type="template" name="footer" />
+		</page>
+
+		<page name="Vibrate">
+			<object type="template" name="header" />
+
+			<object type="text" color="%text_color%">
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_text_y%" placement="5" />
+				<text>Vibration Settings :</text>
+			</object>
+
+			<object type="slidervalue">
+				<placement x="slidervalue_x" y="%row3_text_y%" w="%slidervalue_w%" />
+				<font resource="font" color="%text_color%" />
+				<text>Button Vibration:</text>
+				<data variable="tw_button_vibrate" min="0" max="300" />
+				<colors line="%slidervalue_line_clr%" slider="%slidervalue_slider_clr%" />
+			</object>
+
+			<object type="slidervalue">
+				<placement x="slidervalue_x" y="%row7_text_y%" w="%slidervalue_w%" />
+				<font resource="font" color="%text_color%" />
+				<text>Keyboard Vibration:</text>
+				<data variable="tw_keyboard_vibrate" min="0" max="300" />
+				<colors line="%slidervalue_line_clr%" slider="%slidervalue_slider_clr%" />
+			</object>
+
+			<object type="slidervalue">
+				<placement x="slidervalue_x" y="%row11_text_y%" w="%slidervalue_w%" />
+				<font resource="font" color="%text_color%" />
+				<text>Action Vibration:</text>
+				<data variable="tw_action_vibrate" min="0" max="500" />
+				<colors line="%slidervalue_line_clr%" slider="%slidervalue_slider_clr%" />
 			</object>
 
 			<object type="action">

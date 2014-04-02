@@ -8,11 +8,11 @@ LOGFILE=$INSTALLPATH/action-uninstall.log
 BBX=$INSTALLPATH/busybox
 SS_CONFIG=$INSTALLPATH/ss.config
 
-. $INSTALLPATH/ss_function.sh
-readConfig
-
 chmod 755 $BBX
 chmod 755 $INSTALLPATH/ss_function.sh
+
+. $INSTALLPATH/ss_function.sh
+readConfig
 
 CURRENTSYS=`$BBX readlink $BLOCK_DIR/$BLOCK_SYSTEM`
 # check for older symlink style fixboot

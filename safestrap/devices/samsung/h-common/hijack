@@ -151,6 +151,9 @@ if [ "$RUN_SS" = "1" ]; then
 		# HASH: Hacky here.  We need to setup the framebuffer
 		$RECOVERY_DIR/safestrapmenu 2 1
 
+		# HASH: Another KK Hack.  /system is mounted RO by default, remount here for the future
+		mount -o remount,rw /system
+
 		# filesystem cleanup
 		$BBX rm /d
 		$BBX rm /etc
@@ -164,6 +167,20 @@ if [ "$RUN_SS" = "1" ]; then
 		$BBX mv /sbin/adbd /sbin/adbd.old
 		$BBX mv /init /init.old
 
+		# backup selinux/prop files
+		$BBX cp /file_contexts /tmp/
+		$BBX cp /property_contexts /tmp/
+		$BBX cp /seapp_contexts /tmp/
+		$BBX cp /sepolicy /tmp/
+		$BBX cp /sepolicy_version /tmp/
+		$BBX echo "ro.secure=0" > /tmp/default.prop
+		$BBX echo "ro.allow.mock.location=1" >> /tmp/default.prop
+		$BBX echo "ro.debuggable=1" >> /tmp/default.prop
+		$BBX echo "persist.sys.usb.config=adb" >> /tmp/default.prop
+		$BBX cat /system/build.prop >> /tmp/default.prop
+		$BBX chmod 644 /tmp/*
+
+		# clear out local files
 		$BBX rm /*
 
 		# extract recovery ramdisk
@@ -173,6 +190,11 @@ if [ "$RUN_SS" = "1" ]; then
 		$BBX rm /sbin/stop /sbin/stop.bak
 		$BBX rm /sbin/taskset /sbin/taskset.bak
 		$BBX unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
+
+		# copy back selinux/prop files
+		$BBX cp /tmp/* /
+		$BBX rm /tmp/*
+
 		$BBX chmod 750 /sbin/*
 		$BBX sync
 
@@ -255,6 +277,9 @@ if [ "$RUN_SS" = "1" ]; then
 
 		# check for alt-system or rootfs files
 		if [ "$ALT_SYSTEM_MODE" = "1" ] || [ -d "$CURRENT_SYS_DIR/etc/rootfs" ]; then
+			# HASH: Another KK Hack.  System is default mounted RO, need to remount here for the future
+			mount -o remount,rw /system
+
 			# BEGIN CLEANUP TODO: this should really be a device independant cleanup file
 			if [ -d "$RECOVERY_DIR/rootfs" ]; then
 				if [ -f "$RECOVERY_DIR/rootfs/sbin/adbd" ]; then

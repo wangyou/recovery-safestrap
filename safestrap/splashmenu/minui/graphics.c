@@ -33,8 +33,6 @@
 
 #include "minui.h"
 
-#define PRINT_SCREENINFO 1
-
 #ifdef BOARD_USE_CUSTOM_RECOVERY_FONT
 #include BOARD_USE_CUSTOM_RECOVERY_FONT
 #else
@@ -55,7 +53,9 @@
 #endif
 
 #define NUM_BUFFERS 2
-#define MAX_DISPLAY_DIM 2048
+#define MAX_DISPLAY_DIM  2048
+
+#define PRINT_SCREENINFO 1
 
 typedef struct {
     GGLSurface texture;
@@ -71,6 +71,7 @@ static GGLSurface gr_framebuffer[NUM_BUFFERS];
 static GGLSurface gr_mem_surface;
 static unsigned gr_active_fb = 0;
 static unsigned double_buffering = 0;
+static int gr_is_curr_clr_opaque = 0;
 
 static int gr_fb_fd = -1;
 static int gr_vt_fd = -1;
@@ -111,6 +112,62 @@ static void print_fb_var_screeninfo()
     printf("vi.activate: %d\n", vi.activate);
 }
 #endif
+
+#ifdef MSM_BSP
+int getLeftSplit(void) {
+   //Default even split for all displays with high res
+   int lSplit = vi.xres / 2;
+
+   //Override if split published by driver
+   if (leftSplit)
+       lSplit = leftSplit;
+
+   return lSplit;
+}
+
+int getRightSplit(void) {
+   return rightSplit;
+}
+
+
+void setDisplaySplit(void) {
+    char split[64] = {0};
+    FILE* fp = fopen("/sys/class/graphics/fb0/msm_fb_split", "r");
+    if (fp) {
+        //Format "left right" space as delimiter
+        if(fread(split, sizeof(char), 64, fp)) {
+            leftSplit = atoi(split);
+            printf("Left Split=%d\n",leftSplit);
+            char *rght = strpbrk(split, " ");
+            if (rght)
+                rightSplit = atoi(rght + 1);
+            printf("Right Split=%d\n", rightSplit);
+        }
+    } else {
+        printf("Failed to open mdss_fb_split node\n");
+    }
+    if (fp)
+        fclose(fp);
+}
+
+bool isDisplaySplit(void) {
+    if (vi.xres > MAX_DISPLAY_DIM)
+        return true;
+    //check if right split is set by driver
+    if (getRightSplit())
+        return true;
+
+    return false;
+}
+
+int getFbXres(void) {
+    return vi.xres;
+}
+
+int getFbYres (void) {
+    return vi.yres;
+}
+#endif // MSM_BSP
 
 static int get_framebuffer(GGLSurface *fb)
 {
@@ -210,7 +267,7 @@ static int get_framebuffer(GGLSurface *fb)
 
     has_overlay = target_has_overlay(fi.id);
 
-#ifdef TW_QCOM_BSP
+#ifdef MSM_BSP
     if (isTargetMdp5())
         setDisplaySplit();
 #endif
@@ -223,13 +280,8 @@ static int get_framebuffer(GGLSurface *fb)
             close(fd);
             return -1;
         }
-    }
-    else {
-#ifdef TW_QCOM_BSP
-        printf("qcom overlay detected -- TW_QCOM_BSP enabled!\n");
-#else
-        printf("qcom overlay detected -- not flagged to handle!\n");
-#endif
+    } else {
+        printf("Using qualcomm overlay\n");
     }
 
 #ifdef RECOVERY_GRAPHICS_USE_LINELENGTH
@@ -240,7 +292,7 @@ static int get_framebuffer(GGLSurface *fb)
     fb->width = vi.xres;
     fb->height = vi.yres;
 #ifdef BOARD_HAS_JANKY_BACKBUFFER
-    LOGI("setting JANKY BACKBUFFER\n");
+    printf("setting JANKY BACKBUFFER\n");
     fb->stride = fi.line_length/2;
 #else
     fb->stride = vi.xres_virtual;
@@ -288,59 +340,6 @@ static void get_memory_surface(GGLSurface* ms) {
   ms->format = PIXEL_FORMAT;
 }
 
-void setDisplaySplit() {
-    char split[64] = {0};
-    FILE* fp = fopen("/sys/class/graphics/fb0/msm_fb_split", "r");
-    if (fp) {
-        //Format "left right" space as delimiter
-        if(fread(split, sizeof(char), 64, fp)) {
-            leftSplit = atoi(split);
-            printf("Left Split=%d\n",leftSplit);
-            char *rght = strpbrk(split, " ");
-            if (rght)
-                rightSplit = atoi(rght + 1);
-            printf("Right Split=%d\n", rightSplit);
-        }
-    } else {
-        printf("Failed to open mdss_fb_split node\n");
-    }
-    if (fp)
-        fclose(fp);
-}
-
-int getLeftSplit() {
-    //Default even split for all displays with high res
-    int lSplit = vi.xres / 2;
-
-    //Override if split published by driver
-    if (leftSplit)
-        lSplit = leftSplit;
-
-    return lSplit;
-}
-
-int getRightSplit() {
-    return rightSplit;
-}
-
-bool isDisplaySplit() {
-    if (vi.xres > MAX_DISPLAY_DIM)
-        return true;
-    //check if right split is set by driver
-    if (getRightSplit())
-        return true;
-
-    return false;
-}
-
-int getFbXres() {
-    return vi.xres;
-}
-
-int getFbYres () {
-    return vi.yres;
-}
-
 static void set_active_framebuffer(unsigned n)
 {
     if (n > 1  || !double_buffering) return;
@@ -354,6 +353,14 @@ static void set_active_framebuffer(unsigned n)
 
 void gr_flip(void)
 {
+    if (-EINVAL == overlay_display_frame(gr_fb_fd, gr_mem_surface.data,
+                                         (fi.line_length * vi.yres))) {
+        GGLContext *gl = gr_context;
+
+        /* swap front and back buffers */
+        if (double_buffering)
+            gr_active_fb = (gr_active_fb + 1) & 1;
+
 #ifdef BOARD_HAS_FLIPPED_SCREEN
         /* flip buffer 180 degrees for devices with physicaly inverted screens */
         unsigned int i;
@@ -367,22 +374,6 @@ void gr_flip(void)
             }
         }
 #endif
-
-    if (has_overlay) {
-        // Allocate overlay. It'll exit early if overlay already
-        // allocated and allocate it if not already allocated.
-        allocate_overlay(gr_fb_fd, gr_framebuffer);
-        if (overlay_display_frame(gr_fb_fd,gr_mem_surface.data,
-                                     (fi.line_length * vi.yres)) < 0) {
-            // Free overlay in failure case
-            free_overlay(gr_fb_fd);
-        }
-    } else {
-        GGLContext *gl = gr_context;
-
-        /* swap front and back buffers */
-        if (double_buffering)
-            gr_active_fb = (gr_active_fb + 1) & 1;
 
         /* copy data from the in-memory surface to the buffer we're about
          * to make active. */
@@ -403,6 +394,8 @@ void gr_color(unsigned char r, unsigned char g, unsigned char b, unsigned char a
     color[2] = ((b << 8) | b) + 1;
     color[3] = ((a << 8) | a) + 1;
     gl->color4xv(gl, color);
+
+    gr_is_curr_clr_opaque = (a == 255);
 }
 
 int gr_measureEx(const char *s, void* font)
@@ -419,6 +412,30 @@ int gr_measureEx(const char *s, void* font)
         off -= 32;
         if (off < 96)
             total += (fnt->offset[off+1] - fnt->offset[off]);
+    }
+    return total;
+}
+
+int gr_maxExW(const char *s, void* font, int max_width)
+{
+    GRFont* fnt = (GRFont*) font;
+    int total = 0;
+    unsigned pos;
+    unsigned off;
+
+    if (!fnt)   fnt = gr_font;
+
+    while ((off = *s++))
+    {
+        off -= 32;
+        if (off < 96) {
+            max_width -= (fnt->offset[off+1] - fnt->offset[off]);
+			if (max_width > 0) {
+				total++;
+			} else {
+				return total;
+			}
+		}
     }
     return total;
 }
@@ -578,8 +595,15 @@ int twgr_text(int x, int y, const char *s)
 void gr_fill(int x, int y, int w, int h)
 {
     GGLContext *gl = gr_context;
+
+    if(gr_is_curr_clr_opaque)
+        gl->disable(gl, GGL_BLEND);
+
     gl->disable(gl, GGL_TEXTURE_2D);
     gl->recti(gl, x, y, x + w, y + h);
+
+    if(gr_is_curr_clr_opaque)
+        gl->enable(gl, GGL_BLEND);
 }
 
 void gr_blit(gr_surface source, int sx, int sy, int w, int h, int dx, int dy) {
@@ -588,13 +612,21 @@ void gr_blit(gr_surface source, int sx, int sy, int w, int h, int dx, int dy) {
     }
 
     GGLContext *gl = gr_context;
-    gl->bindTexture(gl, (GGLSurface*) source);
+    GGLSurface *surface = (GGLSurface*)source;
+
+    if(surface->format == GGL_PIXEL_FORMAT_RGBX_8888)
+        gl->disable(gl, GGL_BLEND);
+
+    gl->bindTexture(gl, surface);
     gl->texEnvi(gl, GGL_TEXTURE_ENV, GGL_TEXTURE_ENV_MODE, GGL_REPLACE);
     gl->texGeni(gl, GGL_S, GGL_TEXTURE_GEN_MODE, GGL_ONE_TO_ONE);
     gl->texGeni(gl, GGL_T, GGL_TEXTURE_GEN_MODE, GGL_ONE_TO_ONE);
     gl->enable(gl, GGL_TEXTURE_2D);
     gl->texCoord2i(gl, sx - dx, sy - dy);
     gl->recti(gl, dx, dy, dx + w, dy + h);
+
+    if(surface->format == GGL_PIXEL_FORMAT_RGBX_8888)
+        gl->enable(gl, GGL_BLEND);
 }
 
 unsigned int gr_get_width(gr_surface surface) {
@@ -776,22 +808,16 @@ int gr_init(void)
 //    gr_fb_blank(true);
 //    gr_fb_blank(false);
 
-    if (has_overlay) {
-        if (alloc_ion_mem(vi.xres_virtual * vi.yres * PIXEL_SIZE) ||
-            allocate_overlay(gr_fb_fd, gr_framebuffer)) {
-                free_ion_mem();
-        }
-    }
+    if (!alloc_ion_mem(fi.line_length * vi.yres))
+        allocate_overlay(gr_fb_fd, gr_framebuffer);
 
     return 0;
 }
 
 void gr_exit(void)
 {
-    if (has_overlay) {
-        free_overlay(gr_fb_fd);
-        free_ion_mem();
-    }
+    free_overlay(gr_fb_fd);
+    free_ion_mem();
 
     close(gr_fb_fd);
     gr_fb_fd = -1;
@@ -823,17 +849,15 @@ gr_pixel *gr_fb_data(void)
 int gr_fb_blank(int blank)
 {
     int ret;
-    if (has_overlay && blank) {
+    if (blank)
         free_overlay(gr_fb_fd);
-    }
 
     ret = ioctl(gr_fb_fd, FBIOBLANK, blank ? FB_BLANK_POWERDOWN : FB_BLANK_UNBLANK);
     if (ret < 0)
         perror("ioctl(): blank");
 
-    if (has_overlay && !blank) {
+    if (!blank)
         allocate_overlay(gr_fb_fd, gr_framebuffer);
-    }
 	return ret;
 }
 

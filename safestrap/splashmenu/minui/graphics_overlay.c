@@ -42,9 +42,9 @@
 #include <linux/fb.h>
 #include <linux/kd.h>
 
-#ifdef TW_QCOM_BSP
-#include "msm_mdp.h"
-#include "msm_ion.h"
+#ifdef MSM_BSP
+#include <msm_mdp.h>
+#include <msm_ion.h>
 #endif
 
 #include <pixelflinger/pixelflinger.h>
@@ -53,7 +53,7 @@
 
 #define MDP_V4_0 400
 
-#ifdef TW_QCOM_BSP
+#ifdef MSM_BSP
 #define ALIGN(x, align) (((x) + ((align)-1)) & ~((align)-1))
 
 typedef struct {
@@ -69,7 +69,6 @@ static int overlayL_id = MSMFB_NEW_REQUEST;
 static int overlayR_id = MSMFB_NEW_REQUEST;
 
 static memInfo mem_info;
-static isMDP5 = false;
 
 static int map_mdp_pixel_format()
 {
@@ -81,13 +80,13 @@ static int map_mdp_pixel_format()
 #endif
     return format;
 }
-#endif // #ifdef TW_QCOM_BSP
+#endif // #ifdef MSM_BSP
 
 static bool overlay_supported = false;
+static bool isMDP5 = false;
 
 bool target_has_overlay(char *version)
 {
-#ifdef TW_QCOM_BSP
     int ret;
     int mdp_version;
 
@@ -105,14 +104,9 @@ bool target_has_overlay(char *version)
             isMDP5 = true;
         }
     }
-
-    return true;//overlay_supported;
-#else
-    return false;
-#endif
+if (overlay_supported) printf("Using qcomm overlay\n");
+    return overlay_supported;
 }
-
-#ifdef TW_QCOM_BSP
 
 bool isTargetMdp5()
 {
@@ -121,6 +115,8 @@ bool isTargetMdp5()
 
     return false;
 }
+
+#ifdef MSM_BSP
 
 int free_ion_mem(void) {
     if (!overlay_supported)
@@ -212,7 +208,7 @@ int allocate_overlay(int fd, GGLSurface gr_fb[])
             memset(&overlayL, 0 , sizeof (struct mdp_overlay));
 
             /* Fill Overlay Data */
-            overlayL.src.width = ALIGN(gr_fb[0].width, 32);
+            overlayL.src.width  = ALIGN(gr_fb[0].width, 32);
             overlayL.src.height = gr_fb[0].height;
             overlayL.src.format = map_mdp_pixel_format();
             overlayL.src_rect.w = gr_fb[0].width;
@@ -245,7 +241,7 @@ int allocate_overlay(int fd, GGLSurface gr_fb[])
             memset(&overlayL, 0 , sizeof (struct mdp_overlay));
 
             /* Fill OverlayL Data */
-            overlayL.src.width = ALIGN(gr_fb[0].width, 32);
+            overlayL.src.width  = ALIGN(gr_fb[0].width, 32);
             overlayL.src.height = gr_fb[0].height;
             overlayL.src.format = map_mdp_pixel_format();
             overlayL.src_rect.x = 0;
@@ -272,7 +268,7 @@ int allocate_overlay(int fd, GGLSurface gr_fb[])
             memset(&overlayR, 0 , sizeof (struct mdp_overlay));
 
             /* Fill OverlayR Data */
-            overlayR.src.width = ALIGN(gr_fb[0].width, 32);
+            overlayR.src.width  = ALIGN(gr_fb[0].width, 32);
             overlayR.src.height = gr_fb[0].height;
             overlayR.src.format = map_mdp_pixel_format();
             overlayR.src_rect.x = lCropWidth;
@@ -454,5 +450,4 @@ int overlay_display_frame(int fd, GGLubyte* data, size_t size)
     return -EINVAL;
 }
 
-#endif //#ifdef TW_QCOM_BSP
-
+#endif //#ifdef MSM_BSP

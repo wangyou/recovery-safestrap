@@ -67,10 +67,6 @@ void twrpTar::setdir(string dir) {
 	tardir = dir;
 }
 
-void twrpTar::setexcl(string exclude) {
-	tarexclude.push_back(exclude);
-}
-
 void twrpTar::setsize(unsigned long long backup_size) {
 	Total_Backup_Size = backup_size;
 }
@@ -124,10 +120,7 @@ int twrpTar::createTarFork() {
 					continue; // Skip /data/media
 				if (de->d_type == DT_BLK || de->d_type == DT_CHR)
 					continue;
-				bool skip_dir = false;
-				string dir(de->d_name);
-				skip_dir = du.check_skip_dirs(dir);
-				if (de->d_type == DT_DIR && !skip_dir) {
+				if (de->d_type == DT_DIR && !du.check_skip_dirs(tardir, de->d_name)) {
 					item_len = strlen(de->d_name);
 					if (userdata_encryption && ((item_len >= 3 && strncmp(de->d_name, "app", 3) == 0) || (item_len >= 6 && strncmp(de->d_name, "dalvik", 6) == 0))) {
 						if (Generate_TarList(FileName, &RegularList, &target_size, &regular_thread_id) < 0) {
@@ -171,10 +164,7 @@ int twrpTar::createTarFork() {
 					continue; // Skip /data/media
 				if (de->d_type == DT_BLK || de->d_type == DT_CHR)
 					continue;
-				bool skip_dir = false;
-				string dir(de->d_name);
-				skip_dir = du.check_skip_dirs(dir);
-				if (de->d_type == DT_DIR && !skip_dir) {
+				if (de->d_type == DT_DIR && !du.check_skip_dirs(tardir, de->d_name)) {
 					item_len = strlen(de->d_name);
 					if (userdata_encryption && ((item_len >= 3 && strncmp(de->d_name, "app", 3) == 0) || (item_len >= 6 && strncmp(de->d_name, "dalvik", 6) == 0))) {
 						// Do nothing, we added these to RegularList earlier
@@ -244,6 +234,7 @@ int twrpTar::createTarFork() {
 				enc[i].ItemList = &EncryptList;
 				enc[i].thread_id = i;
 				enc[i].use_encryption = use_encryption;
+				enc[i].setpassword(password);
 				enc[i].use_compression = use_compression;
 				enc[i].split_archives = 1;
 				LOGINFO("Start encryption thread %i\n", i);
@@ -389,6 +380,7 @@ int twrpTar::extractTarFork() {
 					if (TWFunc::Path_Exists(actual_filename)) {
 						thread_count++;
 						tars[i].basefn = basefn;
+						tars[i].setpassword(password);
 						tars[i].thread_id = i;
 						LOGINFO("Creating extract thread ID %i\n", i);
 						ret = pthread_create(&tar_thread[i], &tattr, extractMulti, (void*)&tars[i]);
@@ -453,7 +445,6 @@ int twrpTar::Generate_TarList(string Path, std::vector<TarListStruct> *TarList, 
 	string FileName;
 	struct TarListStruct TarItem;
 	string::size_type i;
-	bool skip;
 
 	if (has_data_media == 1 && Path.size() >= 11 && strncmp(Path.c_str(), "/data/media", 11) == 0)
 		return 0; // Skip /data/media
@@ -465,30 +456,16 @@ int twrpTar::Generate_TarList(string Path, std::vector<TarListStruct> *TarList, 
 		return -1;
 	}
 	while ((de = readdir(d)) != NULL) {
-		// Skip excluded stuff
 		FileName = Path + "/";
 		FileName += de->d_name;
-		if (tarexclude.size() > 0) {
-			skip = false;
-			for (i = 0; i < tarexclude.size(); i++) {
-				if (FileName == tarexclude[i]) {
-					LOGINFO("Excluding %s\n", FileName.c_str());
-					break;
-				}
-			}
-			if (skip)
-				continue;
-		}
+
 		if (has_data_media == 1 && FileName.size() >= 11 && strncmp(FileName.c_str(), "/data/media", 11) == 0)
 			continue; // Skip /data/media
 		if (de->d_type == DT_BLK || de->d_type == DT_CHR)
 			continue;
 		TarItem.fn = FileName;
 		TarItem.thread_id = *thread_id;
-		bool skip_dir = false;
-		string dir(de->d_name);
-		skip_dir = du.check_skip_dirs(dir);
-		if (de->d_type == DT_DIR && !skip_dir) {
+		if (de->d_type == DT_DIR && !du.check_skip_dirs(Path, de->d_name)) {
 			TarList->push_back(TarItem);
 			if (Generate_TarList(FileName, TarList, Target_Size, thread_id) < 0)
 				return -1;
@@ -579,8 +556,8 @@ int twrpTar::tarList(std::vector<TarListStruct> *TarList, unsigned thread_id) {
 	while (i < list_size) {
 		if (TarList->at(i).thread_id == thread_id) {
 			strcpy(buf, TarList->at(i).fn.c_str());
-			stat(buf, &st);
-			if (st.st_mode & S_IFREG) { // item is a regular file
+			lstat(buf, &st);
+			if (S_ISREG(st.st_mode)) { // item is a regular file
 				if (Archive_Current_Size + (unsigned long long)(st.st_size) > MAX_ARCHIVE_SIZE) {
 					if (closeTar() != 0) {
 						LOGERR("Error closing '%s' on thread %i\n", tarfn.c_str(), thread_id);

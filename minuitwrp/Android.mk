@@ -2,14 +2,14 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
+ifndef RECOVERY_INCLUDE_DIR
+    RECOVERY_INCLUDE_DIR := bootable/recovery/minuitwrp/include
+endif
+
 BUILD_SAFESTRAP := true
 ifeq ($(BUILD_SAFESTRAP), true)
     LOCAL_CFLAGS += -DBUILD_SAFESTRAP
     LOCAL_CPPFLAGS += -DBUILD_SAFESTRAP
-ifndef RECOVERY_INCLUDE_DIR
-    RECOVERY_INCLUDE_DIR := bootable/recovery/safestrap/devices/common/include
-endif
-    LOCAL_C_INCLUDES += $(RECOVERY_INCLUDE_DIR)
 endif
 
 LOCAL_SRC_FILES := events.c resources.c graphics_overlay.c
@@ -24,12 +24,16 @@ ifeq ($(TW_TARGET_USES_QCOM_BSP), true)
   LOCAL_CFLAGS += -DMSM_BSP
   ifeq ($(TARGET_PREBUILT_KERNEL),)
     LOCAL_ADDITIONAL_DEPENDENCIES := $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr
-    LOCAL_C_INCLUDES += $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/include
+    ifeq ($(BUILD_SAFESTRAP), true)
+      LOCAL_C_INCLUDES += $(RECOVERY_INCLUDE_DIR)
+    else
+      LOCAL_C_INCLUDES += $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/include
+    endif
   else
-    LOCAL_C_INCLUDES += bootable/recovery/minuitwrp/include
+    LOCAL_C_INCLUDES += $(RECOVERY_INCLUDE_DIR)
   endif
 else
-  LOCAL_C_INCLUDES += bootable/recovery/minuitwrp/include
+  LOCAL_C_INCLUDES += $(RECOVERY_INCLUDE_DIR)
 endif
 
 LOCAL_C_INCLUDES += \
@@ -37,10 +41,6 @@ LOCAL_C_INCLUDES += \
     external/zlib \
     system/core/include \
     external/jpeg
-
-ifeq ($(TW_TARGET_USES_QCOM_BSP), true)
-    LOCAL_CFLAGS += -DTW_QCOM_BSP
-endif
 
 LOCAL_C_INCLUDES += \
     bootable/recovery/libjpegtwrp

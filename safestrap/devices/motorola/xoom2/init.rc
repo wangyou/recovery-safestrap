@@ -3,7 +3,7 @@ on early-init
 
 on init
     loglevel 8
-    export PATH /sbin
+    export PATH /sbin:/system/bin
     export LD_LIBRARY_PATH .:/sbin
     export ANDROID_ROOT /system
     export ANDROID_DATA /data
@@ -20,7 +20,7 @@ on init
     mkdir /system
     mkdir /data
     mkdir /cache
-    mount /tmp /tmp tmpfs
+    mount tmpfs tmpfs /tmp
     chmod /tmp 0777
 
 on fs

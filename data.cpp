@@ -722,19 +722,11 @@ void DataManager::SetDefaultValues()
 #else
 	#ifdef RECOVERY_SDCARD_ON_DATA
 		#ifdef TW_EXTERNAL_STORAGE_PATH
-#ifdef BUILD_SAFESTRAP
-			LOGI("Has %s/media + external storage in '%s'\n", datamedia_mount, EXPAND(TW_EXTERNAL_STORAGE_PATH));
-#else
 			LOGINFO("Has /data/media + external storage in '%s'\n", EXPAND(TW_EXTERNAL_STORAGE_PATH));
-#endif
 			// Device has /data/media + external storage
 			mConstValues.insert(make_pair(TW_HAS_DUAL_STORAGE, "1"));
 		#else
-#ifdef BUILD_SAFESTRAP
-			LOGI("Single storage only -- %s/media.\n", datamedia_mount);
-#else
 			LOGINFO("Single storage only -- data/media.\n");
-#endif
 			// Device just has external storage
 			mConstValues.insert(make_pair(TW_HAS_DUAL_STORAGE, "0"));
 			mConstValues.insert(make_pair(TW_HAS_EXTERNAL, "0"));
@@ -745,11 +737,7 @@ void DataManager::SetDefaultValues()
 		mConstValues.insert(make_pair(TW_HAS_DUAL_STORAGE, "0"));
 	#endif
 	#ifdef RECOVERY_SDCARD_ON_DATA
-#ifdef BUILD_SAFESTRAP
-		LOGI("Device has %s/media defined.\n", datamedia_mount);
-#else
 		LOGINFO("Device has /data/media defined.\n");
-#endif
 		// Device has /data/media
 		mConstValues.insert(make_pair(TW_USE_EXTERNAL_STORAGE, "0"));
 		mConstValues.insert(make_pair(TW_HAS_INTERNAL, "1"));

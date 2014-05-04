@@ -111,12 +111,22 @@ int fixPermissions::fixDataInternalContexts(void) {
 	struct dirent *de;
 	struct stat sb;
 	string dir, androiddir;
+#ifdef BUILD_SAFESTRAP
+	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
+#endif
 	sehandle = selabel_open(SELABEL_CTX_FILE, selinux_options, 1);
 
+#ifdef BUILD_SAFESTRAP
+	if (TWFunc::Path_Exists(datamedia_mount + "/media/0")) {
+		dir = datamedia_mount + "/media/0";
+	else
+		dir = datamedia_mount + "/media";
+#else
 	if (TWFunc::Path_Exists("/data/media/0"))
 		dir = "/data/media/0";
 	else
 		dir = "/data/media";
+#endif
 	LOGINFO("Fixing %s contexts\n", dir.c_str());
 	restorecon(dir, &sb);
 	d = opendir(dir.c_str());

@@ -14,7 +14,9 @@
 
 LOCAL_PATH := $(call my-dir)
 
-SS_PRODUCT_MANUFACTURER := $(shell echo $(PRODUCT_MANUFACTURER) | tr '[A-Z]' '[a-z]')
+ifeq ($(SS_PRODUCT_MANUFACTURER), )
+  SS_PRODUCT_MANUFACTURER := $(shell echo $(PRODUCT_MANUFACTURER) | tr '[A-Z]' '[a-z]')
+endif
 
 BUILD_SAFESTRAP := true
 ifeq ($(BUILD_SAFESTRAP), true)

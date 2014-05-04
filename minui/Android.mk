@@ -1,6 +1,10 @@
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
+ifndef RECOVERY_INCLUDE_DIR
+    RECOVERY_INCLUDE_DIR := bootable/recovery/minui/include
+endif
+
 LOCAL_SRC_FILES := graphics_overlay.c events.c resources.c
 ifneq ($(BOARD_CUSTOM_GRAPHICS),)
   LOCAL_SRC_FILES += $(BOARD_CUSTOM_GRAPHICS)
@@ -16,12 +20,16 @@ ifeq ($(TW_TARGET_USES_QCOM_BSP), true)
   LOCAL_CFLAGS += -DMSM_BSP
   ifeq ($(TARGET_PREBUILT_KERNEL),)
     LOCAL_ADDITIONAL_DEPENDENCIES := $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr
-    LOCAL_C_INCLUDES += $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/include
+    ifeq ($(BUILD_SAFESTRAP), true)
+      LOCAL_C_INCLUDES += $(RECOVERY_INCLUDE_DIR)
+    else
+      LOCAL_C_INCLUDES += $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/include
+    endif
   else
-    LOCAL_C_INCLUDES += bootable/recovery/minui/include
+    LOCAL_C_INCLUDES += $(RECOVERY_INCLUDE_DIR)
   endif
 else
-  LOCAL_C_INCLUDES += bootable/recovery/minui/include
+  LOCAL_C_INCLUDES += $(RECOVERY_INCLUDE_DIR)
 endif
 
 LOCAL_STATIC_LIBRARY := libpng

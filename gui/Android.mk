@@ -147,6 +147,7 @@ TWRP_RES_LOC := $(commands_recovery_local_path)/gui/devices/common/res
 
 ifdef BUILD_SAFESTRAP
 SS_COMMON := $(commands_recovery_local_path)/safestrap
+TWRP_RES_LOC := $(SS_COMMON)/devices/common/res/common/res
 TWRP_THEME_LOC := $(SS_COMMON)/devices/common/res/$(DEVICE_RESOLUTION)/res
 else
 ifeq ($(TW_CUSTOM_THEME),)

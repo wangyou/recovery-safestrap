@@ -31,6 +31,7 @@ LOCAL_SRC_FILES := \
     twrpTar.cpp \
 	twrpDU.cpp \
     twrpDigest.cpp \
+    find_file.cpp
 
 LOCAL_SRC_FILES += \
     data.cpp \
@@ -95,6 +96,12 @@ ifneq ($(wildcard system/core/libsparse/Android.mk),)
 LOCAL_SHARED_LIBRARIES += libsparse
 endif
 
+ifeq ($(TW_OEM_BUILD),true)
+    LOCAL_CFLAGS += -DTW_OEM_BUILD
+    BOARD_HAS_NO_REAL_SDCARD := true
+    TW_USE_TOOLBOX := true
+    TW_EXCLUDE_SUPERSU := true
+endif
 ifeq ($(TARGET_USERIMAGES_USE_EXT4), true)
 #    LOCAL_CFLAGS += -DUSE_EXT4
 #    LOCAL_C_INCLUDES += system/extras/ext4_utils
@@ -285,9 +292,6 @@ endif
 ifneq ($(TW_CUSTOM_BATTERY_CAPACITY_FIELD),)
 	LOCAL_CFLAGS += -DTW_CUSTOM_BATTERY_CAPACITY_FIELD=$(TW_CUSTOM_BATTERY_CAPACITY_FIELD)
 endif
-ifeq ($(TARGET_BOARD_PLATFORM),rk30xx)
-    LOCAL_CFLAGS += -DRK3066
-endif
 ifneq ($(TW_EXCLUDE_ENCRYPTED_BACKUPS), true)
     LOCAL_SHARED_LIBRARIES += libopenaes
 else
@@ -357,6 +361,7 @@ LOCAL_CFLAGS += -DTW_SS_DATAMEDIA_MOUNT=$(TW_SS_DATAMEDIA_MOUNT)
 
 include $(BUILD_EXECUTABLE)
 
+ifneq ($(TW_USE_TOOLBOX), true)
 include $(CLEAR_VARS)
 # Create busybox symlinks... gzip and gunzip are excluded because those need to link to pigz instead
 BUSYBOX_LINKS := $(shell cat external/busybox/busybox-full.links)
@@ -374,6 +379,7 @@ $(RECOVERY_BUSYBOX_SYMLINKS): $(LOCAL_INSTALLED_MODULE)
 	$(hide) ln -sf $(BUSYBOX_BINARY) $@
 
 ALL_DEFAULT_INSTALLED_MODULES += $(RECOVERY_BUSYBOX_SYMLINKS)
+endif
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := verifier_test
@@ -397,9 +403,6 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := libaosprecovery
 LOCAL_MODULE_TAGS := eng
 LOCAL_MODULES_TAGS = optional
-ifeq ($(TARGET_BOARD_PLATFORM),rk30xx)
-    LOCAL_CFLAGS += -DRK3066
-endif
 LOCAL_C_INCLUDES := bootable/recovery/libmincrypt/includes
 LOCAL_SRC_FILES = adb_install.cpp bootloader.cpp verifier.cpp mtdutils/mtdutils.c legacy_property_service.c
 LOCAL_SHARED_LIBRARIES += libc liblog libcutils libmtdutils

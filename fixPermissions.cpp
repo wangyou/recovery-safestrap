@@ -117,7 +117,7 @@ int fixPermissions::fixDataInternalContexts(void) {
 	sehandle = selabel_open(SELABEL_CTX_FILE, selinux_options, 1);
 
 #ifdef BUILD_SAFESTRAP
-	if (TWFunc::Path_Exists(datamedia_mount + "/media/0")) {
+	if (TWFunc::Path_Exists(datamedia_mount + "/media/0"))
 		dir = datamedia_mount + "/media/0";
 	else
 		dir = datamedia_mount + "/media";

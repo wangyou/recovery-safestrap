@@ -20,7 +20,7 @@
 #define TW_VERSION_STR              "2.7.0.0"
 
 #ifdef BUILD_SAFESTRAP
-#define SS_VERSION_STR              "3.72"
+#define SS_VERSION_STR              "3.73"
 #endif
 #define TW_USE_COMPRESSION_VAR      "tw_use_compression"
 #define TW_FILENAME                 "tw_filename"

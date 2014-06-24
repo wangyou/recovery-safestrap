@@ -369,7 +369,7 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Can_Be_Backed_Up = true;
 			if (Mount(false) && !TWFunc::Path_Exists("/cache/recovery/.")) {
 				LOGINFO("Recreating /cache/recovery folder.\n");
-				if (mkdir("/cache/recovery", S_IRWXU | S_IRWXG | S_IWGRP | S_IXGRP) != 0) 
+				if (mkdir("/cache/recovery", S_IRWXU | S_IRWXG | S_IWGRP | S_IXGRP) != 0)
 					return -1;
 			}
 		} else if (Mount_Point == "/datadata") {
@@ -1120,7 +1120,7 @@ bool TWPartition::UnMount(bool Display_Error) {
 }
 
 bool TWPartition::Wipe(string New_File_System) {
-	bool wiped = false, update_crypt = false;
+	bool wiped = false, update_crypt = false, recreate_media = true;
 	int check;
 	string Layout_Filename = Mount_Point + "/.layout_version";
 
@@ -1144,8 +1144,9 @@ bool TWPartition::Wipe(string New_File_System) {
 	else
 		unlink("/.layout_version");
 
-	if (Has_Data_Media) {
+	if (Has_Data_Media && Current_File_System == New_File_System) {
 		wiped = Wipe_Data_Without_Wiping_Media();
+		recreate_media = false;
 	} else {
 #ifdef BUILD_SAFESTRAP
 		string bootslot = "";
@@ -1215,6 +1216,10 @@ bool TWPartition::Wipe(string New_File_System) {
 				}
 			}
 		}
+
+		if (Mount_Point == "/data" && Has_Data_Media && recreate_media) {
+			Recreate_Media_Folder();
+		}
 	}
 	return wiped;
 }
@@ -1236,6 +1241,100 @@ bool TWPartition::Wipe_AndSec(void) {
 	gui_print("Wiping %s\n", Backup_Display_Name.c_str());
 	TWFunc::removeDir(Mount_Point + "/.android_secure/", true);
 	return true;
+}
+
+bool TWPartition::Can_Repair() {
+	if (Current_File_System == "vfat" && TWFunc::Path_Exists("/sbin/dosfsck"))
+		return true;
+	else if ((Current_File_System == "ext2" || Current_File_System == "ext3" || Current_File_System == "ext4") && TWFunc::Path_Exists("/sbin/e2fsck"))
+		return true;
+	else if (Current_File_System == "exfat" && TWFunc::Path_Exists("/sbin/fsck.exfat"))
+		return true;
+	else if (Current_File_System == "f2fs" && TWFunc::Path_Exists("/sbin/fsck.f2fs"))
+		return true;
+	return false;
+}
+
+bool TWPartition::Repair() {
+	string command;
+
+	if (Current_File_System == "vfat") {
+		if (!TWFunc::Path_Exists("/sbin/dosfsck")) {
+			gui_print("dosfsck does not exist! Cannot repair!\n");
+			return false;
+		}
+		if (!UnMount(true))
+			return false;
+		gui_print("Repairing %s using dosfsck...\n", Display_Name.c_str());
+		Find_Actual_Block_Device();
+		command = "/sbin/dosfsck -y " + Actual_Block_Device;
+		LOGINFO("Repair command: %s\n", command.c_str());
+		if (TWFunc::Exec_Cmd(command) == 0) {
+			gui_print("Done.\n");
+			return true;
+		} else {
+			LOGERR("Unable to repair '%s'.\n", Mount_Point.c_str());
+			return false;
+		}
+	}
+	if (Current_File_System == "ext2" || Current_File_System == "ext3" || Current_File_System == "ext4") {
+		if (!TWFunc::Path_Exists("/sbin/e2fsck")) {
+			gui_print("e2fsck does not exist! Cannot repair!\n");
+			return false;
+		}
+		if (!UnMount(true))
+			return false;
+		gui_print("Repairing %s using e2fsck...\n", Display_Name.c_str());
+		Find_Actual_Block_Device();
+		command = "/sbin/e2fsck -p " + Actual_Block_Device;
+		LOGINFO("Repair command: %s\n", command.c_str());
+		if (TWFunc::Exec_Cmd(command) == 0) {
+			gui_print("Done.\n");
+			return true;
+		} else {
+			LOGERR("Unable to repair '%s'.\n", Mount_Point.c_str());
+			return false;
+		}
+	}
+	if (Current_File_System == "exfat") {
+		if (!TWFunc::Path_Exists("/sbin/fsck.exfat")) {
+			gui_print("fsck.exfat does not exist! Cannot repair!\n");
+			return false;
+		}
+		if (!UnMount(true))
+			return false;
+		gui_print("Repairing %s using fsck.exfat...\n", Display_Name.c_str());
+		Find_Actual_Block_Device();
+		command = "/sbin/fsck.exfat " + Actual_Block_Device;
+		LOGINFO("Repair command: %s\n", command.c_str());
+		if (TWFunc::Exec_Cmd(command) == 0) {
+			gui_print("Done.\n");
+			return true;
+		} else {
+			LOGERR("Unable to repair '%s'.\n", Mount_Point.c_str());
+			return false;
+		}
+	}
+	if (Current_File_System == "f2fs") {
+		if (!TWFunc::Path_Exists("/sbin/fsck.f2fs")) {
+			gui_print("fsck.f2fs does not exist! Cannot repair!\n");
+			return false;
+		}
+		if (!UnMount(true))
+			return false;
+		gui_print("Repairing %s using fsck.f2fs...\n", Display_Name.c_str());
+		Find_Actual_Block_Device();
+		command = "/sbin/fsck.f2fs " + Actual_Block_Device;
+		LOGINFO("Repair command: %s\n", command.c_str());
+		if (TWFunc::Exec_Cmd(command) == 0) {
+			gui_print("Done.\n");
+			return true;
+		} else {
+			LOGERR("Unable to repair '%s'.\n", Mount_Point.c_str());
+			return false;
+		}
+	}
+	return false;
 }
 
 bool TWPartition::Backup(string backup_folder) {
@@ -1397,7 +1496,7 @@ void TWPartition::Check_FS_Type() {
 		return;
 	}
 
-	if (blkid_probe_lookup_value(pr, "TYPE", &type, NULL) < 0) { 
+	if (blkid_probe_lookup_value(pr, "TYPE", &type, NULL) < 0) {
 		blkid_free_probe(pr);
 		LOGINFO("can't find filesystem on device %s\n", Actual_Block_Device.c_str());
 		return;
@@ -1769,8 +1868,15 @@ bool TWPartition::Restore_Tar(string restore_folder, string Restore_File_System)
 			return false;
 	} else {
 		gui_print("Wiping %s...\n", Display_Name.c_str());
-		if (!Wipe(Restore_File_System))
-			return false;
+		if (Has_Data_Media && Mount_Point == "/data" && Restore_File_System != Current_File_System) {
+			gui_print("WARNING: This /data backup was made with %s file system!\n", Restore_File_System.c_str());
+			gui_print("The backup may not boot unless you change back to %s.\n", Restore_File_System.c_str());
+			if (!Wipe_Data_Without_Wiping_Media())
+				return false;
+		} else {
+			if (!Wipe(Restore_File_System))
+				return false;
+		}
 	}
 	TWFunc::GUI_Operation_Text(TW_RESTORE_TEXT, Backup_Display_Name, "Restoring");
 	gui_print("Restoring %s...\n", Backup_Display_Name.c_str());
@@ -1950,12 +2056,14 @@ void TWPartition::Recreate_Media_Folder(void) {
 		sprintf(path, "%s/media", datamedia_mount.c_str());
 		mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 #else
-		mkdir("/data/media", S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH); 
+		mkdir("/data/media", S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 #endif
 		#ifdef HAVE_SELINUX
 		perms.fixDataInternalContexts();
 		#endif
+		// Toggle mount to ensure that "internal sdcard" gets mounted
 		PartitionManager.UnMount_By_Path(Symlink_Mount_Point, true);
+		PartitionManager.Mount_By_Path(Symlink_Mount_Point, true);
 	}
 }
 
@@ -1968,7 +2076,7 @@ void TWPartition::Recreate_AndSec_Folder(void) {
 	} else if (!TWFunc::Path_Exists(Symlink_Path)) {
 		LOGINFO("Recreating %s folder.\n", Backup_Name.c_str());
 		PartitionManager.Mount_By_Path(Symlink_Mount_Point, true);
-		mkdir(Symlink_Path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH); 
+		mkdir(Symlink_Path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 		PartitionManager.UnMount_By_Path(Symlink_Mount_Point, true);
 	}
 }

@@ -283,7 +283,9 @@ error:
 	fclose(in);
 	string current = GetCurrentStoragePath();
 	TWPartition* Part = PartitionManager.Find_Partition_By_Path(current);
-	if (current != Part->Storage_Path && Part->Mount(false)) {
+	if(!Part)
+		Part = PartitionManager.Get_Default_Storage_Partition();
+	if (Part && current != Part->Storage_Path && Part->Mount(false)) {
 		LOGINFO("LoadValues setting storage path to '%s'\n", Part->Storage_Path.c_str());
 		SetValue("tw_storage_path", Part->Storage_Path);
 	} else {
@@ -563,18 +565,9 @@ void DataManager::SetBackupFolder()
 		SetValue("tw_storage_free_size", free_space);
 		string zip_path, zip_root, storage_path;
 		GetValue(TW_ZIP_LOCATION_VAR, zip_path);
-#ifdef BUILD_SAFESTRAP
-#ifndef TW_INTERNAL_STORAGE_PATH
-		LOGINFO("DataManager::SetBackupFolder no TW_INTERNAL_STORAGE_PATH\n", storage_path.c_str());
 		if (partition->Has_Data_Media)
 			storage_path = partition->Symlink_Mount_Point;
 		else
-#endif
-#else
-		if (partition->Has_Data_Media)
-			storage_path = partition->Symlink_Mount_Point;
-		else
-#endif
 			storage_path = partition->Storage_Path;
 #ifdef BUILD_SAFESTRAP
 		LOGINFO("DataManager::SetBackupFolder storage_path=%s\n", storage_path.c_str());
@@ -637,7 +630,6 @@ void DataManager::SetDefaultValues()
 	mConstValues.insert(make_pair("false", "0"));
 
 	mConstValues.insert(make_pair(TW_VERSION_VAR, TW_VERSION_STR));
-	mValues.insert(make_pair("tw_storage_path", make_pair("/", 1)));
 	mValues.insert(make_pair("tw_button_vibrate", make_pair("80", 1)));
 	mValues.insert(make_pair("tw_keyboard_vibrate", make_pair("40", 1)));
 	mValues.insert(make_pair("tw_action_vibrate", make_pair("160", 1)));
@@ -664,6 +656,12 @@ void DataManager::SetDefaultValues()
 	mConstValues.insert(make_pair(TW_SS_DEFAULT_VIRT_CACHE_MIN_SIZE, DEFAULT_VIRT_CACHE_MIN_SIZE));
 	mConstValues.insert(make_pair(TW_SS_DEFAULT_VIRT_CACHE_MAX_SIZE, DEFAULT_VIRT_CACHE_MAX_SIZE));
 #endif
+	TWPartition *store = PartitionManager.Get_Default_Storage_Partition();
+	if(store)
+		mValues.insert(make_pair("tw_storage_path", make_pair(store->Storage_Path.c_str(), 1)));
+	else
+		mValues.insert(make_pair("tw_storage_path", make_pair("/", 1)));
+
 #ifdef TW_FORCE_CPUINFO_FOR_DEVICE_ID
 	printf("TW_FORCE_CPUINFO_FOR_DEVICE_ID := true\n");
 #endif
@@ -1086,7 +1084,7 @@ int DataManager::GetMagicValue(const string varName, string& value)
 		int tw_military_time;
 		now = time(0);
 		current = localtime(&now);
-		GetValue(TW_MILITARY_TIME, tw_military_time); 
+		GetValue(TW_MILITARY_TIME, tw_military_time);
 		if (current->tm_hour >= 12)
 		{
 			if (tw_military_time == 1)
@@ -1096,7 +1094,7 @@ int DataManager::GetMagicValue(const string varName, string& value)
 		}
 		else
 		{
-			if (tw_military_time == 1) 
+			if (tw_military_time == 1)
 				sprintf(tmp, "%d:%02d", current->tm_hour, current->tm_min);
 			else
 				sprintf(tmp, "%d:%02d AM", current->tm_hour == 0 ? 12 : current->tm_hour, current->tm_min);

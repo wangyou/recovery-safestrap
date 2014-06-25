@@ -13,7 +13,6 @@ cp -fr k-common/twrp.fstab $OUT/recovery/root/etc/twrp.fstab
 cp -fr k-common/ss.config $OUT/install-files/etc/safestrap/ss.config
 cp -fr k-common/ss.config $OUT/APP/ss.config
 cp -fr k-common/ss.config $OUT/recovery/root/ss.config
-cp -fr k-common/rootfs/* $OUT/install-files/etc/safestrap/rootfs/
 cp -fr k-common/build-fs.sh $OUT/recovery/root/sbin/
 cp -fr ../../sbin-extras/* $OUT/recovery/root/sbin/
 cd ../../../gui

@@ -4,6 +4,7 @@ DEVICE_RESOLUTION := 1080x1920
 RECOVERY_GRAPHICS_USE_LINELENGTH := true
 TW_TARGET_USES_QCOM_BSP := true
 RECOVERY_INCLUDE_DIR := bootable/recovery/safestrap/devices/samsung/k-common/include
+TW_NO_SCREEN_TIMEOUT := true
 
 RECOVERY_SDCARD_ON_DATA := true
 TW_INTERNAL_STORAGE_PATH := "/datamedia/media"
@@ -30,7 +31,7 @@ SPLASH_DISABLE_KEY := KEY_HOMEPAGE
 
 TW_DEFAULT_EXTERNAL_STORAGE := true
 TARGET_USERIMAGES_USE_EXT4 := true
-TW_BRIGHTNESS_PATH := /sys/class/backlight/panel/backlight
+TW_BRIGHTNESS_PATH := /sys/devices/virtual/lcd/panel/panel
 
 # Virtual partition size default (in mb)
 BOARD_DEFAULT_VIRT_SYSTEM_SIZE := 3000

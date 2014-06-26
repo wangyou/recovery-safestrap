@@ -4,6 +4,7 @@ DEVICE_RESOLUTION := 1080x1920
 RECOVERY_GRAPHICS_USE_LINELENGTH := true
 TW_TARGET_USES_QCOM_BSP := true
 RECOVERY_INCLUDE_DIR := bootable/recovery/safestrap/devices/samsung/h-common/include
+TW_NO_SCREEN_TIMEOUT := true
 
 RECOVERY_SDCARD_ON_DATA := true
 TW_INTERNAL_STORAGE_PATH := "/datamedia/media"

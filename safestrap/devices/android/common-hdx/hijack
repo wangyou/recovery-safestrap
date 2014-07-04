@@ -252,6 +252,9 @@ if [ "$RUN_SS" = "1" ]; then
 			if [ -f "$CURRENT_SYS_DIR/etc/rootfs/init" ]; then
 				$BBX mv /init /init.old
 			fi
+			# remove timestampd
+			$BBX rm /sbin/timestampd
+
 			$BBX cp -R $CURRENT_SYS_DIR/etc/rootfs/* /
 
 			# set loglevel

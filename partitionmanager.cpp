@@ -64,7 +64,11 @@ TWPartitionManager::TWPartitionManager(void) {
 	tar_fork_pid = 0;
 }
 
+#ifdef BUILD_SAFESTRAP
+int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error, bool Reset_Partition_List) {
+#else
 int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error) {
+#endif
 	FILE *fstabFile;
 	char fstab_line[MAX_FSTAB_LINE_LENGTH];
 	TWPartition* settings_partition = NULL;
@@ -76,6 +80,10 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 		LOGERR("Critical Error: Unable to open fstab at '%s'.\n", Fstab_Filename.c_str());
 		return false;
 	}
+#ifdef BUILD_SAFESTRAP
+	if (Reset_Partition_List)
+		Partitions.clear();
+#endif
 
 	while (fgets(fstab_line, sizeof(fstab_line), fstabFile) != NULL) {
 		if (fstab_line[0] != '/')
@@ -175,6 +183,9 @@ int TWPartitionManager::Write_Fstab(void) {
 	std::vector<TWPartition*>::iterator iter;
 	string Line;
 
+#ifdef BUILD_SAFESTRAP
+	LOGINFO("Updating /etc/fstab...");
+#endif
 	fp = fopen("/etc/fstab", "w");
 	if (fp == NULL) {
 		LOGINFO("Can not open /etc/fstab.\n");
@@ -183,6 +194,9 @@ int TWPartitionManager::Write_Fstab(void) {
 	for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
 		if ((*iter)->Can_Be_Mounted) {
 			Line = (*iter)->Actual_Block_Device + " " + (*iter)->Mount_Point + " " + (*iter)->Current_File_System + " rw\n";
+#ifdef BUILD_SAFESTRAP
+			LOGINFO("Fstab: Adding %s", Line.c_str());
+#endif
 			fputs(Line.c_str(), fp);
 		}
 		// Handle subpartition tracking
@@ -420,6 +434,10 @@ int TWPartitionManager::Check_Backup_Name(bool Display_Error) {
 	int index, cur_char;
 	string Backup_Name, Backup_Loc;
 
+#ifdef BUILD_SAFESTRAP
+    string bootslot;
+	DataManager::GetValue("tw_bootslot", bootslot);
+#endif
 	DataManager::GetValue(TW_BACKUP_NAME, Backup_Name);
 	copy_size = Backup_Name.size();
 	// Check size
@@ -452,7 +470,11 @@ int TWPartitionManager::Check_Backup_Name(bool Display_Error) {
 	// Check to make sure that a backup with this name doesn't already exist
 	DataManager::GetValue(TW_BACKUPS_FOLDER_VAR, Backup_Loc);
 	strcpy(backup_loc, Backup_Loc.c_str());
+#ifdef BUILD_SAFESTRAP
+	sprintf(tw_image_dir,"%s/%s-%s", backup_loc, bootslot.c_str(), Backup_Name.c_str());
+#else
 	sprintf(tw_image_dir,"%s/%s", backup_loc, Backup_Name.c_str());
+#endif
 	if (TWFunc::Path_Exists(tw_image_dir)) {
 		if (Display_Error)
 			LOGERR("A backup with this name already exists.\n");
@@ -661,12 +683,18 @@ int TWPartitionManager::Run_Backup(void) {
 	time_t start, stop, seconds, total_start, total_stop;
 	size_t start_pos = 0, end_pos = 0;
 	stop_backup.set_value(0);
+#ifdef BUILD_SAFESTRAP
+	string bootslot;
+#endif
 	seconds = time(0);
 	t = localtime(&seconds);
 
 	time(&total_start);
 
 	Update_System_Details();
+#ifdef BUILD_SAFESTRAP
+	DataManager::GetValue("tw_bootslot", bootslot);
+#endif
 
 	if (!Mount_Current_Storage(true))
 		return false;
@@ -686,7 +714,11 @@ int TWPartitionManager::Run_Backup(void) {
 		DataManager::GetValue(TW_BACKUP_NAME, Backup_Name);
 	}
 	LOGINFO("Backup Name is: '%s'\n", Backup_Name.c_str());
+#ifdef BUILD_SAFESTRAP
+	Full_Backup_Path = Backup_Folder + "/" + bootslot + "-" + Backup_Name + "/";
+#else
 	Full_Backup_Path = Backup_Folder + "/" + Backup_Name + "/";
+#endif
 	LOGINFO("Full_Backup_Path is: '%s'\n", Full_Backup_Path.c_str());
 
 	LOGINFO("Calculating backup details...\n");
@@ -716,7 +748,12 @@ int TWPartitionManager::Run_Backup(void) {
 					}
 				}
 			} else {
+#ifdef BUILD_SAFESTRAP
+				// Log this differently.  Freaks the users out as we most likely don't have a boot partition (for now)
+				LOGINFO("Skipping '%s' partition for backup calculations.\n", backup_path.c_str());
+#else
 				LOGERR("Unable to locate '%s' partition for backup calculations.\n", backup_path.c_str());
+#endif
 			}
 			start_pos = end_pos + 1;
 			end_pos = Backup_List.find(";", start_pos);
@@ -1184,7 +1221,12 @@ int TWPartitionManager::Wipe_Android_Secure(void) {
 }
 
 int TWPartitionManager::Format_Data(void) {
+#ifdef BUILD_SAFESTRAP
+	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
+	TWPartition* dat = Find_Partition_By_Path(datamedia_mount);
+#else
 	TWPartition* dat = Find_Partition_By_Path("/data");
+#endif
 
 	if (dat != NULL) {
 		if (!dat->UnMount(true))
@@ -1199,7 +1241,12 @@ int TWPartitionManager::Format_Data(void) {
 }
 
 int TWPartitionManager::Wipe_Media_From_Data(void) {
+#ifdef BUILD_SAFESTRAP
+	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
+	TWPartition* dat = Find_Partition_By_Path(datamedia_mount);
+#else
 	TWPartition* dat = Find_Partition_By_Path("/data");
+#endif
 
 	if (dat != NULL) {
 		if (!dat->Has_Data_Media) {
@@ -1211,7 +1258,11 @@ int TWPartitionManager::Wipe_Media_From_Data(void) {
 
 		gui_print("Wiping internal storage -- /data/media...\n");
 		Remove_MTP_Storage(dat->MTP_Storage_ID);
+#ifdef BUILD_SAFESTRAP
+		TWFunc::removeDir(datamedia_mount + "/media", false);
+#else
 		TWFunc::removeDir("/data/media", false);
+#endif
 		dat->Recreate_Media_Folder();
 		Add_MTP_Storage(dat->MTP_Storage_ID);
 		return true;
@@ -1282,6 +1333,10 @@ void TWPartitionManager::Update_System_Details(void) {
 	std::vector<TWPartition*>::iterator iter;
 	int data_size = 0;
 
+#ifdef BUILD_SAFESTRAP
+	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
+	DataManager::LoadBootslotVar();
+#endif
 	gui_print("Updating partition details...\n");
 	for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
 		if ((*iter)->Can_Be_Mounted) {
@@ -1318,6 +1373,11 @@ void TWPartitionManager::Update_System_Details(void) {
 					DataManager::SetValue(TW_BACKUP_BOOT_VAR, 0);
 				} else
 					DataManager::SetValue("tw_has_boot_partition", 1);
+#ifdef BUILD_SAFESTRAP
+			} else if ((*iter)->Mount_Point == "/ss") {
+				int ss_display_free = (int)((*iter)->Free / 1048576LLU);
+				DataManager::SetValue(TW_SS_STORAGE_FREE_SIZE, ss_display_free);
+#endif
 			}
 #ifdef SP1_NAME
 			if ((*iter)->Backup_Name == EXPAND(SP1_NAME)) {
@@ -1429,6 +1489,11 @@ int TWPartitionManager::Decrypt_Device(string Password) {
 	int ret_val, password_len;
 	char crypto_blkdev[255], cPassword[255];
 	size_t result;
+
+#ifdef BUILD_SAFESTRAP
+	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
+#endif
+
 	std::vector<TWPartition*>::iterator iter;
 
 	property_set("ro.crypto.state", "encrypted");
@@ -1471,14 +1536,23 @@ int TWPartitionManager::Decrypt_Device(string Password) {
 
 			// Sleep for a bit so that the device will be ready
 			sleep(1);
+#ifdef RECOVERY_SDCARD_ON_DATA
+#ifdef BUILD_SAFESTRAP
+			if (dat->Has_Data_Media && dat->Mount(false) && TWFunc::Path_Exists(datamedia_mount + "/media/0")) {
+				dat->Storage_Path = datamedia_mount + "/media/0";
+				dat->Symlink_Path = dat->Storage_Path;
+				DataManager::SetValue("tw_storage_path", datamedia_mount + "/media/0");
+#else
 			if (dat->Has_Data_Media && dat->Mount(false) && TWFunc::Path_Exists("/data/media/0")) {
 				dat->Storage_Path = "/data/media/0";
 				dat->Symlink_Path = dat->Storage_Path;
 				DataManager::SetValue("tw_storage_path", "/data/media/0");
+#endif
 				DataManager::SetValue("tw_settings_path", "/data/media/0");
 				dat->UnMount(false);
 				Output_Partition(dat);
 			}
+#endif
 			Update_System_Details();
 			UnMount_Main_Partitions();
 		} else
@@ -1657,8 +1731,14 @@ void TWPartitionManager::UnMount_Main_Partitions(void) {
 	TWPartition* Boot_Partition = Find_Partition_By_Path("/boot");
 
 	UnMount_By_Path("/system", true);
+
+#ifdef BUILD_SAFESTRAP
+	// FIXME-HASH: We have datamedia mount point so we can unmount /data
+	UnMount_By_Path("/data", true);
+#else
 	if (!datamedia)
 		UnMount_By_Path("/data", true);
+#endif
 
 	if (Boot_Partition != NULL && Boot_Partition->Can_Be_Mounted)
 		Boot_Partition->UnMount(true);
@@ -1813,7 +1893,11 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 	std::vector<TWPartition*>::iterator iter;
 	if (ListType == "mount") {
 		for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
+#ifdef BUILD_SAFESTRAP
+			if ((*iter)->Can_Be_Mounted && !(*iter)->Is_SubPartition && !(*iter)->Hidden) {
+#else
 			if ((*iter)->Can_Be_Mounted && !(*iter)->Is_SubPartition) {
+#endif
 				struct PartitionList part;
 				part.Display_Name = (*iter)->Display_Name;
 				part.Mount_Point = (*iter)->Mount_Point;
@@ -1823,11 +1907,37 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 		}
 	} else if (ListType == "storage") {
 		char free_space[255];
+#ifdef BUILD_SAFESTRAP
+#ifdef RECOVERY_SDCARD_ON_DATA
+		string bootslot;
+		DataManager::GetValue("tw_bootslot", bootslot);
+#endif
+#endif
 		string Current_Storage = DataManager::GetCurrentStoragePath();
 		for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
+#ifdef BUILD_SAFESTRAP
+			if ((*iter)->Is_Storage && !(*iter)->Hidden) {
+#else
 			if ((*iter)->Is_Storage) {
+#endif
 				struct PartitionList part;
+#ifdef BUILD_SAFESTRAP
+#ifdef RECOVERY_SDCARD_ON_DATA
+				if (((*iter)->Mount_Point == "/data") && (bootslot != "stock")) {
+					// Use datamedia free instead
+					string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
+					TWPartition* datamed = Find_Partition_By_Path(datamedia_mount);
+					sprintf(free_space, "%llu", datamed->Free / 1024 / 1024);
+				}
+				else {
+					sprintf(free_space, "%llu", (*iter)->Free / 1024 / 1024);
+				}
+#else
 				sprintf(free_space, "%llu", (*iter)->Free / 1024 / 1024);
+#endif
+#else
+				sprintf(free_space, "%llu", (*iter)->Free / 1024 / 1024);
+#endif
 				part.Display_Name = (*iter)->Storage_Name + " (";
 				part.Display_Name += free_space;
 				part.Display_Name += "MB)";
@@ -1843,7 +1953,11 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 		char backup_size[255];
 		unsigned long long Backup_Size;
 		for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
+#ifdef BUILD_SAFESTRAP
+			if ((*iter)->Can_Be_Backed_Up && !(*iter)->Is_SubPartition && (*iter)->Is_Present && !(*iter)->Hidden) {
+#else
 			if ((*iter)->Can_Be_Backed_Up && !(*iter)->Is_SubPartition && (*iter)->Is_Present) {
+#endif
 				struct PartitionList part;
 				Backup_Size = (*iter)->Backup_Size;
 				if ((*iter)->Has_SubPartition) {
@@ -1873,7 +1987,12 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 			while (end_pos != string::npos && start_pos < Restore_List.size()) {
 				restore_path = Restore_List.substr(start_pos, end_pos - start_pos);
 				if ((restore_part = Find_Partition_By_Path(restore_path)) != NULL) {
+#ifdef BUILD_SAFESTRAP
+					if (((restore_part->Backup_Name == "recovery" && !restore_part->Can_Be_Backed_Up) || restore_part->Is_SubPartition) && !restore_part->Hidden) {
+#else
 					if ((restore_part->Backup_Name == "recovery" && !restore_part->Can_Be_Backed_Up) || restore_part->Is_SubPartition) {
+#endif
+
 						// Don't allow restore of recovery (causes problems on some devices)
 						// Don't add subpartitions to the list of items
 					} else {
@@ -1897,7 +2016,11 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 		dalvik.selected = 0;
 		Partition_List->push_back(dalvik);
 		for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
+#ifdef BUILD_SAFESTRAP
+			if ((*iter)->Wipe_Available_in_GUI && !(*iter)->Is_SubPartition && !(*iter)->Hidden) {
+#else
 			if ((*iter)->Wipe_Available_in_GUI && !(*iter)->Is_SubPartition) {
+#endif
 				struct PartitionList part;
 				part.Display_Name = (*iter)->Display_Name;
 				part.Mount_Point = (*iter)->Mount_Point;
@@ -1911,6 +2034,7 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 				part.selected = 0;
 				Partition_List->push_back(part);
 			}
+#ifndef BUILD_SAFESTRAP
 			if ((*iter)->Has_Data_Media) {
 				struct PartitionList datamedia;
 				datamedia.Display_Name = (*iter)->Storage_Name;
@@ -1918,6 +2042,7 @@ void TWPartitionManager::Get_Partition_List(string ListType, std::vector<Partiti
 				datamedia.selected = 0;
 				Partition_List->push_back(datamedia);
 			}
+#endif
 		}
 	} else if (ListType == "flashimg") {
 		for (iter = Partitions.begin(); iter != Partitions.end(); iter++) {
@@ -1959,6 +2084,54 @@ void TWPartitionManager::Output_Storage_Fstab(void) {
 	}
 	fclose(fp);
 }
+
+#ifdef BUILD_SAFESTRAP
+// SAFESTRAP
+int TWPartitionManager::Backup_Safestrap(void) {
+	string bootslot = "";
+	struct stat st;
+	int returnVal = 0;
+	string result;
+
+	DataManager::GetValue("tw_bootslot", bootslot);
+
+	// PROTECT Safestrap files if this is stock
+	if (bootslot == "stock") {
+		if (stat("/tmp/.dont-restore-ss", &st) == 0) {
+			TWFunc::Exec_Cmd("rm /tmp/.dont-restore-ss", result);
+		}
+		PartitionManager.Mount_By_Path("/system", true);
+		TWFunc::Exec_Cmd("/sbin/backup-ss.sh", result);
+		PartitionManager.UnMount_By_Path("/system", true);
+		if (result != "") returnVal = 1;
+	}
+	return returnVal;
+}
+
+int TWPartitionManager::Restore_Safestrap(void) {
+	string bootslot;
+	struct stat st;
+	int returnVal = 0;
+	string result;
+
+	// Check for special .zip which updates SS (creates a file as /tmp/.dont-restore-ss)
+	if (stat("/tmp/.dont-restore-ss", &st) != 0) {
+		DataManager::GetValue("tw_bootslot", bootslot);
+
+		// RESTORE Safestrap files if this is stock
+		if (bootslot == "stock") {
+			PartitionManager.Mount_By_Path("/system", true);
+			TWFunc::Exec_Cmd("/sbin/restore-ss.sh", result);
+			PartitionManager.UnMount_By_Path("/system", true);
+			if (result != "") returnVal = 1;
+		}
+	}
+	else {
+		TWFunc::Exec_Cmd("rm /tmp/.dont-restore-ss", result);
+	}
+	return returnVal;
+}
+#endif
 
 TWPartition *TWPartitionManager::Get_Default_Storage_Partition()
 {

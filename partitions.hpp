@@ -83,6 +83,14 @@ public:
 	string Crypto_Key_Location;                                               // Location of the crypto key used for decrypting encrypted data partitions
 	unsigned int MTP_Storage_ID;
 
+#ifdef BUILD_SAFESTRAP
+	string Display_Name;                                                      // Display name for the GUI
+	string Primary_Block_Device;                                              // Block device (e.g. /dev/block/mmcblk1p1)
+	unsigned long long Size;                                                  // Overall size of the partition
+	unsigned long long Used;                                                  // Overall used space
+	unsigned long long Free;                                                  // Overall free space
+#endif
+
 protected:
 	bool Has_Data_Media;                                                      // Indicates presence of /data/media, may affect wiping and backup methods
 	void Setup_Data_Media();                                                  // Sets up a partition as a /data/media emulated storage partition
@@ -139,21 +147,30 @@ private:
 	string Symlink_Mount_Point;                                               // /sdcard could be the symlink mount point for /data/media
 	string Mount_Point;                                                       // Mount point for this partition (e.g. /system or /data)
 	string Backup_Path;                                                       // Path for backup
+#ifndef BUILD_SAFESTRAP
 	string Primary_Block_Device;                                              // Block device (e.g. /dev/block/mmcblk1p1)
+#endif
 	string Alternate_Block_Device;                                            // Alternate block device (e.g. /dev/block/mmcblk1)
 	string Decrypted_Block_Device;                                            // Decrypted block device available after decryption
 	bool Removable;                                                           // Indicates if this partition is removable -- affects how often we check overall size, if present, etc.
 	int Length;                                                               // Used by make_ext4fs to leave free space at the end of the partition block for things like a crypto footer
+#ifndef BUILD_SAFESTRAP
+
 	unsigned long long Size;                                                  // Overall size of the partition
 	unsigned long long Used;                                                  // Overall used space
 	unsigned long long Free;                                                  // Overall free space
+#endif
 	unsigned long long Backup_Size;                                           // Backup size -- may be different than used space especially when /data/media is present
 	unsigned long long Restore_Size;                                          // Restore size of the current restore operation
 	bool Can_Be_Encrypted;                                                    // This partition might be encrypted, affects error handling, can only be true if crypto support is compiled in
 	bool Is_Encrypted;                                                        // This partition is thought to be encrypted -- it wouldn't mount for some reason, only avialble with crypto support
 	bool Is_Decrypted;                                                        // This partition has successfully been decrypted
-	bool Mount_To_Decrypt;                                                    // Mount this partition during decrypt (/vendor, /firmware, etc in case we need proprietary libs or firmware files)
+
+#ifndef BUILD_SAFESTRAP
 	string Display_Name;                                                      // Display name for the GUI
+#endif
+
+	bool Mount_To_Decrypt;                                                    // Mount this partition during decrypt (/vendor, /firmware, etc in case we need proprietary libs or firmware files)
 	string Backup_Name;                                                       // Backup name -- used for backup filenames
 	string Backup_Display_Name;                                               // Name displayed in the partition list for backup selection
 	string Storage_Name;                                                      // Name displayed in the partition list for storage selection
@@ -174,6 +191,11 @@ private:
 	bool Can_Flash_Img;                                                       // Indicates if this partition can have images flashed to it via the GUI
 	bool Mount_Read_Only;                                                     // Only mount this partition as read-only
 
+#ifdef BUILD_SAFESTRAP
+	bool Hidden;                                                              // Dont show in lists
+#endif
+
+
 friend class TWPartitionManager;
 friend class DataManager;
 friend class GUIPartitionList;
@@ -187,7 +209,12 @@ public:
 	~TWPartitionManager() {}
 
 public:
+#ifdef BUILD_SAFESTRAP
+	int Process_Fstab(string Fstab_Filename, bool Display_Error, bool Reset_Partition_List);
+                                                                                  // Parses the fstab and populates the partitions
+#else
 	int Process_Fstab(string Fstab_Filename, bool Display_Error);             // Parses the fstab and populates the partitions
+#endif
 	int Write_Fstab();                                                        // Creates /etc/fstab file that's used by the command line for mount commands
 	void Output_Partition_Logging();                                          // Outputs partition information to the log
 	int Mount_By_Path(string Path, bool Display_Error);                       // Mounts partition based on path (e.g. /system)
@@ -235,6 +262,11 @@ public:
 	bool Flash_Image(string Filename);                                        // Flashes an image to a selected partition from the partition list
 
 	TWAtomicInt stop_backup;
+
+#ifdef BUILD_SAFESTRAP
+	int Backup_Safestrap(void);
+	int Restore_Safestrap(void);
+#endif
 
 private:
 	void Setup_Settings_Storage_Partition(TWPartition* Part);                 // Sets up settings storage

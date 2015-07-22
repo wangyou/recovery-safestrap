@@ -43,6 +43,9 @@
 #include "data.hpp"
 #include "partitions.hpp"
 #include "twrp-functions.hpp"
+#ifdef BUILD_SAFESTRAP
+#include "safestrap-functions.h"
+#endif
 #ifndef TW_NO_SCREEN_TIMEOUT
 #include "gui/blanktimer.hpp"
 #endif
@@ -504,6 +507,11 @@ int DataManager::SetValue(const string varName, string value, int persist /* = 0
 	if (varName == "tw_storage_path") {
 		SetBackupFolder();
 	}
+#ifdef BUILD_SAFESTRAP
+	if (varName == TW_ZIP_LOCATION_VAR) {
+		LOGINFO("TW_ZIP_LOCATION_VAR == %s\n", value.c_str());
+	}
+#endif
 	gui_notifyVarChange(varName.c_str(), value.c_str());
 	return 0;
 }
@@ -599,6 +607,9 @@ void DataManager::SetBackupFolder()
 			storage_path = partition->Symlink_Mount_Point;
 		else
 			storage_path = partition->Storage_Path;
+#ifdef BUILD_SAFESTRAP
+		LOGINFO("DataManager::SetBackupFolder storage_path=%s\n", storage_path.c_str());
+#endif
 		if (zip_path.size() < storage_path.size()) {
 			SetValue(TW_ZIP_LOCATION_VAR, storage_path);
 		} else {
@@ -614,8 +625,38 @@ void DataManager::SetBackupFolder()
 	}
 }
 
+#ifdef BUILD_SAFESTRAP
+void DataManager::LoadBootslotVar(void) {
+	char array[512];
+	long lSize;
+	size_t result_len;
+	char str[255] = "stock";
+
+	// Read in the file, if possible
+	FILE* in = fopen("/ss/safestrap/active_slot", "rb");
+	if (!in) return;
+
+	// obtain file size:
+	fseek(in, 0, SEEK_END);
+	lSize = ftell(in);
+	if (lSize > 0) {
+		fseek(in, 0, SEEK_SET);
+		// adjust for EOF
+		result_len = fread(array, 1, lSize, in);
+		if ((long)result_len == lSize) {
+			array[lSize-1] = '\0';
+			strcpy(str, array);
+		}
+	}
+	fclose(in);
+	SetValue("tw_bootslot", str);
+}
+#endif
 void DataManager::SetDefaultValues()
 {
+#ifdef BUILD_SAFESTRAP
+	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
+#endif
 	string str, path;
 
 	get_device_id();
@@ -632,6 +673,28 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair("tw_keyboard_vibrate", make_pair("40", 1)));
 	mValues.insert(make_pair("tw_action_vibrate", make_pair("160", 1)));
 
+#ifdef BUILD_SAFESTRAP
+	// Safestrap
+	mConstValues.insert(make_pair(SS_VERSION_VAR, SS_VERSION_STR));
+	fprintf(stderr, "TW_SS_DEFAULT_VIRT_SYSTEM_SIZE == %s\n", DEFAULT_VIRT_SYSTEM_SIZE);
+	fprintf(stderr, "TW_SS_DEFAULT_VIRT_SYSTEM_MIN_SIZE == %s\n", DEFAULT_VIRT_SYSTEM_MIN_SIZE);
+	fprintf(stderr, "TW_SS_DEFAULT_VIRT_SYSTEM_MAX_SIZE == %s\n", DEFAULT_VIRT_SYSTEM_MAX_SIZE);
+	fprintf(stderr, "TW_SS_DEFAULT_VIRT_DATA_SIZE == %s\n", DEFAULT_VIRT_DATA_SIZE);
+	fprintf(stderr, "TW_SS_DEFAULT_VIRT_DATA_MIN_SIZE == %s\n", DEFAULT_VIRT_DATA_MIN_SIZE);
+	fprintf(stderr, "TW_SS_DEFAULT_VIRT_DATA_MAX_SIZE == %s\n", DEFAULT_VIRT_DATA_MAX_SIZE);
+	fprintf(stderr, "TW_SS_DEFAULT_VIRT_CACHE_SIZE == %s\n", DEFAULT_VIRT_CACHE_SIZE);
+	fprintf(stderr, "TW_SS_DEFAULT_VIRT_CACHE_MIN_SIZE == %s\n", DEFAULT_VIRT_CACHE_MIN_SIZE);
+	fprintf(stderr, "TW_SS_DEFAULT_VIRT_CACHE_MAX_SIZE == %s\n", DEFAULT_VIRT_CACHE_MAX_SIZE);
+	mConstValues.insert(make_pair(TW_SS_DEFAULT_VIRT_SYSTEM_SIZE, DEFAULT_VIRT_SYSTEM_SIZE));
+	mConstValues.insert(make_pair(TW_SS_DEFAULT_VIRT_SYSTEM_MIN_SIZE, DEFAULT_VIRT_SYSTEM_MIN_SIZE));
+	mConstValues.insert(make_pair(TW_SS_DEFAULT_VIRT_SYSTEM_MAX_SIZE, DEFAULT_VIRT_SYSTEM_MAX_SIZE));
+	mConstValues.insert(make_pair(TW_SS_DEFAULT_VIRT_DATA_SIZE, DEFAULT_VIRT_DATA_SIZE));
+	mConstValues.insert(make_pair(TW_SS_DEFAULT_VIRT_DATA_MIN_SIZE, DEFAULT_VIRT_DATA_MIN_SIZE));
+	mConstValues.insert(make_pair(TW_SS_DEFAULT_VIRT_DATA_MAX_SIZE, DEFAULT_VIRT_DATA_MAX_SIZE));
+	mConstValues.insert(make_pair(TW_SS_DEFAULT_VIRT_CACHE_SIZE, DEFAULT_VIRT_CACHE_SIZE));
+	mConstValues.insert(make_pair(TW_SS_DEFAULT_VIRT_CACHE_MIN_SIZE, DEFAULT_VIRT_CACHE_MIN_SIZE));
+	mConstValues.insert(make_pair(TW_SS_DEFAULT_VIRT_CACHE_MAX_SIZE, DEFAULT_VIRT_CACHE_MAX_SIZE));
+#endif
 	TWPartition *store = PartitionManager.Get_Default_Storage_Partition();
 	if(store)
 		mValues.insert(make_pair("tw_storage_path", make_pair(store->Storage_Path.c_str(), 1)));
@@ -790,6 +853,9 @@ void DataManager::SetDefaultValues()
 	mValues.insert(make_pair(TW_RM_RF_VAR, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_SKIP_MD5_CHECK_VAR, make_pair("0", 1)));
 	mValues.insert(make_pair(TW_SKIP_MD5_GENERATE_VAR, make_pair("0", 1)));
+#ifdef BUILD_SAFESTRAP
+	mValues.insert(make_pair(TW_SS_STORAGE_FREE_SIZE, make_pair("0", 0)));
+#endif
 	mValues.insert(make_pair(TW_SDEXT_SIZE, make_pair("512", 1)));
 	mValues.insert(make_pair(TW_SWAP_SIZE, make_pair("32", 1)));
 	mValues.insert(make_pair(TW_SDPART_FILE_SYSTEM, make_pair("ext3", 1)));
@@ -866,6 +932,13 @@ void DataManager::SetDefaultValues()
 	}
 #endif
 	mValues.insert(make_pair(TW_MILITARY_TIME, make_pair("0", 1)));
+#ifdef BUILD_SAFESTRAP
+	mValues.insert(make_pair("tw_rom-slot1_name", make_pair("XXXXXXXXXX", 0)));
+	mValues.insert(make_pair("tw_rom-slot2_name", make_pair("XXXXXXXXXX", 0)));
+	mValues.insert(make_pair("tw_rom-slot3_name", make_pair("XXXXXXXXXX", 0)));
+	mValues.insert(make_pair("tw_rom-slot4_name", make_pair("XXXXXXXXXX", 0)));
+	LoadBootslotVar();
+#endif
 #ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
 	mValues.insert(make_pair("tw_include_encrypted_backup", make_pair("1", 0)));
 #else
@@ -966,10 +1039,25 @@ int DataManager::GetMagicValue(const string varName, string& value)
 			char cap_s[4];
 #ifdef TW_CUSTOM_BATTERY_PATH
 			string capacity_file = EXPAND(TW_CUSTOM_BATTERY_PATH);
+#ifdef TW_CUSTOM_BATTERY_CAPACITY_FIELD
+			capacity_file += "/" + EXPAND(TW_CUSTOM_BATTERY_CAPACITY_FIELD);
+#else
 			capacity_file += "/capacity";
+#endif
+			FILE * cap = fopen(capacity_file.c_str(),"rt");
+#else
+#ifdef BUILD_SAFESTRAP
+			string capacity_file = "/sys/class/power_supply/battery/";
+#ifdef TW_CUSTOM_BATTERY_CAPACITY_FIELD
+			capacity_file += "/";
+			capacity_file += EXPAND(TW_CUSTOM_BATTERY_CAPACITY_FIELD);
+#else
+			capacity_file += "/capacity";
+#endif
 			FILE * cap = fopen(capacity_file.c_str(),"rt");
 #else
 			FILE * cap = fopen("/sys/class/power_supply/battery/capacity","rt");
+#endif
 #endif
 			if (cap){
 				fgets(cap_s, 4, cap);

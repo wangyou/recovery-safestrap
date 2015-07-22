@@ -296,6 +296,10 @@ protected:
 	void operation_end(const int operation_status);
 	time_t Start;
 
+#ifdef BUILD_SAFESTRAP
+#include "objects_action_safestrap.hpp"
+#endif
+
 	// map action name to function pointer
 	typedef int (GUIAction::*execFunction)(std::string);
 	typedef std::map<std::string, execFunction> mapFunc;

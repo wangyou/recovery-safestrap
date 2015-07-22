@@ -1,6 +1,11 @@
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
+ifeq ($(BUILD_SAFESTRAP), true)
+  COMMON_GLOBAL_CFLAGS += -DBUILD_SAFESTRAP
+  COMMON_GLOBAL_CPPFLAGS += -DBUILD_SAFESTRAP
+endif
+
 LOCAL_CFLAGS := -fno-strict-aliasing
 
 LOCAL_SRC_FILES := \
@@ -71,6 +76,44 @@ ifeq ($(TW_ROUND_SCREEN), true)
     LOCAL_CFLAGS += -DTW_ROUND_SCREEN
 endif
 
+# Safestrap virtual size defaults
+ifndef BOARD_DEFAULT_VIRT_SYSTEM_SIZE
+    BOARD_DEFAULT_VIRT_SYSTEM_SIZE := 600
+endif
+ifndef BOARD_DEFAULT_VIRT_SYSTEM_MIN_SIZE
+    BOARD_DEFAULT_VIRT_SYSTEM_MIN_SIZE := 600
+endif
+ifndef BOARD_DEFAULT_VIRT_SYSTEM_MAX_SIZE
+    BOARD_DEFAULT_VIRT_SYSTEM_MAX_SIZE := 1000
+endif
+LOCAL_CFLAGS += -DDEFAULT_VIRT_SYSTEM_SIZE=\"$(BOARD_DEFAULT_VIRT_SYSTEM_SIZE)\"
+LOCAL_CFLAGS += -DDEFAULT_VIRT_SYSTEM_MIN_SIZE=\"$(BOARD_DEFAULT_VIRT_SYSTEM_MIN_SIZE)\"
+LOCAL_CFLAGS += -DDEFAULT_VIRT_SYSTEM_MAX_SIZE=\"$(BOARD_DEFAULT_VIRT_SYSTEM_MAX_SIZE)\"
+ifndef BOARD_DEFAULT_VIRT_DATA_SIZE
+    BOARD_DEFAULT_VIRT_DATA_SIZE := 2000
+endif
+ifndef BOARD_DEFAULT_VIRT_DATA_MIN_SIZE
+    BOARD_DEFAULT_VIRT_DATA_MIN_SIZE := 1000
+endif
+ifndef BOARD_DEFAULT_VIRT_DATA_MAX_SIZE
+    BOARD_DEFAULT_VIRT_DATA_MAX_SIZE := 16000
+endif
+LOCAL_CFLAGS += -DDEFAULT_VIRT_DATA_SIZE=\"$(BOARD_DEFAULT_VIRT_DATA_SIZE)\"
+LOCAL_CFLAGS += -DDEFAULT_VIRT_DATA_MIN_SIZE=\"$(BOARD_DEFAULT_VIRT_DATA_MIN_SIZE)\"
+LOCAL_CFLAGS += -DDEFAULT_VIRT_DATA_MAX_SIZE=\"$(BOARD_DEFAULT_VIRT_DATA_MAX_SIZE)\"
+ifndef BOARD_DEFAULT_VIRT_CACHE_SIZE
+    BOARD_DEFAULT_VIRT_CACHE_SIZE := 300
+endif
+ifndef BOARD_DEFAULT_VIRT_CACHE_MIN_SIZE
+    BOARD_DEFAULT_VIRT_CACHE_MIN_SIZE := 300
+endif
+ifndef BOARD_DEFAULT_VIRT_CACHE_MAX_SIZE
+    BOARD_DEFAULT_VIRT_CACHE_MAX_SIZE := 1000
+endif
+LOCAL_CFLAGS += -DDEFAULT_VIRT_CACHE_SIZE=\"$(BOARD_DEFAULT_VIRT_CACHE_SIZE)\"
+LOCAL_CFLAGS += -DDEFAULT_VIRT_CACHE_MIN_SIZE=\"$(BOARD_DEFAULT_VIRT_CACHE_MIN_SIZE)\"
+LOCAL_CFLAGS += -DDEFAULT_VIRT_CACHE_MAX_SIZE=\"$(BOARD_DEFAULT_VIRT_CACHE_MAX_SIZE)\"
+
 LOCAL_C_INCLUDES += bionic external/stlport/stlport $(commands_recovery_local_path)/gui/devices/$(DEVICE_RESOLUTION)
 LOCAL_CFLAGS += -DTWRES=\"$(TWRES_PATH)\"
 
@@ -85,6 +128,53 @@ LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
 TWRP_RES_LOC := $(commands_recovery_local_path)/gui/devices/common/res
 TWRP_COMMON_XML := $(hide) echo "No common TWRP XML resources"
 
+ifdef BUILD_SAFESTRAP
+    ifeq ($(TW_THEME),)
+        SS_COMMON := $(commands_recovery_local_path)/safestrap
+        TWRP_RES_LOC := $(SS_COMMON)/devices/common/res/common/res
+        # This converts the old DEVICE_RESOLUTION flag to the new TW_THEME flag
+        PORTRAIT_MDPI := 320x480 480x800 480x854 540x960
+        PORTRAIT_HDPI := 720x1280 800x1280 1080x1920 1200x1920 1440x2560 1600x2560
+        WATCH_MDPI := 240x240 280x280 320x320
+        LANDSCAPE_MDPI := 800x480 1024x600 1024x768
+        LANDSCAPE_HDPI := 1280x800 1920x1200 2560x1600
+        ifneq ($(filter $(DEVICE_RESOLUTION), $(PORTRAIT_MDPI)),)
+            TW_THEME := portrait_mdpi
+        else ifneq ($(filter $(DEVICE_RESOLUTION), $(PORTRAIT_HDPI)),)
+            TW_THEME := portrait_hdpi
+        else ifneq ($(filter $(DEVICE_RESOLUTION), $(WATCH_MDPI)),)
+            TW_THEME := watch_mdpi
+        else ifneq ($(filter $(DEVICE_RESOLUTION), $(LANDSCAPE_MDPI)),)
+            TW_THEME := landscape_mdpi
+        else ifneq ($(filter $(DEVICE_RESOLUTION), $(LANDSCAPE_HDPI)),)
+            TW_THEME := landscape_hdpi
+        endif
+    endif
+    ifeq ($(TW_THEME), portrait_mdpi)
+        TWRP_THEME_LOC := $(SS_COMMON)/devices/common/res/480x800/res
+        TWRP_COMMON_XML := cp -fr $(SS_COMMON)/devices/common/res/portrait/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
+    else ifeq ($(TW_THEME), portrait_hdpi)
+        TWRP_THEME_LOC := $(SS_COMMON)/devices/common/res/1080x1920/res
+        TWRP_COMMON_XML := cp -fr $(SS_COMMON)/devices/common/res/portrait/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
+    else ifeq ($(TW_THEME), watch_mdpi)
+        TWRP_THEME_LOC := $(SS_COMMON)/devices/common/res/320x320/res
+        TWRP_COMMON_XML := cp -fr $(SS_COMMON)/devices/common/res/watch/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
+    else ifeq ($(TW_THEME), landscape_mdpi)
+        TWRP_THEME_LOC := $(SS_COMMON)/devices/common/res/800x480/res
+        TWRP_COMMON_XML := cp -fr $(SS_COMMON)/devices/common/res/landscape/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
+    else ifeq ($(TW_THEME), landscape_hdpi)
+        TWRP_THEME_LOC := $(SS_COMMON)/devices/common/res/1920x1200/res
+        TWRP_COMMON_XML := cp -fr $(SS_COMMON)/devices/common/res/landscape/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
+    else
+        $(warning ****************************************************************************)
+        $(warning * TW_THEME ($(TW_THEME)) is not valid.)
+        $(warning * Please choose an appropriate TW_THEME or create a new one for your device.)
+        $(warning * Valid options are portrait_mdpi portrait_hdpi watch_mdpi)
+        $(warning *                   landscape_mdpi landscape_hdpi)
+        $(warning ****************************************************************************)
+        $(error stopping)
+    endif
+else
 ifeq ($(TW_CUSTOM_THEME),)
     ifeq ($(TW_THEME),)
         # This converts the old DEVICE_RESOLUTION flag to the new TW_THEME flag
@@ -132,6 +222,7 @@ ifeq ($(TW_CUSTOM_THEME),)
 else
     TWRP_THEME_LOC := $(TW_CUSTOM_THEME)
 endif
+endif
 
 ifeq ($(TW_DISABLE_TTF), true)
     TWRP_REMOVE_FONT := rm -f $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)fonts/*.ttf
@@ -158,6 +249,30 @@ ifneq ($(TW_USE_TOOLBOX), true)
 endif
 	ln -sf /sbin/pigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gzip
 	ln -sf /sbin/unpigz $(TARGET_RECOVERY_ROOT_OUT)/sbin/gunzip
+ifdef BUILD_SAFESTRAP
+	# Safestrap Setup
+	rm -rf $(OUT)/2nd-init-files
+	rm -rf $(OUT)/APP
+	rm -rf $(OUT)/install-files
+	mkdir -p $(OUT)/2nd-init-files
+	mkdir -p $(OUT)/install-files/etc/safestrap/flags
+	mkdir -p $(OUT)/install-files/etc/safestrap/res
+	mkdir -p $(OUT)/APP
+	cp -p $(SS_COMMON)/devices/common/2nd-init-files/* $(OUT)/2nd-init-files
+	cp -p $(SS_COMMON)/devices/common/2nd-init-files/fixboot.sh $(OUT)/recovery/root/sbin/
+	cp -p $(SS_COMMON)/devices/common/2nd-init-files/ss_function.sh $(OUT)/recovery/root/sbin/
+	cp -p $(SS_COMMON)/devices/common/2nd-init-files/ss_function.sh $(OUT)/APP/
+	cp -p $(SS_COMMON)/devices/common/2nd-init-files/ss_function.sh $(OUT)/install-files/etc/safestrap/
+	cp -p $(SS_COMMON)/devices/common/APP/* $(OUT)/APP/
+	cp -p $(SS_COMMON)/devices/common/sbin/* $(OUT)/recovery/root/sbin/
+	cp -p $(SS_COMMON)/flags/* $(OUT)/install-files/etc/safestrap/flags/
+	cp -p $(SS_COMMON)/bbx $(OUT)/install-files/etc/safestrap/bbx
+	cp -p $(SS_COMMON)/busybox $(OUT)/APP/busybox
+	cp -p $(SS_COMMON)/lfs $(TARGET_RECOVERY_ROOT_OUT)/sbin/lfs
+	cp -p $(SS_COMMON)/devices/common/splashscreen-res/$(DEVICE_RESOLUTION)/* $(OUT)/install-files/etc/safestrap/res/
+	# Call out to device-specific script
+	$(SS_COMMON)/devices/$(SS_PRODUCT_MANUFACTURER)/$(TARGET_DEVICE)/build-safestrap.sh
+endif
 
 
 LOCAL_GENERATED_SOURCES := $(TWRP_RES_GEN)

@@ -130,7 +130,17 @@ int fixPermissions::fixDataInternalContexts(void) {
 	struct dirent *de;
 	struct stat sb;
 	string dir, androiddir;
+#ifdef BUILD_SAFESTRAP
+	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
+#endif
 	sehandle = selabel_open(SELABEL_CTX_FILE, selinux_options, 1);
+
+#ifdef BUILD_SAFESTRAP
+	if (TWFunc::Path_Exists(datamedia_mount + "/media/0"))
+		dir = datamedia_mount + "/media/0";
+	else
+		dir = datamedia_mount + "/media";
+#else
 	if (!sehandle) {
 		LOGINFO("Unable to open /file_contexts\n");
 		return 0;
@@ -140,6 +150,7 @@ int fixPermissions::fixDataInternalContexts(void) {
 		dir = "/data/media/0";
 	else
 		dir = "/data/media";
+#endif
 	if (!TWFunc::Path_Exists(dir)) {
 		LOGINFO("fixDataInternalContexts: '%s' does not exist!\n", dir.c_str());
 		return 0;

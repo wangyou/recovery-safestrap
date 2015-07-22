@@ -152,6 +152,9 @@ TWPartition::TWPartition() {
 	Format_Block_Size = 0;
 	Ignore_Blkid = false;
 	Retain_Layout_Version = false;
+#ifdef BUILD_SAFESTRAP
+	Hidden = false;
+#endif
 	Crypto_Key_Location = "footer";
 	MTP_Storage_ID = 0;
 	Can_Flash_Img = false;
@@ -168,6 +171,9 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 	char* ptr;
 	string Flags;
 	strncpy(full_line, Line.c_str(), line_len);
+#ifdef BUILD_SAFESTRAP
+	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
+#endif
 	bool skip = false;
 
 	for (index = 0; index < line_len; index++) {
@@ -352,6 +358,31 @@ bool TWPartition::Process_Fstab_Line(string Line, bool Display_Error) {
 			Backup_Display_Name = Display_Name;
 			DataManager::SetValue("tw_boot_is_mountable", 1);
 			Can_Be_Backed_Up = true;
+#ifdef BUILD_SAFESTRAP
+#ifdef RECOVERY_SDCARD_ON_DATA
+		} else if (Mount_Point == "/datamedia") {
+			Display_Name = "DataMedia";
+			Is_Storage = true;
+			Can_Be_Wiped = true;
+			Storage_Name = "Internal Storage";
+			Storage_Path = datamedia_mount + "/media";
+			Symlink_Path = Storage_Path;
+			if (strcmp(EXPAND(TW_EXTERNAL_STORAGE_PATH), "/sdcard") == 0) {
+				Make_Dir("/emmc", Display_Error);
+				Symlink_Mount_Point = "/emmc";
+			} else {
+				Make_Dir("/sdcard", Display_Error);
+				Symlink_Mount_Point = "/sdcard";
+			}
+			if (Mount(false) && TWFunc::Path_Exists(datamedia_mount + "/media/0")) {
+				Storage_Path = datamedia_mount + "/media/0";
+				Symlink_Path = Storage_Path;
+				DataManager::SetValue(TW_INTERNAL_PATH, datamedia_mount + "/media/0");
+				UnMount(true);
+				Mount_Storage_Retry();
+			}
+#endif
+#endif
 		}
 #ifdef TW_EXTERNAL_STORAGE_PATH
 		if (Mount_Point == EXPAND(TW_EXTERNAL_STORAGE_PATH)) {
@@ -502,6 +533,10 @@ bool TWPartition::Process_Flags(string Flags, bool Display_Error) {
 			ptr += 15;
 			Is_SubPartition = true;
 			SubPartition_Of = ptr;
+#ifdef BUILD_SAFESTRAP
+		} else if (strcmp(ptr, "hidden") == 0) {
+			Hidden = true;
+#endif
 		} else if (strcmp(ptr, "ignoreblkid") == 0) {
 			Ignore_Blkid = true;
 		} else if (strcmp(ptr, "retainlayoutversion") == 0) {
@@ -1124,6 +1159,13 @@ bool TWPartition::Wipe(string New_File_System) {
 		wiped = Wipe_Data_Without_Wiping_Media();
 		recreate_media = false;
 	} else {
+#ifdef BUILD_SAFESTRAP
+		string bootslot = "";
+		DataManager::GetValue("tw_bootslot", bootslot);
+
+		if (PartitionManager.Backup_Safestrap()) return 1;
+#endif
+
 		DataManager::GetValue(TW_RM_RF_VAR, check);
 
 		if (check || Use_Rm_Rf)
@@ -1148,6 +1190,14 @@ bool TWPartition::Wipe(string New_File_System) {
 			return false;
 		}
 		update_crypt = wiped;
+#ifdef BUILD_SAFESTRAP
+		// RESTORE Safestrap files if this is stock
+		if ((bootslot == "stock") && (Mount_Point == "/system")) {
+			Mount(true);
+			PartitionManager.Restore_Safestrap();
+			UnMount(true);
+		}
+#endif
 	}
 
 	if (wiped) {
@@ -2103,6 +2153,9 @@ bool TWPartition::Restore_Image(string restore_folder, const unsigned long long 
 
 bool TWPartition::Update_Size(bool Display_Error) {
 	bool ret = false, Was_Already_Mounted = false;
+#ifdef BUILD_SAFESTRAP
+	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
+#endif
 
 	if (!Can_Be_Mounted && !Is_Encrypted)
 		return false;
@@ -2171,13 +2224,26 @@ void TWPartition::Find_Actual_Block_Device(void) {
 
 void TWPartition::Recreate_Media_Folder(void) {
 	string Command;
+#ifdef BUILD_SAFESTRAP
+	string datamedia_mount = EXPAND(TW_SS_DATAMEDIA_MOUNT);
+	char path[255];
+#endif
 
 	if (!Mount(true)) {
 		LOGERR("Unable to recreate /data/media folder.\n");
+#ifdef BUILD_SAFESTRAP
+	} else if (!TWFunc::Path_Exists(datamedia_mount + "/media")) {
+#else
 	} else if (!TWFunc::Path_Exists("/data/media")) {
+#endif
 		PartitionManager.Mount_By_Path(Symlink_Mount_Point, true);
 		LOGINFO("Recreating /data/media folder.\n");
+#ifdef BUILD_SAFESTRAP
+		sprintf(path, "%s/media", datamedia_mount.c_str());
+		mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+#else
 		mkdir("/data/media", 0770);
+#endif
 		string Internal_path = DataManager::GetStrValue("tw_internal_path");
 		if (!Internal_path.empty()) {
 			LOGINFO("Recreating %s folder.\n", Internal_path.c_str());

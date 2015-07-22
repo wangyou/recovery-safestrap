@@ -19,12 +19,20 @@
 
 #define TW_VERSION_STR              "2.8.7.0"
 
+#ifdef BUILD_SAFESTRAP
+#define SS_VERSION_STR              "4.00"
+#endif
 #define TW_USE_COMPRESSION_VAR      "tw_use_compression"
 #define TW_FILENAME                 "tw_filename"
 #define TW_ZIP_INDEX                "tw_zip_index"
 #define TW_ZIP_QUEUE_COUNT       "tw_zip_queue_count"
 
+#ifdef BUILD_SAFESTRAP
+// adjust max for slot names (-10 + hyphen)
+#define MAX_BACKUP_NAME_LEN 53
+#else
 #define MAX_BACKUP_NAME_LEN 64
+#endif
 #define TW_BACKUP_TEXT              "tw_backup_text"
 #define TW_BACKUP_NAME		        "tw_backup_name"
 #define TW_BACKUP_SYSTEM_VAR        "tw_backup_system"
@@ -181,5 +189,18 @@
 #define SCRIPT_FILE_CACHE "/cache/recovery/openrecoveryscript"
 #define SCRIPT_FILE_TMP "/tmp/openrecoveryscript"
 #define TMP_LOG_FILE "/tmp/recovery.log"
+#ifdef BUILD_SAFESTRAP
+#define SS_VERSION_VAR                   "ss_version"
+#define TW_SS_STORAGE_FREE_SIZE          "tw_ss_storage_free_size"
+#define TW_SS_DEFAULT_VIRT_SYSTEM_SIZE   "tw_ss_default_virt_system_size"
+#define TW_SS_DEFAULT_VIRT_SYSTEM_MIN_SIZE   "tw_ss_default_virt_system_min_size"
+#define TW_SS_DEFAULT_VIRT_SYSTEM_MAX_SIZE   "tw_ss_default_virt_system_max_size"
+#define TW_SS_DEFAULT_VIRT_DATA_SIZE   "tw_ss_default_virt_data_size"
+#define TW_SS_DEFAULT_VIRT_DATA_MIN_SIZE   "tw_ss_default_virt_data_min_size"
+#define TW_SS_DEFAULT_VIRT_DATA_MAX_SIZE   "tw_ss_default_virt_data_max_size"
+#define TW_SS_DEFAULT_VIRT_CACHE_SIZE    "tw_ss_default_virt_cache_size"
+#define TW_SS_DEFAULT_VIRT_CACHE_MIN_SIZE   "tw_ss_default_virt_cache_min_size"
+#define TW_SS_DEFAULT_VIRT_CACHE_MAX_SIZE   "tw_ss_default_virt_cache_max_size"
+#endif
 
 #endif  // _VARIABLES_HEADER_

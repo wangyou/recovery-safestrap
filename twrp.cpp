@@ -113,7 +113,11 @@ int main(int argc, char **argv) {
 		rename("/etc/twrp.fstab", "/etc/recovery.fstab");
 	}
 	printf("=> Processing recovery.fstab\n");
+#ifdef BUILD_SAFESTRAP
+	if (!PartitionManager.Process_Fstab("/etc/recovery.fstab", true, true)) {
+#else
 	if (!PartitionManager.Process_Fstab("/etc/recovery.fstab", 1)) {
+#endif
 		LOGERR("Failing out of recovery due to problem with recovery.fstab.\n");
 		return -1;
 	}

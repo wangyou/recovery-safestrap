@@ -58,6 +58,10 @@ extern "C" {
 #include "objects.hpp"
 #include "../tw_atomic.hpp"
 
+#ifdef BUILD_SAFESTRAP
+#include "action_safestrap.cpp"
+#endif
+
 void curtainClose(void);
 
 GUIAction::mapFunc GUIAction::mf;
@@ -374,6 +378,9 @@ int GUIAction::flash_zip(std::string filename, int* wipe_cache)
 	if (simulate) {
 		simulate_progress_bar();
 	} else {
+#ifdef BUILD_SAFESTRAP
+		if (PartitionManager.Backup_Safestrap()) return 1;
+#endif
 		ret_val = TWinstall_zip(filename.c_str(), wipe_cache);
 
 		// Now, check if we need to ensure TWRP remains installed...
@@ -388,6 +395,9 @@ int GUIAction::flash_zip(std::string filename, int* wipe_cache)
 				gui_print("Unable to configure TWRP with this kernel.\n");
 			}
 		}
+#ifdef BUILD_SAFESTRAP
+		if (PartitionManager.Restore_Safestrap()) return 1;
+#endif
 	}
 
 	// Done
@@ -664,6 +674,9 @@ int GUIAction::compute(std::string arg)
 	{
 		string varName = arg.substr(0, arg.find('+'));
 		string string_to_add = arg.substr(arg.find('+') + 1, string::npos);
+#ifdef BUILD_SAFESTRAP
+                DataManager::GetValue(string_to_add, string_to_add);
+#endif
 		int amount_to_add = atoi(string_to_add.c_str());
 		int value;
 
@@ -675,6 +688,9 @@ int GUIAction::compute(std::string arg)
 	{
 		string varName = arg.substr(0, arg.find('-'));
 		string string_to_subtract = arg.substr(arg.find('-') + 1, string::npos);
+#ifdef BUILD_SAFESTRAP
+                DataManager::GetValue(string_to_subtract, string_to_subtract);
+#endif
 		int amount_to_subtract = atoi(string_to_subtract.c_str());
 		int value;
 
@@ -1175,9 +1191,15 @@ int GUIAction::nandroid(std::string arg)
 			}
 			DataManager::SetValue(TW_BACKUP_NAME, "(Auto Generate)");
 		} else if (arg == "restore") {
+#ifdef BUILD_SAFESTRAP
+			if (PartitionManager.Backup_Safestrap()) return 1;
+#endif
 			string Restore_Name;
 			DataManager::GetValue("tw_restore", Restore_Name);
 			ret = PartitionManager.Run_Restore(Restore_Name);
+#ifdef BUILD_SAFESTRAP
+			if (PartitionManager.Restore_Safestrap()) return 1;
+#endif
 		} else {
 			operation_end(1);
 			return -1;
@@ -1556,6 +1578,9 @@ int GUIAction::openrecoveryscript(std::string arg)
 		// that we converted to ORS commands during boot in recovery.cpp.
 		// Run those first.
 		int reboot = 0;
+#ifdef BUILD_SAFESTRAP
+				PartitionManager.Backup_Safestrap();
+#endif
 		if (TWFunc::Path_Exists(SCRIPT_FILE_TMP)) {
 			gui_print("Processing AOSP recovery commands...\n");
 			if (OpenRecoveryScript::run_script_file() == 0) {
@@ -1570,6 +1595,9 @@ int GUIAction::openrecoveryscript(std::string arg)
 				op_status = 0;
 			}
 		}
+#ifdef BUILD_SAFESTRAP
+				PartitionManager.Restore_Safestrap();
+#endif
 		if (reboot) {
 			// Disable stock recovery reflashing
 			TWFunc::Disable_Stock_Recovery_Replace();

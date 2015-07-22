@@ -14,6 +14,17 @@
 
 LOCAL_PATH := $(call my-dir)
 
+ifeq ($(SS_PRODUCT_MANUFACTURER), )
+  SS_PRODUCT_MANUFACTURER := $(shell echo $(PRODUCT_MANUFACTURER) | tr '[A-Z]' '[a-z]')
+endif
+
+BUILD_SAFESTRAP := true
+ifeq ($(BUILD_SAFESTRAP), true)
+  COMMON_GLOBAL_CFLAGS += -DBUILD_SAFESTRAP
+  COMMON_GLOBAL_CPPFLAGS += -DBUILD_SAFESTRAP
+  include $(LOCAL_PATH)/safestrap/devices/$(SS_PRODUCT_MANUFACTURER)/$(TARGET_DEVICE)/safestrap.mk
+endif
+
 ifdef project-path-for
     ifeq ($(LOCAL_PATH),$(call project-path-for,recovery))
         PROJECT_PATH_AGREES := true
@@ -52,8 +63,19 @@ LOCAL_SRC_FILES += \
     openrecoveryscript.cpp \
     tarWrite.c
 
+ifeq ($(BUILD_SAFESTRAP), true)
+LOCAL_SRC_FILES += \
+    safestrap-functions.c
+endif
+
 ifneq ($(TARGET_RECOVERY_REBOOT_SRC),)
   LOCAL_SRC_FILES += $(TARGET_RECOVERY_REBOOT_SRC)
+endif
+
+ifeq ($(BUILD_SAFESTRAP), true)
+ifeq ($(SAFESTRAP_NO_CUSTOM_UPDATER),true)
+  LOCAL_FLAGS += -DSAFESTRAP_NO_CUSTOM_UPDATER
+endif
 endif
 
 LOCAL_MODULE := recovery
@@ -389,6 +411,50 @@ ifeq ($(TW_INCLUDE_NTFS_3G),true)
         mkntfs
 endif
 
+# Safestrap virtual size defaults
+ifndef BOARD_DEFAULT_VIRT_SYSTEM_SIZE
+    BOARD_DEFAULT_VIRT_SYSTEM_SIZE := 600
+endif
+ifndef BOARD_DEFAULT_VIRT_SYSTEM_MIN_SIZE
+    BOARD_DEFAULT_VIRT_SYSTEM_MIN_SIZE := 600
+endif
+ifndef BOARD_DEFAULT_VIRT_SYSTEM_MAX_SIZE
+    BOARD_DEFAULT_VIRT_SYSTEM_MAX_SIZE := 1000
+endif
+LOCAL_CFLAGS += -DDEFAULT_VIRT_SYSTEM_SIZE=\"$(BOARD_DEFAULT_VIRT_SYSTEM_SIZE)\"
+LOCAL_CFLAGS += -DDEFAULT_VIRT_SYSTEM_MIN_SIZE=\"$(BOARD_DEFAULT_VIRT_SYSTEM_MIN_SIZE)\"
+LOCAL_CFLAGS += -DDEFAULT_VIRT_SYSTEM_MAX_SIZE=\"$(BOARD_DEFAULT_VIRT_SYSTEM_MAX_SIZE)\"
+ifndef BOARD_DEFAULT_VIRT_DATA_SIZE
+    BOARD_DEFAULT_VIRT_DATA_SIZE := 2000
+endif
+ifndef BOARD_DEFAULT_VIRT_DATA_MIN_SIZE
+    BOARD_DEFAULT_VIRT_DATA_MIN_SIZE := 1000
+endif
+ifndef BOARD_DEFAULT_VIRT_DATA_MAX_SIZE
+    BOARD_DEFAULT_VIRT_DATA_MAX_SIZE := 16000
+endif
+LOCAL_CFLAGS += -DDEFAULT_VIRT_DATA_SIZE=\"$(BOARD_DEFAULT_VIRT_DATA_SIZE)\"
+LOCAL_CFLAGS += -DDEFAULT_VIRT_DATA_MIN_SIZE=\"$(BOARD_DEFAULT_VIRT_DATA_MIN_SIZE)\"
+LOCAL_CFLAGS += -DDEFAULT_VIRT_DATA_MAX_SIZE=\"$(BOARD_DEFAULT_VIRT_DATA_MAX_SIZE)\"
+ifndef BOARD_DEFAULT_VIRT_CACHE_SIZE
+    BOARD_DEFAULT_VIRT_CACHE_SIZE := 300
+endif
+ifndef BOARD_DEFAULT_VIRT_CACHE_MIN_SIZE
+    BOARD_DEFAULT_VIRT_CACHE_MIN_SIZE := 300
+endif
+ifndef BOARD_DEFAULT_VIRT_CACHE_MAX_SIZE
+    BOARD_DEFAULT_VIRT_CACHE_MAX_SIZE := 1000
+endif
+LOCAL_CFLAGS += -DDEFAULT_VIRT_CACHE_SIZE=\"$(BOARD_DEFAULT_VIRT_CACHE_SIZE)\"
+LOCAL_CFLAGS += -DDEFAULT_VIRT_CACHE_MIN_SIZE=\"$(BOARD_DEFAULT_VIRT_CACHE_MIN_SIZE)\"
+LOCAL_CFLAGS += -DDEFAULT_VIRT_CACHE_MAX_SIZE=\"$(BOARD_DEFAULT_VIRT_CACHE_MAX_SIZE)\"
+
+# /datamedia/media mount location for multi-boot SD calculation
+ifeq ($(TW_SS_DATAMEDIA_MOUNT),)
+    TW_SS_DATAMEDIA_MOUNT := /datamedia
+endif
+LOCAL_CFLAGS += -DTW_SS_DATAMEDIA_MOUNT=$(TW_SS_DATAMEDIA_MOUNT)
+
 include $(BUILD_EXECUTABLE)
 
 ifneq ($(TW_USE_TOOLBOX), true)
@@ -517,6 +583,36 @@ include $(commands_recovery_local_path)/injecttwrp/Android.mk \
     $(commands_recovery_local_path)/minzip/Android.mk \
     $(commands_recovery_local_path)/dosfstools/Android.mk \
     $(commands_recovery_local_path)/etc/Android.mk
+
+# 2nd-init
+ifeq ($(SS_INCLUDE_2NDINIT), true)
+  include $(commands_recovery_local_path)/safestrap/2nd-init/Android.mk
+endif
+
+# splashmenu
+ifeq ($(SS_INCLUDE_SPLASHMENU), true)
+    include $(commands_recovery_local_path)/safestrap/splashmenu/Android.mk
+endif
+
+# ueventmon
+ifeq ($(SS_INCLUDE_UEVENTMON), true)
+    include $(commands_recovery_local_path)/safestrap/ueventmon/Android.mk
+endif
+
+# delay-wrapper
+ifdef SS_DELAY_WRAPPER_BINARY
+    include $(commands_recovery_local_path)/safestrap/delay-wrapper/Android.mk
+endif
+
+# hijack-wrapper
+ifdef SS_HIJACK_WRAPPER_BINARY
+    include $(commands_recovery_local_path)/safestrap/hijack-wrapper/Android.mk
+endif
+
+# bypasslkm
+ifdef SS_INCLUDE_BYPASSLKM
+    include $(commands_recovery_local_path)/safestrap/bypasslkm/Android.mk
+endif
 
 ifeq ($(TW_INCLUDE_CRYPTO), true)
     include $(commands_recovery_local_path)/crypto/lollipop/Android.mk

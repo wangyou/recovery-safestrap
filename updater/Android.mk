@@ -2,15 +2,27 @@
 
 LOCAL_PATH := $(call my-dir)
 
+BUILD_SAFESTRAP := true
+
 updater_src_files := \
 	install.c \
 	blockimg.c \
 	updater.c
 
+ifeq ($(BUILD_SAFESTRAP), true)
+  updater_src_files += \
+	../safestrap-functions.c
+endif
+
 #
 # Build a statically-linked binary to include in OTA packages
 #
 include $(CLEAR_VARS)
+
+ifeq ($(BUILD_SAFESTRAP), true)
+  LOCAL_CFLAGS += -DBUILD_SAFESTRAP
+  LOCAL_CPPFLAGS += -DBUILD_SAFESTRAP
+endif
 
 # Build only in eng, so we don't end up with a copy of this in /system
 # on user builds.  (TODO: find a better way to build device binaries
@@ -75,7 +87,9 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/..
 # any subsidiary static libraries required for your registered
 # extension libs.
 
+ifneq ($(BUILD_SAFESTRAP), true)
 inc := $(call intermediates-dir-for,PACKAGING,updater_extensions)/register.inc
+endif
 
 # Encode the value of TARGET_RECOVERY_UPDATER_LIBS into the filename of the dependency.
 # So if TARGET_RECOVERY_UPDATER_LIBS is changed, a new dependency file will be generated.
@@ -103,7 +117,13 @@ LOCAL_C_INCLUDES += $(dir $(inc))
 inc :=
 inc_dep_file :=
 
+ifeq ($(BUILD_SAFESTRAP), true)
+LOCAL_MODULE := update-binary
+LOCAL_MODULE_CLASS := RECOVERY_EXECUTABLES
+LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/sbin
+else
 LOCAL_MODULE := updater
+endif
 
 LOCAL_FORCE_STATIC_EXECUTABLE := true
 

@@ -646,6 +646,7 @@ public:
 protected:
 	struct ListData {
 		std::string displayName;
+		std::string variableName;
 		std::string variableValue;
 		unsigned int selected;
 		GUIAction* action;
@@ -657,6 +658,7 @@ protected:
 	std::string currentValue;
 	ImageResource* mIconSelected;
 	ImageResource* mIconUnselected;
+	bool isCheckList;
 };
 
 class GUIPartitionList : public GUIScrollList

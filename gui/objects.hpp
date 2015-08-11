@@ -296,10 +296,6 @@ protected:
 	void operation_end(const int operation_status);
 	time_t Start;
 
-#ifdef BUILD_SAFESTRAP
-#include "objects_action_safestrap.hpp"
-#endif
-
 	// map action name to function pointer
 	typedef int (GUIAction::*execFunction)(std::string);
 	typedef std::map<std::string, execFunction> mapFunc;
@@ -366,6 +362,20 @@ protected:
 	int cancelbackup(std::string arg);
 	int checkpartitionlifetimewrites(std::string arg);
 	int mountsystemtoggle(std::string arg);
+
+#ifdef BUILD_SAFESTRAP	
+        // safestrap threaded actions
+	int readslotnames(std::string arg);
+	int createslot(std::string arg);
+	int refreshsizesnt(std::string arg);
+	int checkslot(std::string arg);
+	int loadsizes(std::string arg);
+	int setslotvarname(std::string arg);
+	int changeslot(std::string arg);
+	int deleteslot(std::string arg);
+	int setslotnickname(std::string arg);
+	int checkslotnames(std::string arg);
+#endif	
 
 	int simulate;
 };

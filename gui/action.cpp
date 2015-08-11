@@ -203,6 +203,20 @@ GUIAction::GUIAction(xml_node<>* node)
 		ADD_ACTION(checkpartitionlifetimewrites);
 		ADD_ACTION(mountsystemtoggle);
 
+#ifdef BUILD_SAFESTRAP
+		// safestrap threaded actions
+		ADD_ACTION(readslotnames);
+		ADD_ACTION(createslot);
+		ADD_ACTION(refreshsizesnt);
+		ADD_ACTION(checkslot);
+		ADD_ACTION(loadsizes);
+		ADD_ACTION(setslotvarname);
+		ADD_ACTION(changeslot);
+		ADD_ACTION(deleteslot);
+		ADD_ACTION(setslotnickname);
+		ADD_ACTION(checkslotnames);
+#endif
+
 		// remember actions that run in the caller thread
 		for (mapFunc::const_iterator it = mf.begin(); it != mf.end(); ++it)
 			setActionsRunningInCallerThread.insert(it->first);

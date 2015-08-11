@@ -119,65 +119,241 @@ int checkRomSlot(string loopName, bool remount) {
 	return 0;
 }
 
-int GUIAction::doSafestrapAction(Action action, int isThreaded /* = 0 */) {
-	int simulate;
-	std::string arg = gui_parse_text(action.mArg);
-	std::string function = gui_parse_text(action.mFunction);
+int GUIAction::refreshsizesnt(std::string arg)
+{
 	DataManager::GetValue(TW_SIMULATE_ACTIONS, simulate);
+	if (simulate) {
+		simulate_progress_bar();
+	} else {
+		PartitionManager.Update_System_Details();
+	}
+	return 0;
+}
+
+int GUIAction::loadsizes(std::string arg)
+{
+	DataManager::GetValue(TW_SIMULATE_ACTIONS, simulate);
+	if (simulate) {
+		simulate_progress_bar();
+	} else {
+		unsigned long long mb = 1048576;
+		TWPartition* Part;
+
+		// Fill the following vars:
+		//tw_slot_system_size / tw_slot_system_free
+		//tw_slot_data_size / tw_slot_data_free
+		//tw_slot_cache_size / tw_slot_cache_free
+		Part = PartitionManager.Find_Partition_By_Path("/system");
+		if (Part) {
+			DataManager::SetValue("tw_slot_system_size", (int)(Part->Size / mb));
+			DataManager::SetValue("tw_slot_system_free", (int)(Part->Free / mb));
+		}
+		Part = PartitionManager.Find_Partition_By_Path("/data");
+		if (Part) {
+			DataManager::SetValue("tw_slot_data_size", (int)(Part->Size / mb));
+			DataManager::SetValue("tw_slot_data_free", (int)(Part->Free / mb));
+		}
+		Part = PartitionManager.Find_Partition_By_Path("/cache");
+		if (Part) {
+			DataManager::SetValue("tw_slot_cache_size", (int)(Part->Size / mb));
+			DataManager::SetValue("tw_slot_cache_free", (int)(Part->Free / mb));
+		}
+	}
+	return 0;
+}
+
+int GUIAction::changeslot(std::string arg)
+{
+        string result;
+	PartitionManager.UnMount_By_Path("/system", true);
+	PartitionManager.UnMount_By_Path("/data", true);
+
+	// CACHE COPY
+	PartitionManager.Mount_By_Path("/cache", true);
+	TWFunc::Exec_Cmd("rm -rf /tmp/recovery", result);
+	TWFunc::Exec_Cmd("cp -R /cache/recovery /tmp", result);
+	TWFunc::Exec_Cmd("rm -rf /cache/recovery", result);
+	PartitionManager.UnMount_By_Path("/cache", true);
+
+	TWFunc::Exec_Cmd("/sbin/changeslot.sh " + arg, result);
+	PartitionManager.Process_Fstab("/etc/recovery.fstab", true, true);
+	PartitionManager.Update_System_Details();
+
+	PartitionManager.Mount_By_Path("/cache", true);
+	TWFunc::Exec_Cmd("rm -rf /cache/recovery", result);
+	TWFunc::Exec_Cmd("cp -R /tmp/recovery /cache", result);
+	TWFunc::Exec_Cmd("rm -rf /tmp/recovery", result);
+
+	return 0;
+}
+
+int GUIAction::checkslotnames(std::string arg)
+{
+	char array[512];
+	string str = "Undefined";
+	string var = "";
+
+	for (int i = 1; i < 5; i++) {
+		sprintf(array, "rom-slot%d", i);
+		var = array;
+		DataManager::GetValue("tw_" + var + "_name", str);
+		fprintf(stderr, "checkslotnames: tw_%s_name=%s\n", var.c_str(), str.c_str());
+	}
+	return 0;	
+}
+
+int GUIAction::readslotnames(std::string arg)
+{
+	int i;
+	char array[512];
+	char filename[512];
+	long lSize;
+	size_t result;
+	string str = "Undefined";
+	string var = "";
+
+	DataManager::SetValue("tw_rom-slot1_name", "ROM-Slot-1");
+	DataManager::SetValue("tw_rom-slot2_name", "ROM-Slot-2");
+	DataManager::SetValue("tw_rom-slot3_name", "ROM-Slot-3");
+	DataManager::SetValue("tw_rom-slot4_name", "ROM-Slot-4");
+
+	for (int i = 1; i < 5; i++) {
+		sprintf(array, "rom-slot%d", i);
+		var = array;
+
+		// Read in the file, if possible
+		sprintf(filename, "/ss/safestrap/rom-slot%d/name", i);
+		FILE* in = fopen(filename, "rb");
+		if (in) {
+			// obtain file size:
+			fseek(in, 0, SEEK_END);
+			lSize = ftell(in);
+			if (lSize > 0) {
+				fseek(in, 0, SEEK_SET);
+				// adjust for EOF
+				result = fread(array, 1, lSize, in);
+				if ((long)result == lSize) {
+					array[lSize-1] = '\0';
+					str = array;
+				}
+			}
+			fclose(in);
+			fprintf(stderr, "found: tw_%s_name=%s\n", var.c_str(), str.c_str());
+			DataManager::SetValue("tw_" + var + "_name", str);
+		}
+// HASH: Don't complain so much about missing rom-slots
+#if 0
+		else {
+			DataManager::GetValue("tw_" + var + "_name", str);
+			fprintf(stderr, "not found: tw_%s_name=%s\n", var.c_str(), str.c_str());
+		}
+#endif
+	}
+	return 0;
+}
+
+int GUIAction::setslotvarname(std::string arg)
+{
+	char array[512];
+	string str = arg;
+	string var = "tw_" + arg +"_name";
+	DataManager::GetValue(var, str);
+	fprintf(stderr, "Loaded from %s, setting tw_slotname: %s\n", var.c_str(), str.c_str());
+	DataManager::SetValue("tw_slotname", str);
+	return 0;
+}
+
+int GUIAction::setslotnickname(std::string arg)
+{
 	string result;
+	string romslot;
+	string slotname;
 
-	if (function == "refreshsizesnt")
-	{
-		if (simulate) {
-			simulate_progress_bar();
-		} else {
-			PartitionManager.Update_System_Details();
-		}
+	DataManager::GetValue("tw_trybootslot", romslot);
+	DataManager::GetValue("tw_try_slotname", slotname);
+	if ((romslot == "stock") || (slotname == ""))
 		return 0;
-	}
 
-	if (function == "loadsizes") {
-		if (simulate) {
-			simulate_progress_bar();
-		} else {
-			unsigned long long mb = 1048576;
-			TWPartition* Part;
+	fprintf(stderr, "setslotnickname: echo \"%s\" > /ss/safestrap/%s/name\n", slotname.c_str(), romslot.c_str());
+	TWFunc::Exec_Cmd("echo \"" + slotname + "\" > /ss/safestrap/" + romslot + "/name", result);
 
-			// Fill the following vars:
-			//tw_slot_system_size / tw_slot_system_free
-			//tw_slot_data_size / tw_slot_data_free
-			//tw_slot_cache_size / tw_slot_cache_free
-			Part = PartitionManager.Find_Partition_By_Path("/system");
-			if (Part) {
-				DataManager::SetValue("tw_slot_system_size", (int)(Part->Size / mb));
-				DataManager::SetValue("tw_slot_system_free", (int)(Part->Free / mb));
-			}
-			Part = PartitionManager.Find_Partition_By_Path("/data");
-			if (Part) {
-				DataManager::SetValue("tw_slot_data_size", (int)(Part->Size / mb));
-				DataManager::SetValue("tw_slot_data_free", (int)(Part->Free / mb));
-			}
-			Part = PartitionManager.Find_Partition_By_Path("/cache");
-			if (Part) {
-				DataManager::SetValue("tw_slot_cache_size", (int)(Part->Size / mb));
-				DataManager::SetValue("tw_slot_cache_free", (int)(Part->Free / mb));
-			}
-		}
+	DataManager::SetValue("tw_" + romslot + "_name", slotname);
+	return 0;
+}
+
+int GUIAction::createslot(std::string arg)
+{
+        string result;
+	std::string pageName = gui_parse_text(arg);
+	DataManager::GetValue(TW_SIMULATE_ACTIONS, simulate);
+	DataManager::GetValue("tw_trybootslot", arg);
+	if (arg == "stock")
 		return 0;
+
+	operation_start("createslot");
+
+	if (simulate) {
+		simulate_progress_bar();
+		gui_print("Simulating actions...\n");
 	}
+	else {
+		int system_size = 600;
+		int data_size = 1024;
+		int cache_size = 300;
 
-	if (function == "changeslot") {
-		PartitionManager.UnMount_By_Path("/system", true);
-		PartitionManager.UnMount_By_Path("/data", true);
+		gui_changePage(pageName);
 
-		// CACHE COPY
+		DataManager::GetValue("tw_slot_system_size", system_size);
+		DataManager::GetValue("tw_slot_data_size", data_size);
+		DataManager::GetValue("tw_slot_cache_size", cache_size);
+
+		DataManager::SetValue("ui_progress", 0);
+
+		TWFunc::Exec_Cmd("mkdir -p /ss/safestrap/" + arg, result);
+
+		// SYSTEM
+		if (createImagePartition(arg, "system", system_size, "system", 7, 5, 20, 30) != 0) {
+			DataManager::SetValue("tw_operation", "Error creating system partition!");
+			gui_print("Error creating system partition!\n");
+			gui_print("Cleaning up files...\n");
+			TWFunc::Exec_Cmd("rm -rf /ss/safestrap/" + arg, result);
+			return -1;
+		}
+
+		// USERDATA
+		if (createImagePartition(arg, "userdata", data_size, "data", 6, 35, 60, 70) != 0) {
+			DataManager::SetValue("tw_operation", "Error creating data partition!");
+			gui_print("Error creating data partition!\n");
+			gui_print("Cleaning up files...\n");
+			TWFunc::Exec_Cmd("rm -rf /ss/safestrap/" + arg, result);
+			return -1;
+		}
+
+		// CACHE
 		PartitionManager.Mount_By_Path("/cache", true);
-		TWFunc::Exec_Cmd("rm -rf /tmp/recovery", result);
 		TWFunc::Exec_Cmd("cp -R /cache/recovery /tmp", result);
 		TWFunc::Exec_Cmd("rm -rf /cache/recovery", result);
 		PartitionManager.UnMount_By_Path("/cache", true);
 
+		if (createImagePartition(arg, "cache", cache_size, "cache", 5, 75, 85, 90) != 0) {
+			DataManager::SetValue("tw_operation", "Error creating cache partition!");
+			gui_print("Error creating cache partition!\n");
+			gui_print("Cleaning up files...\n");
+			TWFunc::Exec_Cmd("rm -rf /ss/safestrap/" + arg, result);
+			PartitionManager.Mount_By_Path("/cache", true);
+			TWFunc::Exec_Cmd("rm -rf /cache/recovery", result);
+			TWFunc::Exec_Cmd("cp -R /tmp/recovery /cache", result);
+			TWFunc::Exec_Cmd("rm -rf /tmp/recovery", result);
+			return -1;
+		}
+
+		DataManager::SetValue("tw_operation", "Activating ROM slot...");
+		gui_print("Activating ROM slot...\n");
 		TWFunc::Exec_Cmd("/sbin/changeslot.sh " + arg, result);
+		DataManager::SetValue("ui_progress", 95);
+
+		DataManager::SetValue("tw_operation", "Updating filesystem details...");
+		gui_print("Updating filesystem details...\n");
 		PartitionManager.Process_Fstab("/etc/recovery.fstab", true, true);
 		PartitionManager.Update_System_Details();
 
@@ -186,233 +362,52 @@ int GUIAction::doSafestrapAction(Action action, int isThreaded /* = 0 */) {
 		TWFunc::Exec_Cmd("cp -R /tmp/recovery /cache", result);
 		TWFunc::Exec_Cmd("rm -rf /tmp/recovery", result);
 
-		return 0;
+		// Done
+		DataManager::SetValue("ui_progress", 0);
 	}
-
-	if (function == "checkslotnames") {
-		char array[512];
-		string str = "Undefined";
-		string var = "";
-
-		for (int i = 1; i < 5; i++) {
-			sprintf(array, "rom-slot%d", i);
-			var = array;
-			DataManager::GetValue("tw_" + var + "_name", str);
-			fprintf(stderr, "checkslotnames: tw_%s_name=%s\n", var.c_str(), str.c_str());
-		}
-		return 0;	
-	}
-
-	if (function == "readslotnames") {
-		int i;
-		char array[512];
-		char filename[512];
-		long lSize;
-		size_t result;
-		string str = "Undefined";
-		string var = "";
-
-		DataManager::SetValue("tw_rom-slot1_name", "ROM-Slot-1");
-		DataManager::SetValue("tw_rom-slot2_name", "ROM-Slot-2");
-		DataManager::SetValue("tw_rom-slot3_name", "ROM-Slot-3");
-		DataManager::SetValue("tw_rom-slot4_name", "ROM-Slot-4");
-
-		for (int i = 1; i < 5; i++) {
-			sprintf(array, "rom-slot%d", i);
-			var = array;
-
-			// Read in the file, if possible
-			sprintf(filename, "/ss/safestrap/rom-slot%d/name", i);
-			FILE* in = fopen(filename, "rb");
-			if (in) {
-				// obtain file size:
-				fseek(in, 0, SEEK_END);
-				lSize = ftell(in);
-				if (lSize > 0) {
-					fseek(in, 0, SEEK_SET);
-					// adjust for EOF
-					result = fread(array, 1, lSize, in);
-					if ((long)result == lSize) {
-						array[lSize-1] = '\0';
-						str = array;
-					}
-				}
-				fclose(in);
-				fprintf(stderr, "found: tw_%s_name=%s\n", var.c_str(), str.c_str());
-				DataManager::SetValue("tw_" + var + "_name", str);
-			}
-// HASH: Don't complain so much about missing rom-slots
-#if 0
-			else {
-				DataManager::GetValue("tw_" + var + "_name", str);
-				fprintf(stderr, "not found: tw_%s_name=%s\n", var.c_str(), str.c_str());
-			}
-#endif
-		}
-		return 0;
-	}
-
-	if (function == "setslotvarname") {
-		char array[512];
-		string str = arg;
-		string var = "tw_" + arg +"_name";
-		DataManager::GetValue(var, str);
-		fprintf(stderr, "Loaded from %s, setting tw_slotname: %s\n", var.c_str(), str.c_str());
-		DataManager::SetValue("tw_slotname", str);
-		return 0;
-	}
-
-	if (function == "setslotnickname") {
-		string result;
-		string romslot;
-		string slotname;
-
-		DataManager::GetValue("tw_trybootslot", romslot);
-		DataManager::GetValue("tw_try_slotname", slotname);
-		if ((romslot == "stock") || (slotname == ""))
-			return 0;
-
-		fprintf(stderr, "setslotnickname: echo \"%s\" > /ss/safestrap/%s/name\n", slotname.c_str(), romslot.c_str());
-		TWFunc::Exec_Cmd("echo \"" + slotname + "\" > /ss/safestrap/" + romslot + "/name", result);
-
-		DataManager::SetValue("tw_" + romslot + "_name", slotname);
-		return 0;
-	}
-
-	return -1;
+	operation_end(0);
+	return 0;
 }
 
-int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */) {
-	int simulate;
-	std::string pageName = gui_parse_text(action.mArg);
-	std::string function = gui_parse_text(action.mFunction);
-	std::string arg = "stock";
-	DataManager::GetValue(TW_SIMULATE_ACTIONS, simulate);
-	DataManager::GetValue("tw_trybootslot", arg);
+int GUIAction::deleteslot(std::string arg)
+{
 	string result;
-
-	if (function == "createslot") {
-		if (arg == "stock")
-			return 0;
-
-		operation_start("createslot");
-
-		if (simulate) {
-			simulate_progress_bar();
-			gui_print("Simulating actions...\n");
-		}
-		else {
-			int system_size = 600;
-			int data_size = 1024;
-			int cache_size = 300;
-
-			gui_changePage(pageName);
-
-			DataManager::GetValue("tw_slot_system_size", system_size);
-			DataManager::GetValue("tw_slot_data_size", data_size);
-			DataManager::GetValue("tw_slot_cache_size", cache_size);
-
-			DataManager::SetValue("ui_progress", 0);
-
-			TWFunc::Exec_Cmd("mkdir -p /ss/safestrap/" + arg, result);
-
-			// SYSTEM
-			if (createImagePartition(arg, "system", system_size, "system", 7, 5, 20, 30) != 0) {
-				DataManager::SetValue("tw_operation", "Error creating system partition!");
-				gui_print("Error creating system partition!\n");
-				gui_print("Cleaning up files...\n");
-				TWFunc::Exec_Cmd("rm -rf /ss/safestrap/" + arg, result);
-				return -1;
-			}
-
-			// USERDATA
-			if (createImagePartition(arg, "userdata", data_size, "data", 6, 35, 60, 70) != 0) {
-				DataManager::SetValue("tw_operation", "Error creating data partition!");
-				gui_print("Error creating data partition!\n");
-				gui_print("Cleaning up files...\n");
-				TWFunc::Exec_Cmd("rm -rf /ss/safestrap/" + arg, result);
-				return -1;
-			}
-
-			// CACHE
-			PartitionManager.Mount_By_Path("/cache", true);
-			TWFunc::Exec_Cmd("cp -R /cache/recovery /tmp", result);
-			TWFunc::Exec_Cmd("rm -rf /cache/recovery", result);
-			PartitionManager.UnMount_By_Path("/cache", true);
-
-			if (createImagePartition(arg, "cache", cache_size, "cache", 5, 75, 85, 90) != 0) {
-				DataManager::SetValue("tw_operation", "Error creating cache partition!");
-				gui_print("Error creating cache partition!\n");
-				gui_print("Cleaning up files...\n");
-				TWFunc::Exec_Cmd("rm -rf /ss/safestrap/" + arg, result);
-				PartitionManager.Mount_By_Path("/cache", true);
-				TWFunc::Exec_Cmd("rm -rf /cache/recovery", result);
-				TWFunc::Exec_Cmd("cp -R /tmp/recovery /cache", result);
-				TWFunc::Exec_Cmd("rm -rf /tmp/recovery", result);
-				return -1;
-			}
-
-			DataManager::SetValue("tw_operation", "Activating ROM slot...");
-			gui_print("Activating ROM slot...\n");
-			TWFunc::Exec_Cmd("/sbin/changeslot.sh " + arg, result);
-			DataManager::SetValue("ui_progress", 95);
-
-			DataManager::SetValue("tw_operation", "Updating filesystem details...");
-			gui_print("Updating filesystem details...\n");
-			PartitionManager.Process_Fstab("/etc/recovery.fstab", true, true);
-			PartitionManager.Update_System_Details();
-
-			PartitionManager.Mount_By_Path("/cache", true);
-			TWFunc::Exec_Cmd("rm -rf /cache/recovery", result);
-			TWFunc::Exec_Cmd("cp -R /tmp/recovery /cache", result);
-			TWFunc::Exec_Cmd("rm -rf /tmp/recovery", result);
-
-			// Done
-			DataManager::SetValue("ui_progress", 0);
-		}
-		operation_end(0);
+	if (arg == "stock")
 		return 0;
+
+	operation_start("deleteslot");
+
+	if (simulate) {
+		simulate_progress_bar();
+		gui_print("Simulating actions...\n");
 	}
-
-	if (function == "deleteslot") {
-		if (arg == "stock")
-			return 0;
-
-		operation_start("deleteslot");
-
-		if (simulate) {
-			simulate_progress_bar();
-			gui_print("Simulating actions...\n");
-		}
-		else {
-			TWFunc::Exec_Cmd("rm -rf /ss/safestrap/" + arg, result);
-		}
-		operation_end(0);
-		return 0;
+	else {
+		TWFunc::Exec_Cmd("rm -rf /ss/safestrap/" + arg, result);
 	}
-
-	if (function == "checkslot") {
-		operation_start("deleteslot");
-
-		if (simulate) {
-			simulate_progress_bar();
-			gui_print("Simulating actions...\n");
-		}
-		else {
-			// 1 at a time unmount partition and run e2fsck -pfv <block>
-
-			DataManager::SetValue("ui_progress", 0);
-			checkRomSlot("system", false);
-			DataManager::SetValue("ui_progress", 20);
-			checkRomSlot("data", false);
-			DataManager::SetValue("ui_progress", 80);
-			checkRomSlot("cache", true);
-		}
-
-		operation_end(0);
-		return 0;
-	}
-
-	return -1;
+	operation_end(0);
+	return 0;
 }
 
+int GUIAction::checkslot(std::string arg)
+{
+	DataManager::GetValue(TW_SIMULATE_ACTIONS, simulate);
+	operation_start("deleteslot");
+
+	if (simulate) {
+		simulate_progress_bar();
+		gui_print("Simulating actions...\n");
+	}
+	else {
+		// 1 at a time unmount partition and run e2fsck -pfv <block>
+
+		DataManager::SetValue("ui_progress", 0);
+		checkRomSlot("system", false);
+		DataManager::SetValue("ui_progress", 20);
+		checkRomSlot("data", false);
+		DataManager::SetValue("ui_progress", 80);
+		checkRomSlot("cache", true);
+	}
+
+	operation_end(0);
+	return 0;
+}

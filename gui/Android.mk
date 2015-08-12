@@ -135,15 +135,12 @@ ifdef BUILD_SAFESTRAP
         # This converts the old DEVICE_RESOLUTION flag to the new TW_THEME flag
         PORTRAIT_MDPI := 320x480 480x800 480x854 540x960
         PORTRAIT_HDPI := 720x1280 800x1280 1080x1920 1200x1920 1440x2560 1600x2560
-        WATCH_MDPI := 240x240 280x280 320x320
         LANDSCAPE_MDPI := 800x480 1024x600 1024x768
         LANDSCAPE_HDPI := 1280x800 1920x1200 2560x1600
         ifneq ($(filter $(DEVICE_RESOLUTION), $(PORTRAIT_MDPI)),)
             TW_THEME := portrait_mdpi
         else ifneq ($(filter $(DEVICE_RESOLUTION), $(PORTRAIT_HDPI)),)
             TW_THEME := portrait_hdpi
-        else ifneq ($(filter $(DEVICE_RESOLUTION), $(WATCH_MDPI)),)
-            TW_THEME := watch_mdpi
         else ifneq ($(filter $(DEVICE_RESOLUTION), $(LANDSCAPE_MDPI)),)
             TW_THEME := landscape_mdpi
         else ifneq ($(filter $(DEVICE_RESOLUTION), $(LANDSCAPE_HDPI)),)
@@ -156,9 +153,6 @@ ifdef BUILD_SAFESTRAP
     else ifeq ($(TW_THEME), portrait_hdpi)
         TWRP_THEME_LOC := $(SS_COMMON)/devices/common/res/1080x1920/res
         TWRP_COMMON_XML := cp -fr $(SS_COMMON)/devices/common/res/portrait/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
-    else ifeq ($(TW_THEME), watch_mdpi)
-        TWRP_THEME_LOC := $(SS_COMMON)/devices/common/res/320x320/res
-        TWRP_COMMON_XML := cp -fr $(SS_COMMON)/devices/common/res/watch/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
     else ifeq ($(TW_THEME), landscape_mdpi)
         TWRP_THEME_LOC := $(SS_COMMON)/devices/common/res/800x480/res
         TWRP_COMMON_XML := cp -fr $(SS_COMMON)/devices/common/res/landscape/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)

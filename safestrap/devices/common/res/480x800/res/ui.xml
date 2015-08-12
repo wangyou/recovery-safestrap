@@ -31,6 +31,7 @@
 		<resource name="radio_false" type="image" filename="radio_empty" retainaspect="1" />
 		<resource name="radio_true" type="image" filename="radio_selected" retainaspect="1" />
 		<resource name="medium_button" type="image" filename="medium-button" />
+		<resource name="main_button_highlight" type="image" filename="menu-highlight-button" />
 		<resource name="sort_button" type="image" filename="sort-button" />
 		<resource name="minus_button" type="image" filename="minus-button" />
 		<resource name="plus_button" type="image" filename="plus-button" />
@@ -98,10 +99,15 @@
 		<variable name="row7_medium_y" value="580" />
 		<variable name="slider_y" value="680" />
 		<variable name="slider_text_y" value="721" />
-		<variable name="button_text_color" value="#AAAAAA" />
+		<variable name="button_text_color" value="#CCCCCC" />
+		<variable name="button_text_warn_color" value="#FF3333" />
+		<variable name="button_text_disable_color" value="#666666" />
+		<variable name="button_text_highlight_color" value="#33FFDD" />
 		<variable name="text_color" value="#FFFFFF" />
-		<variable name="text_success_color" value="#33B5E5" />
+		<variable name="text_success_color" value="#25B39B" />
 		<variable name="text_fail_color" value="#FF0101" />
+		<variable name="text_color_safe" value="#33E5B5" />
+		<variable name="text_color_unsafe" value="#FF0101" />
 		<variable name="highlight_color" value="#90909080" />
 		<variable name="caps_highlight_color" value="#33B5E580" />
 		<variable name="home_button_x" value="10" />
@@ -136,16 +142,16 @@
 		<variable name="fileselector_install_height" value="480" />
 		<variable name="fileselector_header_background" value="#202020" />
 		<variable name="fileselector_header_textcolor" value="#AAAAAA" />
-		<variable name="fileselector_header_separatorcolor" value="#33B5E5" />
+		<variable name="fileselector_header_separatorcolor" value="#25B39B" />
 		<variable name="fileselector_header_separatorheight" value="3" />
 		<variable name="fileselector_separatorcolor" value="#505050" />
 		<variable name="fileselector_separatorheight" value="2" />
-		<variable name="fileselector_background" value="#303030" />
+		<variable name="fileselector_background" value="#000000" />
 		<variable name="fileselector_highlight_color" value="#505050" />
 		<variable name="fileselector_highlight_font_color" value="#33B5E5" />
 		<variable name="fileselector_spacing" value="18" />
-		<variable name="fastscroll_linecolor" value="#50505080" />
-		<variable name="fastscroll_rectcolor" value="#33B5E580" />
+		<variable name="fastscroll_linecolor" value="#808080" />
+		<variable name="fastscroll_rectcolor" value="#808080" />
 		<variable name="fastscroll_w" value="40" />
 		<variable name="fastscroll_linew" value="2" />
 		<variable name="fastscroll_rectw" value="10" />
@@ -190,7 +196,7 @@
 		<variable name="wipe_button_y" value="400" />
 		<variable name="slidervalue_w" value="460" />
 		<variable name="slidervalue_line_clr" value="#FFFFFF" />
-		<variable name="slidervalue_slider_clr" value="#33B5E5" />
+		<variable name="slidervalue_slider_clr" value="#25B39B" />
 		<variable name="slidervalue_lineh" value="1" />
 		<variable name="slidervalue_padding" value="13" />
 		<variable name="slidervalue_sliderw" value="7" />
@@ -198,10 +204,10 @@
 		<variable name="pattern_x" value="90" />
 		<variable name="pattern_y" value="250" />
 		<variable name="pattern_width" value="300" />
-		<variable name="pattern_dot_color" value="#33B5E5" />
+		<variable name="pattern_dot_color" value="#25B39B" />
 		<variable name="pattern_dot_color_active" value="#FFFFFF" />
 		<variable name="pattern_dot_radius" value="12" />
-		<variable name="pattern_line_color" value="#33B5E5" />
+		<variable name="pattern_line_color" value="#25B39B" />
 		<variable name="pattern_line_width" value="9" />
 	</variables>
 
@@ -213,11 +219,13 @@
 
 	<templates>
 		<template name="header">
+			<background color="#333333FF" />
+
 			<object type="fill" color="%button_fill_color%">
 				<placement x="0" y="0" w="480" h="98" />
 			</object>
 
-			<object type="fill" color="%highlight%">
+			<object type="fill" color="%text_color_safe%">
 				<placement x="0" y="98" w="480" h="2" />
 			</object>
 
@@ -229,7 +237,20 @@
 			<object type="text" color="%text_color%">
 				<font resource="font" />
 				<placement x="100" y="10" />
-				<text>Team Win Recovery Project  v%tw_version%</text>
+				<text>Safestrap %ss_version% (TWRP v%tw_version%)</text>
+			</object>
+
+			<object type="text" color="%text_color_safe%">
+				<condition var1="tw_bootslot" op="!=" var2="stock" />
+				<font resource="font" />
+				<placement x="100" y="40" />
+				<text>ROM Slot: %tw_bootslot%</text>
+			</object>
+			<object type="text" color="%text_color_unsafe%">
+				<condition var1="tw_bootslot" op="=" var2="stock" />
+				<font resource="font" />
+				<placement x="100" y="40" />
+				<text>ROM Slot: %tw_bootslot%</text>
 			</object>
 
 			<object type="text" color="%text_color%">

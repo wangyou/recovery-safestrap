@@ -151,7 +151,7 @@
 		<variable name="fileselector_header_separatorheight" value="4" />
 		<variable name="fileselector_separatorcolor" value="#505050" />
 		<variable name="fileselector_separatorheight" value="3" />
-		<variable name="fileselector_background" value="##000000" />
+		<variable name="fileselector_background" value="#000000" />
 		<variable name="fileselector_highlight_color" value="#505050" />
 		<variable name="fileselector_highlight_font_color" value="#25B39B" />
 		<variable name="fileselector_spacing" value="48" />

@@ -202,11 +202,9 @@ GUIAction::GUIAction(xml_node<>* node)
 		ADD_ACTION(cancelbackup);
 		ADD_ACTION(checkpartitionlifetimewrites);
 		ADD_ACTION(mountsystemtoggle);
-
 #ifdef BUILD_SAFESTRAP
 		// safestrap threaded actions
 		ADD_ACTION(readslotnames);
-		ADD_ACTION(createslot);
 		ADD_ACTION(refreshsizesnt);
 		ADD_ACTION(checkslot);
 		ADD_ACTION(loadsizes);
@@ -244,6 +242,11 @@ GUIAction::GUIAction(xml_node<>* node)
 		ADD_ACTION(resize);
 		ADD_ACTION(changefilesystem);
 		ADD_ACTION(flashimage);
+
+#ifdef BUILD_SAFESTRAP
+		// safestrap separate threaded actions
+		ADD_ACTION(createslot);
+#endif
 	}
 
 	// First, get the action

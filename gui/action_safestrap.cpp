@@ -121,7 +121,6 @@ int checkRomSlot(string loopName, bool remount) {
 
 int GUIAction::refreshsizesnt(std::string arg)
 {
-	DataManager::GetValue(TW_SIMULATE_ACTIONS, simulate);
 	if (simulate) {
 		simulate_progress_bar();
 	} else {
@@ -132,7 +131,6 @@ int GUIAction::refreshsizesnt(std::string arg)
 
 int GUIAction::loadsizes(std::string arg)
 {
-	DataManager::GetValue(TW_SIMULATE_ACTIONS, simulate);
 	if (simulate) {
 		simulate_progress_bar();
 	} else {
@@ -285,7 +283,7 @@ int GUIAction::createslot(std::string arg)
 {
         string result;
 	std::string pageName = gui_parse_text(arg);
-	DataManager::GetValue(TW_SIMULATE_ACTIONS, simulate);
+	std::string function = gui_parse_text(pageName);
 	DataManager::GetValue("tw_trybootslot", arg);
 	if (arg == "stock")
 		return 0;
@@ -361,9 +359,9 @@ int GUIAction::createslot(std::string arg)
 		TWFunc::Exec_Cmd("rm -rf /cache/recovery", result);
 		TWFunc::Exec_Cmd("cp -R /tmp/recovery /cache", result);
 		TWFunc::Exec_Cmd("rm -rf /tmp/recovery", result);
-
-		// Done
-		DataManager::SetValue("ui_progress", 0);
+	       
+                // Done
+	        DataManager::SetValue("ui_progress", 0);
 	}
 	operation_end(0);
 	return 0;
@@ -390,7 +388,6 @@ int GUIAction::deleteslot(std::string arg)
 
 int GUIAction::checkslot(std::string arg)
 {
-	DataManager::GetValue(TW_SIMULATE_ACTIONS, simulate);
 	operation_start("deleteslot");
 
 	if (simulate) {

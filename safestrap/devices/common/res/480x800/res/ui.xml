@@ -179,7 +179,7 @@
 		<variable name="row_dst_text_y" value="440" />
 		<variable name="row_offset_text_y" value="480" />
 		<variable name="row_offset_medium_y" value="505" />
-		<variable name="button_fill_color" value="#303030" />
+		<variable name="button_fill_color" value="#202020" />
 		<variable name="button_fill_full_width" value="455" />
 		<variable name="button_fill_main_width" value="225" />
 		<variable name="button_fill_main_height" value="135" />
@@ -221,7 +221,7 @@
 		<template name="header">
 			<background color="#333333FF" />
 
-			<object type="fill" color="%button_fill_color%">
+			<object type="fill" color="#303030">
 				<placement x="0" y="0" w="480" h="98" />
 			</object>
 

@@ -191,7 +191,7 @@
 		<variable name="terminal_text_y" value="624" />
 		<variable name="terminal_button_y" value="615" />
 		<variable name="terminal_input_width" value="1550" />
-		<variable name="button_fill_color" value="#303030" />
+		<variable name="button_fill_color" value="#202020" />
 		<variable name="button_fill_full_width" value="960" />
 		<variable name="button_fill_main_width" value="900" />
 		<variable name="button_fill_main_height" value="240" />
@@ -239,7 +239,7 @@
 		<template name="header">
 			<background color="#333333FF" />
 
-			<object type="fill" color="%button_fill_color%">
+			<object type="fill" color="#303030">
 				<placement x="0" y="0" w="1920" h="87" />
 			</object>
 

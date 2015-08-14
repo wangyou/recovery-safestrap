@@ -995,7 +995,7 @@
 				<condition var1="tw_mount_system_ro" op="=" var2="0" />
 				<text>Only mount system read-only</text>
 				<image resource="checkbox_false" />
-				<action function="mountsystemtoggle">1</action>
+				<action function="mountsystemtoggle"></action>
 			</object>
 
 			<object type="button">
@@ -1062,15 +1062,18 @@
 			</object>
 
 			<object type="action">
-				<condition var1="tw_lifetime_writes" var2="1" />
-				<actions>
-					<action function="mountsystemtoggle">0</action>
-					<action function="page">mount</action>
-				</actions>
+				<conditions>
+					<condition var1="tw_operation_state" var2="1" />
+					<condition var1="tw_lifetime_writes" var2="1" />
+				</conditions>
+				<action function="page">mount</action>
 			</object>
 
 			<object type="action">
-				<condition var1="tw_lifetime_writes" var2="0" />
+				<conditions>
+					<condition var1="tw_operation_state" var2="1" />
+					<condition var1="tw_lifetime_writes" var2="0" />
+				</conditions>
 				<actions>
 					<action function="set">tw_back=mount</action>
 					<action function="page">system_readonly</action>
@@ -3693,7 +3696,7 @@
 				<placement x="%col_center_x%" y="%row7_text_y%" />
 				<text>Keep Read Only</text>
 				<actions>
-					<action function="mountsystemtoggle">1</action>
+					<action function="set">tw_mount_system_ro=1</action>
 					<action function="set">tw_page_done=1</action>
 					<action function="page">%tw_back%</action>
 				</actions>
@@ -3702,7 +3705,7 @@
 			<object type="slider">
 				<text>Swipe to Allow Modifications</text>
 				<actions>
-					<action function="mountsystemtoggle">0</action>
+					<action function="set">tw_mount_system_ro=0</action>
 					<action function="set">tw_page_done=1</action>
 					<action function="page">%tw_back%</action>
 				</actions>

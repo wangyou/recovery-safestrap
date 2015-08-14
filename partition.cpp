@@ -1003,10 +1003,7 @@ bool TWPartition::Mount(bool Display_Error) {
 
 	if (Current_File_System == "ntfs" && TWFunc::Path_Exists("/sbin/ntfs-3g")) {
 		string cmd;
-		if (Mount_Read_Only)
-			cmd = "/sbin/ntfs-3g -o ro " + Actual_Block_Device + " " + Mount_Point;
-		else
-			cmd = "/sbin/ntfs-3g " + Actual_Block_Device + " " + Mount_Point;
+		cmd = "/sbin/ntfs-3g " + Actual_Block_Device + " " + Mount_Point;
 		LOGINFO("cmd: '%s'\n", cmd.c_str());
 		if (TWFunc::Exec_Cmd(cmd) == 0) {
 			return true;

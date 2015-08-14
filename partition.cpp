@@ -1234,8 +1234,6 @@ bool TWPartition::Wipe_AndSec(void) {
 }
 
 bool TWPartition::Can_Repair() {
-	if (Mount_Read_Only)
-		return false;
 	if (Current_File_System == "vfat" && TWFunc::Path_Exists("/sbin/dosfsck"))
 		return true;
 	else if ((Current_File_System == "ext2" || Current_File_System == "ext3" || Current_File_System == "ext4") && TWFunc::Path_Exists("/sbin/e2fsck"))
@@ -1351,8 +1349,6 @@ bool TWPartition::Repair() {
 }
 
 bool TWPartition::Can_Resize() {
-	if (Mount_Read_Only)
-		return false;
 	if ((Current_File_System == "ext2" || Current_File_System == "ext3" || Current_File_System == "ext4") && TWFunc::Path_Exists("/sbin/resize2fs"))
 		return true;
 	return false;

@@ -1591,6 +1591,7 @@ bool TWPartition::Wipe_Encryption() {
 						} else {
 							LOGINFO("Successfully wiped crypto footer.\n");
 						}
+						free(buffer);
 					}
 				}
 			}

@@ -531,6 +531,7 @@ void GUIAction::operation_end(const int operation_status)
 	DataManager::SetValue("tw_operation_state", 1);
 	DataManager::SetValue(TW_ACTION_BUSY, 0);
 	blankTimer.resetTimerAndUnblank();
+	property_set("twrp.action_complete", "1");
 	time(&Stop);
 	if ((int) difftime(Stop, Start) > 10)
 		DataManager::Vibrate("tw_action_vibrate");
@@ -565,6 +566,7 @@ int GUIAction::key(std::string arg)
 
 int GUIAction::page(std::string arg)
 {
+	property_set("twrp.action_complete", "0");
 	std::string page_name = gui_parse_text(arg);
 	return gui_changePage(page_name);
 }

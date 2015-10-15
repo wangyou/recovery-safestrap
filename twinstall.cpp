@@ -98,7 +98,6 @@ static int switch_to_new_properties()
 #endif
 
 static int Run_Update_Binary(const char *path, ZipArchive *Zip, int* wipe_cache) {
-	const ZipEntry* binary_location = mzFindZipEntry(Zip, ASSUMED_UPDATE_BINARY_NAME);
 	string Temp_Binary = "/tmp/updater"; // Note: AOSP names it /tmp/update_binary (yes, with "_")
 	int binary_fd, ret_val, pipe_fd[2], status, zip_verify;
 	char buffer[1024];

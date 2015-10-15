@@ -1091,6 +1091,7 @@ int DataManager::GetMagicValue(const string varName, string& value)
 
 void DataManager::Output_Version(void)
 {
+#ifndef TW_OEM_BUILD
 	string Path;
 	char version[255];
 
@@ -1121,6 +1122,7 @@ void DataManager::Output_Version(void)
 	PartitionManager.Output_Storage_Fstab();
 	sync();
 	LOGINFO("Version number saved to '%s'\n", Path.c_str());
+#endif
 }
 
 void DataManager::ReadSettingsFile(void)

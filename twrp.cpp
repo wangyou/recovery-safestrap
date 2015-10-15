@@ -339,6 +339,7 @@ int main(int argc, char **argv) {
 	// Launch the main GUI
 	gui_start();
 
+#ifndef TW_OEM_BUILD
 	// Disable flashing of stock recovery
 	TWFunc::Disable_Stock_Recovery_Replace();
 	// Check for su to see if the device is rooted or not
@@ -353,6 +354,7 @@ int main(int argc, char **argv) {
 		sync();
 		PartitionManager.UnMount_By_Path("/system", false);
 	}
+#endif
 
 	// Reboot
 	TWFunc::Update_Intent_File(Reboot_Value);

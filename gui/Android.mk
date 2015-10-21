@@ -63,9 +63,6 @@ endif
 ifeq ($(TW_OEM_BUILD), true)
     LOCAL_CFLAGS += -DTW_OEM_BUILD
 endif
-ifeq ($(TW_DISABLE_TTF), true)
-    LOCAL_CFLAGS += -DTW_DISABLE_TTF
-endif
 ifneq ($(TW_X_OFFSET),)
     LOCAL_CFLAGS += -DTW_X_OFFSET=$(TW_X_OFFSET)
 endif
@@ -114,7 +111,7 @@ LOCAL_CFLAGS += -DDEFAULT_VIRT_CACHE_SIZE=\"$(BOARD_DEFAULT_VIRT_CACHE_SIZE)\"
 LOCAL_CFLAGS += -DDEFAULT_VIRT_CACHE_MIN_SIZE=\"$(BOARD_DEFAULT_VIRT_CACHE_MIN_SIZE)\"
 LOCAL_CFLAGS += -DDEFAULT_VIRT_CACHE_MAX_SIZE=\"$(BOARD_DEFAULT_VIRT_CACHE_MAX_SIZE)\"
 
-LOCAL_C_INCLUDES += bionic external/stlport/stlport $(commands_recovery_local_path)/gui/devices/$(DEVICE_RESOLUTION)
+LOCAL_C_INCLUDES += bionic external/stlport/stlport system/core/libpixelflinger/include
 LOCAL_CFLAGS += -DTWRES=\"$(TWRES_PATH)\"
 
 include $(BUILD_STATIC_LIBRARY)
@@ -125,13 +122,13 @@ LOCAL_MODULE := twrp
 LOCAL_MODULE_TAGS := eng
 LOCAL_MODULE_CLASS := RECOVERY_EXECUTABLES
 LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
-TWRP_RES_LOC := $(commands_recovery_local_path)/gui/devices/common/res
-TWRP_COMMON_XML := $(hide) echo "No common TWRP XML resources"
+TWRP_RES := $(commands_recovery_local_path)/gui/devices/common/res/*
+# enable this to use new themes:
+#TWRP_NEW_THEME := true
 
 ifdef BUILD_SAFESTRAP
     ifeq ($(TW_THEME),)
         SS_COMMON := $(commands_recovery_local_path)/safestrap
-        TWRP_RES_LOC := $(SS_COMMON)/devices/common/res/common/res
         # This converts the old DEVICE_RESOLUTION flag to the new TW_THEME flag
         PORTRAIT_MDPI := 320x480 480x800 480x854 540x960
         PORTRAIT_HDPI := 720x1280 800x1280 1080x1920 1200x1920 1440x2560 1600x2560
@@ -147,18 +144,15 @@ ifdef BUILD_SAFESTRAP
             TW_THEME := landscape_hdpi
         endif
     endif
+    TWRP_RES += $(SS_COMMON)/devices/common/res/$(word 1,$(subst _, ,$(TW_THEME)))/res/*
     ifeq ($(TW_THEME), portrait_mdpi)
         TWRP_THEME_LOC := $(SS_COMMON)/devices/common/res/480x800/res
-        TWRP_COMMON_XML := cp -fr $(SS_COMMON)/devices/common/res/portrait/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
     else ifeq ($(TW_THEME), portrait_hdpi)
         TWRP_THEME_LOC := $(SS_COMMON)/devices/common/res/1080x1920/res
-        TWRP_COMMON_XML := cp -fr $(SS_COMMON)/devices/common/res/portrait/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
     else ifeq ($(TW_THEME), landscape_mdpi)
         TWRP_THEME_LOC := $(SS_COMMON)/devices/common/res/800x480/res
-        TWRP_COMMON_XML := cp -fr $(SS_COMMON)/devices/common/res/landscape/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
     else ifeq ($(TW_THEME), landscape_hdpi)
         TWRP_THEME_LOC := $(SS_COMMON)/devices/common/res/1920x1200/res
-        TWRP_COMMON_XML := cp -fr $(SS_COMMON)/devices/common/res/landscape/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
     else
         $(warning ****************************************************************************)
         $(warning * TW_THEME ($(TW_THEME)) is not valid.)
@@ -189,21 +183,35 @@ ifeq ($(TW_CUSTOM_THEME),)
             TW_THEME := landscape_hdpi
         endif
     endif
+ifeq ($(TWRP_NEW_THEME),true)
+    TWRP_THEME_LOC := $(commands_recovery_local_path)/gui/theme/$(TW_THEME)
+    TWRP_RES := $(commands_recovery_local_path)/gui/theme/common/fonts
+    TWRP_RES += $(commands_recovery_local_path)/gui/theme/common/$(word 1,$(subst _, ,$(TW_THEME))).xml
+# for future copying of used include xmls and fonts:
+# UI_XML := $(TWRP_THEME_LOC)/ui.xml
+# TWRP_INCLUDE_XMLS := $(shell xmllint --xpath '/recovery/include/xmlfile/@name' $(UI_XML)|sed -n 's/[^\"]*\"\([^\"]*\)\"[^\"]*/\1\n/gp'|sort|uniq)
+# TWRP_FONTS_TTF := $(shell xmllint --xpath '/recovery/resources/font/@filename' $(UI_XML)|sed -n 's/[^\"]*\"\([^\"]*\)\"[^\"]*/\1\n/gp'|sort|uniq)niq)
+ifeq ($(wildcard $(TWRP_THEME_LOC)/ui.xml),)
+    $(warning ****************************************************************************)
+    $(warning * TW_THEME is not valid: '$(TW_THEME)')
+    $(warning * Please choose an appropriate TW_THEME or create a new one for your device.)
+    $(warning * Available themes:)
+    $(warning * $(notdir $(wildcard $(commands_recovery_local_path)/gui/theme/*_*)))
+    $(warning ****************************************************************************)
+    $(error stopping)
+endif
+else
+    TWRP_RES += $(commands_recovery_local_path)/gui/devices/$(word 1,$(subst _, ,$(TW_THEME)))/res/*
     ifeq ($(TW_THEME), portrait_mdpi)
         TWRP_THEME_LOC := $(commands_recovery_local_path)/gui/devices/480x800/res
-        TWRP_COMMON_XML := cp -fr $(commands_recovery_local_path)/gui/devices/portrait/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
     else ifeq ($(TW_THEME), portrait_hdpi)
         TWRP_THEME_LOC := $(commands_recovery_local_path)/gui/devices/1080x1920/res
-        TWRP_COMMON_XML := cp -fr $(commands_recovery_local_path)/gui/devices/portrait/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
     else ifeq ($(TW_THEME), watch_mdpi)
         TWRP_THEME_LOC := $(commands_recovery_local_path)/gui/devices/320x320/res
-        TWRP_COMMON_XML := cp -fr $(commands_recovery_local_path)/gui/devices/watch/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
     else ifeq ($(TW_THEME), landscape_mdpi)
         TWRP_THEME_LOC := $(commands_recovery_local_path)/gui/devices/800x480/res
-        TWRP_COMMON_XML := cp -fr $(commands_recovery_local_path)/gui/devices/landscape/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
     else ifeq ($(TW_THEME), landscape_hdpi)
         TWRP_THEME_LOC := $(commands_recovery_local_path)/gui/devices/1920x1200/res
-        TWRP_COMMON_XML := cp -fr $(commands_recovery_local_path)/gui/devices/landscape/res/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
     else
         $(warning ****************************************************************************)
         $(warning * TW_THEME ($(TW_THEME)) is not valid.)
@@ -213,15 +221,10 @@ ifeq ($(TW_CUSTOM_THEME),)
         $(warning ****************************************************************************)
         $(error stopping)
     endif
+endif
 else
     TWRP_THEME_LOC := $(TW_CUSTOM_THEME)
 endif
-endif
-
-ifeq ($(TW_DISABLE_TTF), true)
-    TWRP_REMOVE_FONT := rm -f $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)fonts/*.ttf
-else
-    TWRP_REMOVE_FONT := rm -f $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)fonts/*.dat
 endif
 
 TWRP_RES_GEN := $(intermediates)/twrp
@@ -233,10 +236,8 @@ endif
 
 $(TWRP_RES_GEN):
 	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
-	cp -fr $(TWRP_RES_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
+	cp -fr $(TWRP_RES) $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
 	cp -fr $(TWRP_THEME_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
-	$(TWRP_COMMON_XML)
-	$(TWRP_REMOVE_FONT)
 	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/sbin/
 ifneq ($(TW_USE_TOOLBOX), true)
 	ln -sf $(TWRP_SH_TARGET) $(TARGET_RECOVERY_ROOT_OUT)/sbin/sh

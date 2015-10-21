@@ -38,6 +38,7 @@
 #include <map>
 #include <fstream>
 #include <sstream>
+#include <pthread.h>
 
 #include "variables.h"
 #include "data.hpp"
@@ -79,7 +80,11 @@ int                                     DataManager::mInitialized = 0;
 
 extern bool datamedia;
 
+#ifndef PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
 pthread_mutex_t DataManager::m_valuesLock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER;
+#else
+pthread_mutex_t DataManager::m_valuesLock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+#endif
 
 // Device ID functions
 void DataManager::sanitize_device_id(char* device_id) {
@@ -1091,6 +1096,7 @@ int DataManager::GetMagicValue(const string varName, string& value)
 
 void DataManager::Output_Version(void)
 {
+#ifndef TW_OEM_BUILD
 	string Path;
 	char version[255];
 
@@ -1121,6 +1127,7 @@ void DataManager::Output_Version(void)
 	PartitionManager.Output_Storage_Fstab();
 	sync();
 	LOGINFO("Version number saved to '%s'\n", Path.c_str());
+#endif
 }
 
 void DataManager::ReadSettingsFile(void)

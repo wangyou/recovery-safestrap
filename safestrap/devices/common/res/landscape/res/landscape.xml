@@ -2469,7 +2469,7 @@
 			</object>
 
 			<object type="button">
-				<placement x="%slidervalue_x%" y="%row3_text_y%" />
+				<placement x="%slidervalue_x%" y="%row3_text_y%" textplacement="6" />
 				<condition var1="tw_screen_timeout_secs" op="=" var2="0" />
 				<condition var1="tw_no_screen_timeout" op="!=" var2="1" />
 				<text>Enable screen timeout.</text>
@@ -2478,7 +2478,7 @@
 			</object>
 
 			<object type="button">
-				<placement x="%slidervalue_x%" y="%row3_text_y%" />
+				<placement x="%slidervalue_x%" y="%row3_text_y%" textplacement="6" />
 				<condition var1="tw_screen_timeout_secs" op="!=" var2="0" />
 				<condition var1="tw_no_screen_timeout" op="!=" var2="1" />
 				<text>Enable screen timeout.</text>

@@ -15,12 +15,16 @@ endif
 
 PIXELFLINGER_SRC_FILES += \
     codeflinger/CodeCache.cpp \
-    codeflinger/tinyutils/SharedBuffer.cpp \
-    codeflinger/tinyutils/VectorImpl.cpp \
     format.cpp \
     clear.cpp \
     raster.cpp \
     buffer.cpp
+
+ifneq ($(wildcard system/core/libpixelflinger/codeflinger/tinyutils/VectorImpl.cpp),)
+    PIXELFLINGER_SRC_FILES += \
+        codeflinger/tinyutils/SharedBuffer.cpp \
+        codeflinger/tinyutils/VectorImpl.cpp
+endif
 
 ifneq ($(TW_HAVE_X86_ACCELERATED_PIXELFLINGER),true)
 PIXELFLINGER_SRC_FILES += \
@@ -85,13 +89,14 @@ endif
 #
 
 include $(CLEAR_VARS)
+LOCAL_CLANG := false
 LOCAL_MODULE:= libpixelflinger_twrp
 LOCAL_SRC_FILES := $(PIXELFLINGER_SRC_FILES)
 LOCAL_SRC_FILES_arm := $(PIXELFLINGER_SRC_FILES_arm)
 LOCAL_SRC_FILES_arm64 := $(PIXELFLINGER_SRC_FILES_arm64)
 LOCAL_SRC_FILES_x86 := $(PIXELFLINGER_SRC_FILES_x86)
 LOCAL_SRC_FILES_mips := $(PIXELFLINGER_SRC_FILES_mips)
-ifneq ($(shell test $(PLATFORM_SDK_VERSION) -gt 22; echo $$?),0)
+ifneq ($(shell test $(PLATFORM_SDK_VERSION) -gt 20; echo $$?),0)
     LOCAL_SRC_FILES += $(LOCAL_SRC_FILES_$(TARGET_ARCH))
 endif
 LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)/include

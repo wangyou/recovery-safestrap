@@ -53,6 +53,7 @@
 #include "find_file.hpp"
 #include "set_metadata.h"
 #include <cutils/properties.h>
+#include "gui/gui.hpp"
 
 #define DEVID_MAX 64
 #define HWID_MAX 32
@@ -232,7 +233,7 @@ void DataManager::get_device_id(void) {
 	}
 
 	strcpy(device_id, "serialno");
-	LOGERR("=> device id not found, using '%s'\n", device_id);
+	LOGINFO("=> device id not found, using '%s'\n", device_id);
 	mConstValues.insert(make_pair("device_id", device_id));
 	return;
 }
@@ -277,16 +278,18 @@ int DataManager::LoadValues(const string filename)
 		string Name;
 		string Value;
 		unsigned short length;
-		char array[512];
+		char array[513];
 
 		if (fread(&length, 1, sizeof(unsigned short), in) != sizeof(unsigned short))	goto error;
 		if (length >= 512)																goto error;
 		if (fread(array, 1, length, in) != length)										goto error;
+		array[length+1] = '\0';
 		Name = array;
 
 		if (fread(&length, 1, sizeof(unsigned short), in) != sizeof(unsigned short))	goto error;
 		if (length >= 512)																goto error;
 		if (fread(array, 1, length, in) != length)										goto error;
+		array[length+1] = '\0';
 		Value = array;
 
 		map<string, TStrIntPair>::iterator pos;
@@ -528,13 +531,7 @@ int DataManager::SetValue(const string varName, int value, int persist /* = 0 */
 	if (varName == "tw_use_external_storage") {
 		string str;
 
-		if (GetIntValue(TW_HAS_DUAL_STORAGE) == 1) {
-			if (value == 0) {
-				str = GetStrValue(TW_INTERNAL_PATH);
-			} else {
-				str = GetStrValue(TW_EXTERNAL_PATH);
-			}
-		} else if (GetIntValue(TW_HAS_INTERNAL) == 1)
+		if (GetIntValue(TW_HAS_INTERNAL) == 1)
 			str = GetStrValue(TW_INTERNAL_PATH);
 		else
 			str = GetStrValue(TW_EXTERNAL_PATH);
@@ -625,8 +622,10 @@ void DataManager::SetBackupFolder()
 			}
 		}
 	} else {
-		if (PartitionManager.Fstab_Processed() != 0)
-			LOGERR("Storage partition '%s' not found\n", str.c_str());
+		if (PartitionManager.Fstab_Processed() != 0) {
+			LOGINFO("Storage partition '%s' not found\n", str.c_str());
+			gui_err("unable_locate_storage=Unable to locate storage device.");
+		}
 	}
 }
 
@@ -932,8 +931,24 @@ void DataManager::SetDefaultValues()
 			LOGINFO("Specified secondary brightness file '%s' not found.\n", secondfindbright.c_str());
 		}
 #endif
-		string max_bright = maxVal.str();
-		TWFunc::Set_Brightness(max_bright);
+#ifdef TW_DEFAULT_BRIGHTNESS
+		int defValInt = TW_DEFAULT_BRIGHTNESS;
+		int maxValInt = TW_MAX_BRIGHTNESS;
+		// Deliberately int so the % is always a whole number
+		int defPctInt = ( ( (double)defValInt / maxValInt ) * 100 );
+		ostringstream defPct;
+		defPct << defPctInt;
+		mValues.erase("tw_brightness_pct");
+		mValues.insert(make_pair("tw_brightness_pct", make_pair(defPct.str(), 1)));
+
+		ostringstream defVal;
+		defVal << TW_DEFAULT_BRIGHTNESS;
+		mValues.erase("tw_brightness");
+		mValues.insert(make_pair("tw_brightness", make_pair(defVal.str(), 1)));
+		TWFunc::Set_Brightness(defVal.str());	
+#else
+		TWFunc::Set_Brightness(maxVal.str());
+#endif
 	}
 #endif
 	mValues.insert(make_pair(TW_MILITARY_TIME, make_pair("0", 1)));
@@ -960,6 +975,8 @@ void DataManager::SetDefaultValues()
 	mConstValues.insert(make_pair("tw_mtp_enabled", "0"));
 #endif
 
+	mValues.insert(make_pair("tw_language", make_pair(EXPAND(TW_DEFAULT_LANGUAGE), 1)));
+	LOGINFO("LANG: %s\n", EXPAND(TW_DEFAULT_LANGUAGE));
 	pthread_mutex_unlock(&m_valuesLock);
 }
 
@@ -1117,7 +1134,7 @@ void DataManager::Output_Version(void)
 	}
 	FILE *fp = fopen(Path.c_str(), "w");
 	if (fp == NULL) {
-		LOGERR("Unable to open '%s'.\n", Path.c_str());
+		gui_msg(Msg(msg::kError, "error_opening_strerr=Error opening: '{1}' ({2})")(Path)(strerror(errno)));
 		return;
 	}
 	strcpy(version, TW_VERSION_STR);
@@ -1153,7 +1170,7 @@ void DataManager::ReadSettingsFile(void)
 	{
 		usleep(500000);
 		if (!PartitionManager.Mount_Settings_Storage(false))
-			LOGERR("Unable to mount %s when trying to read settings file.\n", settings_file);
+			gui_msg(Msg(msg::kError, "unable_to_mount=Unable to mount {1}")(settings_file));
 	}
 
 	mkdir(mkdir_path, 0777);

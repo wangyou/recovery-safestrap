@@ -43,6 +43,15 @@ using namespace rapidxml;
 #define TW_Y_OFFSET 0
 #endif
 
+struct translate_later_struct {
+	std::string resource_name; // Name of the string resource for looking up
+	std::string default_value; // Default in case we don't find the string resource
+	std::string color;         // Color for the console... normal, highlight, warning, error
+	std::string format;        // Formatted extra variables like %i, %s
+	std::string text;          // Final, translated, formatted text
+	bool inline_format;        // Indicates if the final text includes an inlined format variable
+};
+
 class RenderObject
 {
 public:
@@ -72,7 +81,7 @@ public:
 	virtual int SetPlacement(Placement placement) { mPlacement = placement; return 0; }
 
 	// SetPageFocus - Notify when a page gains or loses focus
-	virtual void SetPageFocus(int inFocus) { return; }
+	virtual void SetPageFocus(int inFocus __unused) { return; }
 
 protected:
 	int mRenderX, mRenderY, mRenderW, mRenderH;
@@ -88,11 +97,11 @@ public:
 public:
 	// NotifyTouch - Notify of a touch event
 	//  Return 0 on success, >0 to ignore remainder of touch, and <0 on error
-	virtual int NotifyTouch(TOUCH_STATE state, int x, int y) { return 0; }
+	virtual int NotifyTouch(TOUCH_STATE state __unused, int x __unused, int y __unused) { return 0; }
 
 	// NotifyKey - Notify of a key press
 	//  Return 0 on success (and consume key), >0 to pass key to next handler, and <0 on error
-	virtual int NotifyKey(int key, bool down) { return 1; }
+	virtual int NotifyKey(int key __unused, bool down __unused) { return 1; }
 
 	// GetRenderPos - Returns the current position of the object
 	virtual int GetActionPos(int& x, int& y, int& w, int& h) { x = mActionX; y = mActionY; w = mActionW; h = mActionH; return 0; }
@@ -159,7 +168,7 @@ public:
 public:
 	// NotifyKeyboard - Notify of keyboard input
 	//  Return 0 on success (and consume key), >0 to pass key to next handler, and <0 on error
-	virtual int NotifyKeyboard(int key) { return 1; }
+	virtual int NotifyKeyboard(int key __unused) { return 1; }
 
 	virtual int SetInputFocus(int focus) { HasInputFocus = focus; return 1; }
 
@@ -368,6 +377,9 @@ protected:
 	int setslotnickname(std::string arg);
 	int checkslotnames(std::string arg);
 #endif	
+	int checkpartitionlifetimewrites(std::string arg);
+	int mountsystemtoggle(std::string arg);
+	int setlanguage(std::string arg);
 
 	int simulate;
 };
@@ -481,7 +493,7 @@ protected:
 	// render a single item in rect (mRenderX, yPos, mRenderW, actualItemHeight)
 	virtual void RenderItem(size_t itemindex, int yPos, bool selected);
 	// an item was selected
-	virtual void NotifySelect(size_t item_selected) {}
+	virtual void NotifySelect(size_t item_selected __unused) {}
 
 	// render a standard-layout list item with optional icon and text
 	void RenderStdItem(int yPos, bool selected, ImageResource* icon, const char* text, int iconAndTextH = 0);
@@ -557,6 +569,7 @@ protected:
 	int lastY, last2Y; // last 2 touch locations, used for tracking kinetic scroll speed
 	int fastScroll; // indicates that the inital touch was inside the fastscroll region - makes for easier fast scrolling as the touches don't have to stay within the fast scroll region and you drag your finger
 	int mUpdate; // indicates that a change took place and we need to re-render
+	bool AddLines(std::vector<std::string>* origText, std::vector<std::string>* origColor, size_t* lastCount, std::vector<std::string>* rText, std::vector<std::string>* rColor);
 };
 
 class GUIFileSelector : public GUIScrollList
@@ -692,6 +705,33 @@ protected:
 	bool updateList;
 };
 
+class GUITextBox : public GUIScrollList
+{
+public:
+	GUITextBox(xml_node<>* node);
+
+public:
+	// Update - Update any UI component animations (called <= 30 FPS)
+	//  Return 0 if nothing to update, 1 on success and contiue, >1 if full render required, and <0 on error
+	virtual int Update(void);
+
+	// NotifyVarChange - Notify of a variable change
+	virtual int NotifyVarChange(const std::string& varName, const std::string& value);
+
+	// ScrollList interface
+	virtual size_t GetItemCount();
+	virtual void RenderItem(size_t itemindex, int yPos, bool selected);
+	virtual void NotifySelect(size_t item_selected);
+protected:
+
+	size_t mLastCount;
+	bool mIsStatic;
+	std::vector<std::string> mLastValue; // Parsed text - parsed for variables but not word wrapped
+	std::vector<std::string> mText;      // Original text - not parsed for variables and not word wrapped
+	std::vector<std::string> rText;      // Rendered text - what we actually see
+
+};
+
 class GUIConsole : public GUIScrollList
 {
 public:
@@ -718,6 +758,7 @@ public:
 	virtual size_t GetItemCount();
 	virtual void RenderItem(size_t itemindex, int yPos, bool selected);
 	virtual void NotifySelect(size_t item_selected);
+	static void Translate_Now();
 protected:
 	enum SlideoutState
 	{
@@ -737,7 +778,6 @@ protected:
 	std::vector<std::string> rConsoleColor;
 
 protected:
-	bool AddLines();
 	int RenderSlideout(void);
 	int RenderConsole(void);
 };

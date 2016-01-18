@@ -666,6 +666,7 @@ protected:
 	ImageResource* mIconSelected;
 	ImageResource* mIconUnselected;
 	bool isCheckList;
+	bool isTextParsed;
 };
 
 class GUIPartitionList : public GUIScrollList

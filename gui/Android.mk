@@ -238,6 +238,7 @@ else
     TWRP_THEME_LOC := $(TW_CUSTOM_THEME)
 endif
 endif
+TWRP_RES += $(TW_ADDITIONAL_RES)
 
 TWRP_RES_GEN := $(intermediates)/twrp
 ifneq ($(TW_USE_TOOLBOX), true)

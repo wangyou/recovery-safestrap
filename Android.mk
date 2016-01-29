@@ -53,7 +53,7 @@ TARGET_RECOVERY_GUI := true
 
 LOCAL_SRC_FILES := \
     twrp.cpp \
-    fixPermissions.cpp \
+    fixContexts.cpp \
     twrpTar.cpp \
     twrpDU.cpp \
     twrpDigest.cpp \
@@ -364,7 +364,6 @@ LOCAL_ADDITIONAL_DEPENDENCIES := \
     dump_image \
     erase_image \
     flash_image \
-    fix_permissions.sh \
     mke2fs.conf \
     pigz \
     teamwin \

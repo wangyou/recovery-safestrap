@@ -131,7 +131,7 @@ LOCAL_MODULE_CLASS := RECOVERY_EXECUTABLES
 LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
 TWRP_RES := $(commands_recovery_local_path)/gui/devices/common/res/*
 # enable this to use new themes:
-#TWRP_NEW_THEME := true
+TWRP_NEW_THEME := true
 
 ifdef BUILD_SAFESTRAP
     ifeq ($(TW_THEME),)
@@ -151,6 +151,29 @@ ifdef BUILD_SAFESTRAP
             TW_THEME := landscape_hdpi
         endif
     endif
+ifeq ($(TWRP_NEW_THEME),true)
+    TWRP_THEME_LOC := $(SS_COMMON)/devices/common/theme/$(TW_THEME)
+    TWRP_RES := $(SS_COMMON)/devices/common/theme/common/fonts
+    TWRP_RES += $(SS_COMMON)/devices/common/theme/common/languages
+    TWRP_RES += $(SS_COMMON)/devices/common/theme/common/$(word 1,$(subst _, ,$(TW_THEME))).xml
+ifeq ($(TW_EXTRA_LANGUAGES),true)
+    TWRP_RES += $(SS_COMMON)/devices/common/theme/extra-languages/fonts
+    TWRP_RES += $(SS_COMMON)/devices/common/theme/extra-languages/languages
+endif
+# for future copying of used include xmls and fonts:
+# UI_XML := $(TWRP_THEME_LOC)/ui.xml
+# TWRP_INCLUDE_XMLS := $(shell xmllint --xpath '/recovery/include/xmlfile/@name' $(UI_XML)|sed -n 's/[^\"]*\"\([^\"]*\)\"[^\"]*/\1\n/gp'|sort|uniq)
+# TWRP_FONTS_TTF := $(shell xmllint --xpath '/recovery/resources/font/@filename' $(UI_XML)|sed -n 's/[^\"]*\"\([^\"]*\)\"[^\"]*/\1\n/gp'|sort|uniq)niq)
+ifeq ($(wildcard $(TWRP_THEME_LOC)/ui.xml),)
+    $(warning ****************************************************************************)
+    $(warning * TW_THEME is not valid: '$(TW_THEME)')
+    $(warning * Please choose an appropriate TW_THEME or create a new one for your device.)
+    $(warning * Available themes:)
+    $(warning * $(notdir $(wildcard $(SS_COMMON)/devices/common/theme/*_*)))
+    $(warning ****************************************************************************)
+    $(error stopping)
+endif
+else
     TWRP_RES += $(SS_COMMON)/devices/common/res/$(word 1,$(subst _, ,$(TW_THEME)))/res/*
     ifeq ($(TW_THEME), portrait_mdpi)
         TWRP_THEME_LOC := $(SS_COMMON)/devices/common/res/480x800/res
@@ -169,6 +192,7 @@ ifdef BUILD_SAFESTRAP
         $(warning ****************************************************************************)
         $(error stopping)
     endif
+endif
 else
 ifeq ($(TW_CUSTOM_THEME),)
     ifeq ($(TW_THEME),)
@@ -238,7 +262,6 @@ else
     TWRP_THEME_LOC := $(TW_CUSTOM_THEME)
 endif
 endif
-TWRP_RES += $(TW_ADDITIONAL_RES)
 
 TWRP_RES_GEN := $(intermediates)/twrp
 ifneq ($(TW_USE_TOOLBOX), true)
@@ -246,6 +269,7 @@ ifneq ($(TW_USE_TOOLBOX), true)
 else
     TWRP_SH_TARGET := /sbin/mksh
 endif
+TWRP_RES += $(TW_ADDITIONAL_RES)
 
 $(TWRP_RES_GEN):
 	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)

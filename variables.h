@@ -17,7 +17,7 @@
 #ifndef _VARIABLES_HEADER_
 #define _VARIABLES_HEADER_
 
-#define TW_VERSION_STR              "2.8.7.0"
+#define TW_VERSION_STR              "3.0.0-0"
 
 #ifdef BUILD_SAFESTRAP
 #define SS_VERSION_STR              "4.00"

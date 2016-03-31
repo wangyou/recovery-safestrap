@@ -65,6 +65,7 @@ LOCAL_SRC_FILES += \
     data.cpp \
     partition.cpp \
     partitionmanager.cpp \
+    progresstracking.cpp \
     twinstall.cpp \
     twrp-functions.cpp \
     openrecoveryscript.cpp \

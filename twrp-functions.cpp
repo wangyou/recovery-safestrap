@@ -38,6 +38,7 @@
 #include <algorithm>
 #include "twrp-functions.hpp"
 #include "twcommon.h"
+#include "gui/gui.hpp"
 #ifndef BUILD_TWRPTAR_MAIN
 #include "data.hpp"
 #include "partitions.hpp"
@@ -47,7 +48,6 @@
 #ifdef ANDROID_RB_POWEROFF
 	#include "cutils/android_reboot.h"
 #endif
-#include "gui/gui.hpp"
 #endif // ndef BUILD_TWRPTAR_MAIN
 #ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
 	#include "openaes/inc/oaes_lib.h"
@@ -274,7 +274,7 @@ int TWFunc::Try_Decrypting_File(string fn, string password) {
 #endif
 }
 
-unsigned long TWFunc::Get_File_Size(string Path) {
+unsigned long TWFunc::Get_File_Size(const string& Path) {
 	struct stat st;
 
 	if (stat(Path.c_str(), &st) != 0)
@@ -329,6 +329,25 @@ vector<string> TWFunc::split_string(const string &in, char del, bool skip_empty)
 		}
 	}
 	return res;
+}
+
+timespec TWFunc::timespec_diff(timespec& start, timespec& end)
+{
+	timespec temp;
+	if ((end.tv_nsec-start.tv_nsec)<0) {
+		temp.tv_sec = end.tv_sec-start.tv_sec-1;
+		temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
+	} else {
+		temp.tv_sec = end.tv_sec-start.tv_sec;
+		temp.tv_nsec = end.tv_nsec-start.tv_nsec;
+	}
+	return temp;
+}
+
+int32_t TWFunc::timespec_diff_ms(timespec& start, timespec& end)
+{
+	return ((end.tv_sec * 1000) + end.tv_nsec/1000000) -
+			((start.tv_sec * 1000) + start.tv_nsec/1000000);
 }
 
 #ifndef BUILD_TWRPTAR_MAIN
@@ -701,25 +720,6 @@ int TWFunc::write_file(string fn, string& line) {
 	}
 	LOGINFO("Cannot find file %s\n", fn.c_str());
 	return -1;
-}
-
-timespec TWFunc::timespec_diff(timespec& start, timespec& end)
-{
-	timespec temp;
-	if ((end.tv_nsec-start.tv_nsec)<0) {
-		temp.tv_sec = end.tv_sec-start.tv_sec-1;
-		temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
-	} else {
-		temp.tv_sec = end.tv_sec-start.tv_sec;
-		temp.tv_nsec = end.tv_nsec-start.tv_nsec;
-	}
-	return temp;
-}
-
-int32_t TWFunc::timespec_diff_ms(timespec& start, timespec& end)
-{
-	return ((end.tv_sec * 1000) + end.tv_nsec/1000000) -
-			((start.tv_sec * 1000) + start.tv_nsec/1000000);
 }
 
 bool TWFunc::Install_SuperSU(void) {

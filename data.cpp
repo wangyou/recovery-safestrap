@@ -860,10 +860,10 @@ void DataManager::SetDefaultValues()
 	}
 
 #ifdef BUILD_SAFESTRAP
-        mConst.SetValue("tw_rom-slot1_name", "XXXXXXXXXX");
-        mConst.SetValue("tw_rom-slot2_name", "XXXXXXXXXX");
-        mConst.SetValue("tw_rom-slot3_name", "XXXXXXXXXX");
-        mConst.SetValue("tw_rom-slot4_name", "XXXXXXXXXX");
+        mPersist.SetValue("tw_rom-slot1_name", "XXXXXXXXXX");
+        mPersist.SetValue("tw_rom-slot2_name", "XXXXXXXXXX");
+        mPersist.SetValue("tw_rom-slot3_name", "XXXXXXXXXX");
+        mPersist.SetValue("tw_rom-slot4_name", "XXXXXXXXXX");
 	LoadBootslotVar();
 #endif
 

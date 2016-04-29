@@ -31,7 +31,7 @@
 		<string name="adopted_storage">适配的存储</string>
 
 		<!-- GUI XML strings -->
-		<string name="twrp_header">Team Win Recovery Project</string>
+		<string name="twrp_header">Safestrap %ss_version% (TWRP v%tw_version%)</string>
 		<string name="twrp_watch_header">TWRP %tw_version%</string>
 		<string name="cpu_temp">温度：%tw_cpu_temp% &#xB0;C</string>
 		<string name="battery_pct">电量：%tw_battery%</string>

@@ -22,7 +22,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <sys/wait.h>
 #include <stdlib.h>
 #include <unistd.h>
+
+#ifdef PLATFORM_SDK_22
+#include <sys/user.h>
+#else
 #include <linux/user.h>
+#endif
+
 #include <stdio.h>
 #include <string.h>
 

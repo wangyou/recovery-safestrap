@@ -123,6 +123,9 @@ enum TW_FSTAB_FLAGS {
 	TWFLAG_FLASHIMG,
 	TWFLAG_FORCEENCRYPT,
 	TWFLAG_FSFLAGS,
+#ifdef BUILD_SAFESTRAP
+	TWFLAG_HIDDEN,
+#endif
 	TWFLAG_IGNOREBLKID,
 	TWFLAG_LENGTH,
 	TWFLAG_MOUNTTODECRYPT,
@@ -156,6 +159,9 @@ const struct flag_list tw_flags[] = {
 	{ "flashimg",               TWFLAG_FLASHIMG },
 	{ "forceencrypt=",          TWFLAG_FORCEENCRYPT },
 	{ "fsflags=",               TWFLAG_FSFLAGS },
+#ifdef BUILD_SAFESTRAP
+	{ "hidden",                 TWFLAG_HIDDEN },
+#endif
 	{ "ignoreblkid",            TWFLAG_IGNOREBLKID },
 	{ "length=",                TWFLAG_LENGTH },
 	{ "mounttodecrypt",         TWFLAG_MOUNTTODECRYPT },
@@ -641,6 +647,11 @@ void TWPartition::Apply_TW_Flag(const unsigned flag, const char* str, const bool
 		case TWFLAG_FSFLAGS:
 			Process_FS_Flags(str);
 			break;
+#ifdef BUILD_SAFESTRAP
+		case TWFLAG_HIDDEN:
+			Hidden = val;
+			break;
+#endif
 		case TWFLAG_IGNOREBLKID:
 			Ignore_Blkid = val;
 			break;
@@ -669,10 +680,6 @@ void TWPartition::Apply_TW_Flag(const unsigned flag, const char* str, const bool
 			break;
 		case TWFLAG_SUBPARTITIONOF:
 			Is_SubPartition = true;
-#ifdef BUILD_SAFESTRAP
-		} else if (strcmp(ptr, "hidden") == 0) {
-			Hidden = true;
-#endif
 			SubPartition_Of = str;
 			break;
 		case TWFLAG_SYMLINK:
